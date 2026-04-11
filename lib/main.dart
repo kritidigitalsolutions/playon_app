@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
 
       // 🔥 Initial Route
-      initialRoute: AppRoutes.myHomePage,
+      initialRoute: AppRoutes.splashScreen,
 
       // 🔥 All Routes
       getPages: AppPages.routes,

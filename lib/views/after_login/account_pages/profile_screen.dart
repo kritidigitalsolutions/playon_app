@@ -280,10 +280,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   child: CircleAvatar(
                     radius: 28,
+                    backgroundColor: AppColors.white,
                     backgroundImage: _profileImagePath != null
                         ? FileImage(File(_profileImagePath!))
-                        : const AssetImage("assets/profile.jpg")
-                              as ImageProvider,
+                        : const AssetImage("assets/user.png") as ImageProvider,
                   ),
                 ),
                 Positioned(

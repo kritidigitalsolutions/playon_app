@@ -24,17 +24,54 @@ class OtpVerifyScreen extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    "Verify Your Number",
-                    style: text24(fontWeight: FontWeight.bold),
+                  const SizedBox(height: 60),
+
+                  // Enhanced Header Section
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // App Logo or Icon
+                      Container(
+                        height: 60,
+                        width: 60,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Icon(
+                          Icons.sports_cricket,
+                          size: 32,
+                          color: AppColors.primary,
+                        ),
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      // Main Heading
+                      Text(
+                        "Verify Your Number",
+                        style: text24(
+                          fontWeight: FontWeight.bold,
+                        ).copyWith(fontSize: 32, height: 1.2),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // Subheading
+                      Text(
+                        "Enter the 6-digit code sent to your phone",
+                        style: text24(fontWeight: FontWeight.normal).copyWith(
+                          fontSize: 16,
+                          color: Colors.grey[600],
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    "Enter the 6-digit code sent to your phone",
-                    style: text16(color: AppColors.textSecondary),
-                  ),
+
                   const SizedBox(height: 40),
 
                   // OTP Fields
