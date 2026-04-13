@@ -27,26 +27,26 @@ class OtpVerifyScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 60),
+                  
 
                   // Enhanced Header Section
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // App Logo or Icon
-                      Container(
-                        height: 60,
-                        width: 60,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Icon(
-                          Icons.sports_cricket,
-                          size: 32,
-                          color: AppColors.primary,
-                        ),
-                      ),
+                      // Container(
+                      //   height: 60,
+                      //   width: 60,
+                      //   decoration: BoxDecoration(
+                      //     color: AppColors.primary.withValues(alpha: 0.3),
+                      //     borderRadius: BorderRadius.circular(16),
+                      //   ),
+                      //   child: Icon(
+                      //     Icons.sports_cricket,
+                      //     size: 32,
+                      //     color: AppColors.primary,
+                      //   ),
+                      // ),
 
                       const SizedBox(height: 32),
 
