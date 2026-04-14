@@ -27,6 +27,25 @@ class HomeController extends GetxController {
     }
   }
 
+  // tab
+
+  final RxInt selectedTabIndex = 0.obs;
+
+  void changeTab(int index) {
+    selectedTabIndex.value = index;
+  }
+
+  final List<String> tabs = [
+    "Home",
+    "Cricket",
+    "Football",
+    "Tennis",
+    "Sports",
+    "Basketball",
+    "Hockey",
+    "Badminton",
+  ];
+
   void _showLoginBottomSheet() {
     Get.bottomSheet(
       Container(

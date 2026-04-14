@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:get/get.dart';
 import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/routes/app_routes.dart';
@@ -26,7 +27,7 @@ class SportChannelList extends StatelessWidget {
                   Expanded(
                     flex: 2,
                     child: Text(
-                      "Live Sports\nChannels",
+                      "Live TV\nChannels",
                       style: text24(fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -101,18 +102,26 @@ class SportChannelList extends StatelessWidget {
 
             // Channels List
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                children: [
-                  _buildChannelItem("Star Sports", "assets/star_sports.png"),
-                  _buildChannelItem("Sky Sports", "assets/sky_sports.png"),
-                  _buildChannelItem("Star Sports", "assets/star_sports.png"),
-                  _buildChannelItem("Sky Sports", "assets/sky_sports.png"),
-                  _buildChannelItem("Star Sports", "assets/star_sports.png"),
-                  _buildChannelItem("Sky Sports", "assets/sky_sports.png"),
-                  _buildChannelItem("Star Sports", "assets/star_sports.png"),
-                  _buildChannelItem("Sky Sports", "assets/sky_sports.png"),
-                ],
+              child: AnimationLimiter(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: 20,
+                  itemBuilder: (BuildContext context, int index) {
+                    return AnimationConfiguration.staggeredList(
+                      position: index,
+                      duration: const Duration(milliseconds: 375),
+                      child: SlideAnimation(
+                        verticalOffset: 50.0,
+                        child: FadeInAnimation(
+                          child: _buildChannelItem(
+                            "Star Sports",
+                            "assets/star_sports.png",
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
 
