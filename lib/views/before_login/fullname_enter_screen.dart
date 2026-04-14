@@ -7,6 +7,7 @@ import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/utils/custom_button.dart';
 import 'package:play_on_app/utils/custom_snakebar.dart';
 import 'package:play_on_app/utils/custom_text_fields.dart';
+import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 
 class FullNameScreen extends StatefulWidget {
@@ -17,6 +18,7 @@ class FullNameScreen extends StatefulWidget {
 }
 
 class _FullNameScreenState extends State<FullNameScreen> {
+  final HomeController ctr = Get.find();
   final TextEditingController _nameController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
 
@@ -38,7 +40,8 @@ class _FullNameScreenState extends State<FullNameScreen> {
         message: "Hi, $fullName 👋",
         type: SnackType.success,
       );
-
+      ctr.toggleLogin();
+      print(ctr.isLogin.value);
       Get.toNamed(AppRoutes.sportInterrestScreen);
     } else {
       showCustomSnackbar(
@@ -56,89 +59,6 @@ class _FullNameScreenState extends State<FullNameScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // Top Header Section with Glass Effect
-              // Container(
-              //   padding: const EdgeInsets.symmetric(
-              //     horizontal: 24,
-              //     vertical: 20,
-              //   ),
-              //   decoration: BoxDecoration(
-              //     gradient: LinearGradient(
-              //       begin: Alignment.topCenter,
-              //       end: Alignment.bottomCenter,
-              //       colors: [Colors.black.withOpacity(0.3), Colors.transparent],
-              //     ),
-              //   ),
-              //   child: Column(
-              //     crossAxisAlignment: CrossAxisAlignment.start,
-              //     children: [
-              //       // Progress Indicator
-              //       Row(
-              //         children: [
-              //           Expanded(
-              //             child: Container(
-              //               height: 4,
-              //               decoration: BoxDecoration(
-              //                 borderRadius: BorderRadius.circular(2),
-              //                 gradient: LinearGradient(
-              //                   colors: [
-              //                     AppColors.primary,
-              //                     AppColors.primary.withOpacity(0.5),
-              //                   ],
-              //                 ),
-              //               ),
-              //             ),
-              //           ),
-              //           const SizedBox(width: 8),
-              //           Expanded(
-              //             child: Container(
-              //               height: 4,
-              //               decoration: BoxDecoration(
-              //                 borderRadius: BorderRadius.circular(2),
-              //                 color: Colors.white.withOpacity(0.2),
-              //               ),
-              //             ),
-              //           ),
-              //           const SizedBox(width: 8),
-              //           Expanded(
-              //             child: Container(
-              //               height: 4,
-              //               decoration: BoxDecoration(
-              //                 borderRadius: BorderRadius.circular(2),
-              //                 color: Colors.white.withOpacity(0.2),
-              //               ),
-              //             ),
-              //           ),
-              //         ],
-              //       ),
-              //       const SizedBox(height: 24),
-
-              //       // Step Counter
-              //       Container(
-              //         padding: const EdgeInsets.symmetric(
-              //           horizontal: 12,
-              //           vertical: 6,
-              //         ),
-              //         decoration: BoxDecoration(
-              //           color: AppColors.primary.withOpacity(0.2),
-              //           borderRadius: BorderRadius.circular(20),
-              //           border: Border.all(
-              //             color: AppColors.primary.withOpacity(0.3),
-              //             width: 1,
-              //           ),
-              //         ),
-              //         child: Text(
-              //           "Step 1 of 3",
-              //           style: text14(
-              //             color: AppColors.primary,
-              //             fontWeight: FontWeight.w600,
-              //           ),
-              //         ),
-              //       ),
-              //     ],
-              //   ),
-              // ),
-
               // Scrollable Content
               Expanded(
                 child: SingleChildScrollView(

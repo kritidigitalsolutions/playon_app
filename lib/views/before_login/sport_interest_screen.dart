@@ -91,7 +91,9 @@ class _SportsInterestScreenState extends State<SportsInterestScreen> {
                     // TODO: Save selected sports and navigate
                     final selected = sports.where((s) => s.isSelected).toList();
                     print("Selected Sports: ${selected.map((e) => e.name)}");
-                    Get.offAllNamed(AppRoutes.myHomePage);
+                    Get.until(
+                      (route) => Get.currentRoute == AppRoutes.myHomePage,
+                    );
                   },
                 ),
               ],

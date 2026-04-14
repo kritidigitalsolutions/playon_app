@@ -8,10 +8,13 @@ import 'package:play_on_app/res/app_image.dart';
 import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/utils/custom_button.dart';
+import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  HomeScreen({super.key});
+
+  final HomeController ctr = Get.find();
 
   @override
   Widget build(BuildContext context) {
@@ -282,7 +285,10 @@ class HomeScreen extends StatelessWidget {
             AppButton(
               title: "Watch Live",
               onTap: () {
-                Get.toNamed(AppRoutes.matchDetails);
+                print(ctr.isLogin.value);
+                ctr.handleProtectedAction(() {
+                  Get.toNamed(AppRoutes.matchDetails);
+                });
               },
               height: 40,
             ),
@@ -399,11 +405,14 @@ class HomeScreen extends StatelessWidget {
                   child: AppButton(
                     title: "Watch Now",
                     onTap: () {
-                      if (isUpcaming) {
-                        Get.toNamed(AppRoutes.matchDetails);
-                      } else {
-                        Get.toNamed(AppRoutes.recapMatch);
-                      }
+                      print(ctr.isLogin.value);
+                      ctr.handleProtectedAction(() {
+                        if (isUpcaming) {
+                          Get.toNamed(AppRoutes.matchDetails);
+                        } else {
+                          Get.toNamed(AppRoutes.recapMatch);
+                        }
+                      });
                     },
                     radius: 8,
                     height: 25,

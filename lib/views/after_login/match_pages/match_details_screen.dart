@@ -240,6 +240,7 @@ class MatchDetailScreen extends StatelessWidget {
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                     child: Container(
+                      height: 180,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: AppColors.white.withOpacity(0.08),
@@ -247,34 +248,16 @@ class MatchDetailScreen extends StatelessWidget {
                         border: Border.all(
                           color: AppColors.white.withOpacity(0.15),
                         ),
+                        image: const DecorationImage(
+                          image: AssetImage(
+                            'assets/images/iPhone.png',
+                          ), // Add your image
+                          fit: BoxFit.cover,
+                        ),
                       ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Row(
-                            children: [
-                              Image.asset(
-                                'assets/images/iPhone.png', // Replace with actual logo
-                                height: 28,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Center(
-                                    child: Icon(Icons.error, size: 50),
-                                  );
-                                },
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                "MacBook Air",
-                                style: text18(fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            "Amazing performance. Unbelievable price.",
-                            style: text13(color: AppColors.white70),
-                          ),
-                          const SizedBox(height: 16),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [

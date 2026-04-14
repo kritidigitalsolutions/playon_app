@@ -27,8 +27,6 @@ class OtpVerifyScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  
-
                   // Enhanced Header Section
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -47,7 +45,6 @@ class OtpVerifyScreen extends StatelessWidget {
                       //     color: AppColors.primary,
                       //   ),
                       // ),
-
                       const SizedBox(height: 32),
 
                       // Main Heading

@@ -9,6 +9,10 @@ import 'package:play_on_app/routes/app_pages.dart';
 import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
+import 'package:play_on_app/views/after_login/channel_page/sport_channel_list.dart';
+import 'package:play_on_app/views/after_login/home_pages/home_screen.dart';
+import 'package:play_on_app/views/after_login/home_pages/schedules_screen.dart';
+import 'package:play_on_app/views/after_login/home_pages/watch_list_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -68,11 +72,18 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     final controller = Get.find<HomeController>();
 
+    final List<Widget> screens = [
+      HomeScreen(),
+      const SportChannelList(),
+      CreateWatchlistScreen(),
+      MatchScheduleScreen(),
+    ];
+
     return Scaffold(
       body: Obx(
         () => IndexedStack(
           index: controller.currentIndex.value,
-          children: controller.screens,
+          children: screens,
         ),
       ),
       bottomNavigationBar: Obx(
