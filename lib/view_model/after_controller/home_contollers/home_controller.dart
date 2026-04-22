@@ -4,11 +4,128 @@ import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 
+import 'package:play_on_app/model/response_model/channel_model.dart';
+import 'package:play_on_app/repo/channel_repository.dart';
+import 'package:play_on_app/model/response_model/match_model.dart';
+import 'package:play_on_app/repo/match_repository.dart';
+import 'package:play_on_app/utils/hive_service/hive_service.dart';
+
 class HomeController extends GetxController {
+  final MatchRepository _matchRepository = MatchRepository();
+  final ChannelRepository _channelRepository = ChannelRepository();
   final RxInt currentIndex = 0.obs;
 
   void changeIndex(int index) {
     currentIndex.value = index;
+  }
+
+  var isLoading = false.obs;
+  var liveMatches = <Match>[].obs;
+  var allMatches = <Match>[].obs;
+  var filteredMatches = <Match>[].obs;
+  var filteredLiveMatches = <Match>[].obs;
+  var scheduledMatches = <Match>[].obs;
+  var isScheduleLoading = false.obs;
+
+  var isChannelLoading = false.obs;
+  var allChannels = <Channel>[].obs;
+  var filteredChannels = <Channel>[].obs;
+
+  var searchQuery = "".obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    isLogin.value = HiveService.isLogin();
+    fetchMatches();
+    fetchChannels();
+    
+    // Setup search listeners
+    searchQuery.listen((query) {
+      filterData(query);
+    });
+  }
+
+  void filterData(String query) {
+    if (query.isEmpty) {
+      filteredMatches.value = allMatches;
+      filteredLiveMatches.value = liveMatches;
+      filteredChannels.value = allChannels;
+    } else {
+      final q = query.toLowerCase();
+      
+      filteredMatches.value = allMatches.where((m) {
+        return (m.title?.toLowerCase().contains(q) ?? false) ||
+               (m.teamA?.toLowerCase().contains(q) ?? false) ||
+               (m.teamB?.toLowerCase().contains(q) ?? false);
+      }).toList();
+
+      filteredLiveMatches.value = liveMatches.where((m) {
+        return (m.title?.toLowerCase().contains(q) ?? false) ||
+               (m.teamA?.toLowerCase().contains(q) ?? false) ||
+               (m.teamB?.toLowerCase().contains(q) ?? false);
+      }).toList();
+
+      filteredChannels.value = allChannels.where((c) {
+        return (c.name?.toLowerCase().contains(q) ?? false);
+      }).toList();
+    }
+  }
+
+  Future<void> fetchChannels() async {
+    isChannelLoading.value = true;
+    try {
+      final res = await _channelRepository.getLiveChannels();
+      if (res['success'] == true) {
+        final data = ChannelModel.fromJson(res);
+        allChannels.value = data.channels ?? [];
+        filterData(searchQuery.value); // Re-apply filter
+      }
+    } catch (e) {
+      print("Error fetching channels: $e");
+    } finally {
+      isChannelLoading.value = false;
+    }
+  }
+
+  Future<void> fetchScheduledMatches({String? sport, String? date}) async {
+    isScheduleLoading.value = true;
+    try {
+      final res = await _matchRepository.getAllMatches(sport: sport, date: date);
+      if (res['success'] == true) {
+        final data = MatchModel.fromJson(res);
+        scheduledMatches.value = data.matches ?? [];
+      }
+    } catch (e) {
+      print("Error fetching scheduled matches: $e");
+    } finally {
+      isScheduleLoading.value = false;
+    }
+  }
+
+  Future<void> fetchMatches({String? sport}) async {
+    isLoading.value = true;
+    try {
+      // Fetch Live Matches
+      final liveRes = await _matchRepository.getLiveMatches();
+      if (liveRes['success'] == true) {
+        final data = MatchModel.fromJson(liveRes);
+        liveMatches.value = data.matches ?? [];
+      }
+
+      // Fetch All Matches with sport filter
+      final allRes = await _matchRepository.getAllMatches(sport: sport);
+      if (allRes['success'] == true) {
+        final data = MatchModel.fromJson(allRes);
+        allMatches.value = data.matches ?? [];
+      }
+      
+      filterData(searchQuery.value); // Re-apply filter
+    } catch (e) {
+      print("Error fetching matches: $e");
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   var isLogin = false.obs;
@@ -33,6 +150,7 @@ class HomeController extends GetxController {
 
   void changeTab(int index) {
     selectedTabIndex.value = index;
+    fetchMatches(sport: tabs[index]);
   }
 
   final List<String> tabs = [

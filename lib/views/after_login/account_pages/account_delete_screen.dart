@@ -5,6 +5,7 @@ import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/utils/custom_button.dart';
 import 'package:play_on_app/utils/custom_snakebar.dart';
+import 'package:play_on_app/view_model/before_controller/auth_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 
 class DeleteAccountScreen extends StatefulWidget {
@@ -15,8 +16,8 @@ class DeleteAccountScreen extends StatefulWidget {
 }
 
 class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
+  final AuthController _authController = Get.find<AuthController>();
   bool _isConfirmChecked = false;
-  bool _isLoading = false;
   String? _selectedReason;
 
   final List<String> _deleteReasons = [
@@ -155,22 +156,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
 
   void _deleteAccount() async {
     Get.back(); // Close dialog
-    setState(() => _isLoading = true);
-
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 2));
-
-    setState(() => _isLoading = false);
-
-    // TODO: Implement actual account deletion logic
-    showCustomSnackbar(
-      title: "Account Deleted",
-      message: "Your account has been permanently deleted",
-      type: SnackType.success,
-    );
-
-    // Navigate to login or onboarding
-    // Get.offAllNamed(AppRoutes.login);
+    _authController.deleteAccount(_selectedReason!);
   }
 
   @override
@@ -347,8 +333,8 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                       const SizedBox(height: 32),
 
                       // Delete Button
-                      _isLoading
-                          ? Center(
+                      Obx(() => _authController.isLoading.value
+                          ? const Center(
                               child: CircularProgressIndicator(
                                 color: AppColors.error,
                               ),
@@ -357,7 +343,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                               title: "Delete My Account",
                               onTap: _showDeleteConfirmationDialog,
                               color: AppColors.error,
-                            ),
+                            )),
 
                       const SizedBox(height: 16),
 

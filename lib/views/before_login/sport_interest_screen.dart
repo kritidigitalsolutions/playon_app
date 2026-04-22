@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:play_on_app/view_model/before_controller/auth_controller.dart';
 import 'package:play_on_app/res/app_colors.dart';
-import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/utils/custom_button.dart';
-import 'package:play_on_app/views/custom_background.dart/custom_widget.dart'; // Your color file
+import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 
 class SportsInterestScreen extends StatefulWidget {
   const SportsInterestScreen({super.key});
@@ -14,6 +14,8 @@ class SportsInterestScreen extends StatefulWidget {
 }
 
 class _SportsInterestScreenState extends State<SportsInterestScreen> {
+  final AuthController ctr = Get.find<AuthController>();
+
   final List<SportItem> sports = [
     SportItem(name: "Cricket", image: "assets/auth/cri.png", isSelected: false),
     SportItem(
@@ -85,17 +87,16 @@ class _SportsInterestScreenState extends State<SportsInterestScreen> {
                 const SizedBox(height: 20),
 
                 // Save & Continue Button
-                AppButton(
-                  title: "Save & Continue",
+                Obx(() => AppButton(
+                  title: ctr.isLoading.value ? "Saving..." : "Save & Continue",
                   onTap: () {
-                    // TODO: Save selected sports and navigate
-                    final selected = sports.where((s) => s.isSelected).toList();
-                    print("Selected Sports: ${selected.map((e) => e.name)}");
-                    Get.until(
-                      (route) => Get.currentRoute == AppRoutes.myHomePage,
-                    );
+                    final selectedSports = sports
+                        .where((s) => s.isSelected)
+                        .map((e) => e.name)
+                        .toList();
+                    ctr.completeProfile(selectedSports);
                   },
-                ),
+                )),
               ],
             ),
           ),

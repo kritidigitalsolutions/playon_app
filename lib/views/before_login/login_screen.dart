@@ -11,7 +11,7 @@ import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 class LoginScreen extends StatelessWidget {
   LoginScreen({super.key});
 
-  final LoginController ctr = Get.put(LoginController());
+  final AuthController ctr = Get.put(AuthController());
 
   // Bottom Sheet for Terms & Conditions
   void _showTermsBottomSheet(BuildContext context) {
@@ -279,22 +279,20 @@ Last updated: ${DateTime.now().year}
                   NumberTextField(
                     radius: 8,
                     maxLength: 10,
-                    controller: ctr.phoneCtr,
+                    controller: ctr.mobileController,
                     hintText: "Enter Your Mobile Number",
                   ),
 
                   const SizedBox(height: 20),
 
                   // Continue Button
-                  AppButton(
+                  Obx(() => AppButton(
                     radius: 8,
-                    title: "Continue",
+                    title: ctr.isLoading.value ? "Please wait..." : "Continue",
                     onTap: () {
-                      if (ctr.formKey.currentState!.validate()) {
-                        Get.toNamed(AppRoutes.otpVerify);
-                      }
+                      ctr.sendOtp();
                     },
-                  ),
+                  )),
 
                   //  const Spacer(),
                   const SizedBox(height: 48),

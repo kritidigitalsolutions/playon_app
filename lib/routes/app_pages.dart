@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:play_on_app/bindings/auth_binding.dart';
 import 'package:play_on_app/bindings/home_binding.dart';
 import 'package:play_on_app/main.dart';
 import 'package:play_on_app/views/after_login/account_pages/account_delete_screen.dart';
@@ -26,12 +27,25 @@ class AppPages {
   static final routes = [
     // auth
     GetPage(name: AppRoutes.splashScreen, page: () => const SplashScreen()),
-    GetPage(name: AppRoutes.login, page: () => LoginScreen()),
-    GetPage(name: AppRoutes.otpVerify, page: () => OtpVerifyScreen()),
-    GetPage(name: AppRoutes.fullnameEnter, page: () => FullNameScreen()),
+    GetPage(
+      name: AppRoutes.login,
+      page: () => LoginScreen(),
+      binding: AuthBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.otpVerify,
+      page: () => OtpVerifyScreen(),
+      binding: AuthBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.fullnameEnter,
+      page: () => FullNameScreen(),
+      binding: AuthBinding(),
+    ),
     GetPage(
       name: AppRoutes.sportInterrestScreen,
       page: () => SportsInterestScreen(),
+      binding: AuthBinding(),
     ),
 
     // home

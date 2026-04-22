@@ -12,100 +12,75 @@ import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 class OtpVerifyScreen extends StatelessWidget {
   OtpVerifyScreen({super.key});
 
-  final VerifyOtpController ctr = Get.put(VerifyOtpController());
+  final AuthController ctr = Get.find<AuthController>();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          BackgroundWithImg(child: SizedBox.shrink()),
-          Positioned(
+          BackgroundWithImg(child: const SizedBox.shrink()),
+          Positioned.fill(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Enhanced Header Section
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // App Logo or Icon
-                      // Container(
-                      //   height: 60,
-                      //   width: 60,
-                      //   decoration: BoxDecoration(
-                      //     color: AppColors.primary.withValues(alpha: 0.3),
-                      //     borderRadius: BorderRadius.circular(16),
-                      //   ),
-                      //   child: Icon(
-                      //     Icons.sports_cricket,
-                      //     size: 32,
-                      //     color: AppColors.primary,
-                      //   ),
-                      // ),
-                      const SizedBox(height: 32),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 100),
+                    // Main Heading
+                    Text(
+                      "Verify Your Number",
+                      style: text24(
+                        fontWeight: FontWeight.bold,
+                      ).copyWith(fontSize: 32, height: 1.2),
+                    ),
 
-                      // Main Heading
-                      Text(
-                        "Verify Your Number",
-                        style: text24(
-                          fontWeight: FontWeight.bold,
-                        ).copyWith(fontSize: 32, height: 1.2),
+                    const SizedBox(height: 12),
+
+                    // Subheading
+                    Text(
+                      "Enter the 6-digit code sent to your phone",
+                      style: text24(fontWeight: FontWeight.normal).copyWith(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                        height: 1.5,
                       ),
+                    ),
 
-                      const SizedBox(height: 12),
+                    const SizedBox(height: 40),
 
-                      // Subheading
-                      Text(
-                        "Enter the 6-digit code sent to your phone",
-                        style: text24(fontWeight: FontWeight.normal).copyWith(
-                          fontSize: 16,
-                          color: Colors.grey[600],
-                          height: 1.5,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  // OTP Fields
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: List.generate(
-                      6,
-                      (index) => Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: AppColors.white24,
-                            width: 1.2,
+                    // OTP Fields
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: List.generate(
+                        6,
+                        (index) => Container(
+                          width: 45,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: AppColors.white24,
+                              width: 1.2,
+                            ),
                           ),
-                        ),
-                        child: KeyboardListener(
-                          focusNode: FocusNode(), // required
-                          onKeyEvent: (event) {
-                            // Only handle key down events
-                            if (event is KeyDownEvent) {
-                              if (event.logicalKey ==
-                                  LogicalKeyboardKey.backspace) {
-                                final text = ctr.otpCtrls[index].text;
-                                if (text.isNotEmpty) {
-                                  ctr.otpCtrls[index].clear();
-                                } else if (index > 0) {
-                                  ctr.focusNodes[index - 1].requestFocus();
-                                  ctr.otpCtrls[index - 1].clear();
-                                }
-                              }
-                            }
-                          },
                           child: TextField(
-                            controller: ctr.otpCtrls[index],
-                            focusNode: ctr.focusNodes[index],
+                            onChanged: (value) {
+                              if (value.length == 1 && index < 5) {
+                                FocusScope.of(context).nextFocus();
+                              }
+                              if (value.isEmpty && index > 0) {
+                                FocusScope.of(context).previousFocus();
+                              }
+                              // Collect OTP
+                              List<String> currentOtp = ctr.otpController.text.split('');
+                              if (currentOtp.length <= index) {
+                                currentOtp.addAll(List.filled(index - currentOtp.length + 1, ''));
+                              }
+                              currentOtp[index] = value;
+                              ctr.otpController.text = currentOtp.join();
+                            },
                             keyboardType: TextInputType.number,
                             textAlign: TextAlign.center,
                             maxLength: 1,
@@ -117,52 +92,22 @@ class OtpVerifyScreen extends StatelessWidget {
                               counterText: "",
                               border: InputBorder.none,
                             ),
-                            onChanged: (value) {
-                              if (value.isNotEmpty) {
-                                // Keep only last character
-                                ctr.otpCtrls[index].text =
-                                    value[value.length - 1];
-                                ctr.otpCtrls[index].selection =
-                                    TextSelection.fromPosition(
-                                      TextPosition(
-                                        offset: ctr.otpCtrls[index].text.length,
-                                      ),
-                                    );
-
-                                // Move to next empty field
-                                for (
-                                  int i = index + 1;
-                                  i < ctr.otpCtrls.length;
-                                  i++
-                                ) {
-                                  if (ctr.otpCtrls[i].text.isEmpty) {
-                                    ctr.focusNodes[i].requestFocus();
-                                    break;
-                                  }
-                                }
-                              }
-                            },
                           ),
                         ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 40),
+                    const SizedBox(height: 40),
 
-                  AppButton(
-                    radius: 8,
-                    title: "Verify OTP",
-                    onTap: () {
-                      final isValidate = ctr.validateOtp();
-
-                      if (!isValidate) {
-                        return;
-                      }
-                      Get.toNamed(AppRoutes.fullnameEnter);
-                    },
-                  ),
-                ],
+                    Obx(() => AppButton(
+                      radius: 8,
+                      title: ctr.isLoading.value ? "Verifying..." : "Verify OTP",
+                      onTap: () {
+                        ctr.verifyOtp();
+                      },
+                    )),
+                  ],
+                ),
               ),
             ),
           ),

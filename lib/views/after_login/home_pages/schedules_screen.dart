@@ -1,9 +1,15 @@
+import 'package:play_on_app/model/response_model/match_model.dart' as model;
+
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:play_on_app/utils/custom_button.dart';
 import 'dart:ui';
+import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
+
+import '../../../routes/app_routes.dart';
 
 class MatchScheduleScreen extends StatefulWidget {
   const MatchScheduleScreen({super.key});
@@ -13,12 +19,24 @@ class MatchScheduleScreen extends StatefulWidget {
 }
 
 class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
-  DateTime _focusedDay = DateTime(2026, 4, 7);
-  DateTime _selectedDay = DateTime(
-    2026,
-    4,
-    7,
-  ); // Default selected like your image
+  final HomeController ctr = Get.find();
+  DateTime _focusedDay = DateTime.now();
+  DateTime _selectedDay = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMatches();
+  }
+
+  void _fetchMatches() {
+    String dateStr = _selectedDay.toIso8601String().split('T')[0];
+    String? sport = ctr.tabs[ctr.selectedTabIndex.value] == "Home" ||
+            ctr.tabs[ctr.selectedTabIndex.value] == "All Sports"
+        ? null
+        : ctr.tabs[ctr.selectedTabIndex.value];
+    ctr.fetchScheduledMatches(date: dateStr, sport: sport);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,8 +48,11 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  IconButton(
+                    onPressed: () => Get.back(),
+                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                  ),
                   const Text(
                     "Match Schedule",
                     style: TextStyle(
@@ -45,17 +66,25 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
             ),
 
             // Category Tabs
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  _buildCategoryTab("All Sports", true),
-                  _buildCategoryTab("Cricket", false),
-                  _buildCategoryTab("Football", false),
-                  _buildCategoryTab("Tennis", false),
-                  _buildCategoryTab("Basketball", false),
-                ],
+            Obx(
+              () => SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: List.generate(
+                    ctr.tabs.length,
+                    (index) => GestureDetector(
+                      onTap: () {
+                        ctr.selectedTabIndex.value = index;
+                        _fetchMatches();
+                      },
+                      child: _buildCategoryTab(
+                        ctr.tabs[index] == "Home" ? "All Sports" : ctr.tabs[index],
+                        ctr.selectedTabIndex.value == index,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
 
@@ -63,119 +92,117 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
 
             const SizedBox(height: 20),
 
-            // Matches List (You can filter this based on _selectedDay later)
+            // Matches List
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.15),
-                            width: 1.2,
-                          ),
-                        ),
-                        child: TableCalendar(
-                          firstDay: DateTime(2026, 1, 1),
-                          lastDay: DateTime(2028, 12, 31),
-                          focusedDay: _focusedDay,
-                          selectedDayPredicate: (day) =>
-                              isSameDay(_selectedDay, day),
-                          onDaySelected: (selectedDay, focusedDay) {
-                            setState(() {
-                              _selectedDay = selectedDay;
-                              _focusedDay = focusedDay;
-                            });
-                            // TODO: Filter matches based on selected date
-                          },
-                          calendarStyle: CalendarStyle(
-                            outsideDaysVisible: false,
-                            defaultTextStyle: const TextStyle(
-                              color: Colors.white70,
-                            ),
-                            weekendTextStyle: const TextStyle(
-                              color: Colors.white70,
-                            ),
-                            selectedTextStyle: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            todayTextStyle: const TextStyle(
-                              color: Colors.white,
-                            ),
-                            selectedDecoration: const BoxDecoration(
-                              color: Color(0xFF2196F3),
-                              shape: BoxShape.circle,
-                            ),
-                            todayDecoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            defaultDecoration: const BoxDecoration(
-                              shape: BoxShape.circle,
+              child: Obx(() {
+                if (ctr.isScheduleLoading.value) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                return ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.15),
+                              width: 1.2,
                             ),
                           ),
-                          headerStyle: const HeaderStyle(
-                            titleCentered: true,
-                            formatButtonVisible: false,
-                            titleTextStyle: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
+                          child: TableCalendar(
+                            firstDay: DateTime(2024, 1, 1),
+                            lastDay: DateTime(2028, 12, 31),
+                            focusedDay: _focusedDay,
+                            selectedDayPredicate: (day) =>
+                                isSameDay(_selectedDay, day),
+                            onDaySelected: (selectedDay, focusedDay) {
+                              setState(() {
+                                _selectedDay = selectedDay;
+                                _focusedDay = focusedDay;
+                              });
+                              _fetchMatches();
+                            },
+                            calendarStyle: CalendarStyle(
+                              outsideDaysVisible: false,
+                              defaultTextStyle: const TextStyle(
+                                color: Colors.white70,
+                              ),
+                              weekendTextStyle: const TextStyle(
+                                color: Colors.white70,
+                              ),
+                              selectedTextStyle: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              todayTextStyle: const TextStyle(
+                                color: Colors.white,
+                              ),
+                              selectedDecoration: const BoxDecoration(
+                                color: Color(0xFF2196F3),
+                                shape: BoxShape.circle,
+                              ),
+                              todayDecoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              defaultDecoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                              ),
                             ),
-                            leftChevronIcon: Icon(
-                              Icons.chevron_left,
-                              color: Colors.white70,
+                            headerStyle: const HeaderStyle(
+                              titleCentered: true,
+                              formatButtonVisible: false,
+                              titleTextStyle: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              leftChevronIcon: Icon(
+                                Icons.chevron_left,
+                                color: Colors.white70,
+                              ),
+                              rightChevronIcon: Icon(
+                                Icons.chevron_right,
+                                color: Colors.white70,
+                              ),
                             ),
-                            rightChevronIcon: Icon(
-                              Icons.chevron_right,
-                              color: Colors.white70,
+                            daysOfWeekStyle: const DaysOfWeekStyle(
+                              weekdayStyle: TextStyle(color: Colors.white60),
+                              weekendStyle: TextStyle(color: Colors.white60),
                             ),
-                          ),
-                          daysOfWeekStyle: const DaysOfWeekStyle(
-                            weekdayStyle: TextStyle(color: Colors.white60),
-                            weekendStyle: TextStyle(color: Colors.white60),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  SizedBox(height: 10),
-                  _buildMatchCard(
-                    team1: "England",
-                    team2: "South Africa",
-                    flag1: "🇬🇧",
-                    flag2: "🇿🇦",
-                    time: "Today at 7:30 PM",
-                    isLive: false,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildMatchCard(
-                    team1: "Brazil",
-                    team2: "Argentina",
-                    flag1: "🇧🇷",
-                    flag2: "🇦🇷",
-                    time: "Today at 7:30 PM",
-                    isLive: true,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildMatchCard(
-                    team1: "England",
-                    team2: "South Africa",
-                    flag1: "🇬🇧",
-                    flag2: "🇿🇦",
-                    time: "Tomorrow at 3:00 PM",
-                    isLive: false,
-                  ),
-                ],
-              ),
+                    const SizedBox(height: 20),
+                    if (ctr.scheduledMatches.isEmpty)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.only(top: 40.0),
+                          child: Text(
+                            "No matches scheduled for this date",
+                            style: TextStyle(color: Colors.white70, fontSize: 16),
+                          ),
+                        ),
+                      )
+                    else
+                      ...ctr.scheduledMatches.map((match) => Padding(
+                            padding: const EdgeInsets.only(bottom: 16.0),
+                            child: _buildMatchCard(
+                              match: match,
+                            ),
+                          )),
+                    const SizedBox(height: 40),
+                  ],
+                );
+              }),
             ),
           ],
         ),
@@ -203,16 +230,13 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
     );
   }
 
-  // Match Card (keep your existing one)
-  Widget _buildMatchCard({
-    required String team1,
-    required String team2,
-    required String flag1,
-    required String flag2,
-    required String time,
-    required bool isLive,
-  }) {
-    // ... (same as your previous code)
+  // Match Card
+  Widget _buildMatchCard({required model.Match match}) {
+    bool isLive = match.status?.toLowerCase() == 'live';
+    String time = match.matchDate != null
+        ? match.matchDate!.split('T')[1].substring(0, 5)
+        : "TBA";
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
@@ -231,10 +255,14 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                   Expanded(
                     child: Column(
                       children: [
-                        Text(flag1, style: const TextStyle(fontSize: 36)),
+                        if (match.teamALogo != null && match.teamALogo!.isNotEmpty)
+                          Image.network(match.teamALogo!, height: 40, width: 40)
+                        else
+                          const Icon(Icons.shield, color: Colors.white, size: 40),
                         const SizedBox(height: 6),
                         Text(
-                          team1,
+                          match.teamA ?? "Team A",
+                          textAlign: TextAlign.center,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 14,
@@ -282,10 +310,14 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                   Expanded(
                     child: Column(
                       children: [
-                        Text(flag2, style: const TextStyle(fontSize: 36)),
+                        if (match.teamBLogo != null && match.teamBLogo!.isNotEmpty)
+                          Image.network(match.teamBLogo!, height: 40, width: 40)
+                        else
+                          const Icon(Icons.shield, color: Colors.white, size: 40),
                         const SizedBox(height: 6),
                         Text(
-                          team2,
+                          match.teamB ?? "Team B",
+                          textAlign: TextAlign.center,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 14,
@@ -297,7 +329,14 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              AppButton(title: "View Details", onTap: () {}),
+              AppButton(
+                title: "View Details",
+                onTap: () {
+                  ctr.handleProtectedAction(() {
+                    Get.toNamed(AppRoutes.matchDetails, arguments: match);
+                  });
+                },
+              ),
             ],
           ),
         ),

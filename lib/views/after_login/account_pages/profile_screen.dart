@@ -10,6 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:play_on_app/utils/custom_snakebar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:play_on_app/view_model/before_controller/auth_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -20,6 +21,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final AuthController _authController = Get.find<AuthController>();
   String? _profileImagePath;
   final ImagePicker _picker = ImagePicker();
 
@@ -27,6 +29,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _loadProfileImage();
+    _authController.getUserProfile();
   }
 
   // Load saved image path from SharedPreferences
@@ -203,48 +206,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       body: BackgroundWithOutImg(
         child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _header(),
-              const SizedBox(height: 20),
-              Expanded(
-                child: ListView(
-                  physics: BouncingScrollPhysics(),
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  children: [
-                    _glassInfoTile(
-                      text: "richo@email.com",
-                      onEdit: () => _showEditDialog("Email", "richo@email.com"),
-                    ),
-                    const SizedBox(height: 10),
-                    _glassInfoTile(
-                      text: "+91 5896458964",
-                      onEdit: () =>
-                          _showEditDialog("Phone Number", "+91 5896458964"),
-                    ),
-                    const SizedBox(height: 24),
-                    _sectionTitle("Tours & Series", () {
-                      Get.toNamed(AppRoutes.selectTour);
-                    }),
-                    const SizedBox(height: 10),
-                    _glassToursList(),
-                    const SizedBox(height: 24),
-                    _sectionTitle("Follow Players", () {
-                      Get.toNamed(AppRoutes.findPlayer);
-                    }),
-                    const SizedBox(height: 10),
-                    _glassPlayersList(),
-                    const SizedBox(height: 24),
-                    _glassMenuList(),
-                    const SizedBox(height: 30),
-                    _glassLogoutButton(context),
-                    const SizedBox(height: 50),
-                  ],
+          child: Obx(() {
+            if (_authController.isLoading.value &&
+                _authController.userData.value == null) {
+              return const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              );
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _header(),
+                const SizedBox(height: 20),
+                Expanded(
+                  child: ListView(
+                    physics: BouncingScrollPhysics(),
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    children: [
+                      _glassInfoTile(
+                        text:
+                            _authController.userData.value?.email ??
+                            "No email provided",
+                        onEdit: () => _showEditDialog(
+                          "Email",
+                          _authController.userData.value?.email ?? "",
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      _glassInfoTile(
+                        text:
+                            _authController.userData.value?.mobile ??
+                            "No phone number",
+                        onEdit: () => _showEditDialog(
+                          "Phone Number",
+                          _authController.userData.value?.mobile ?? "",
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      _sectionTitle("Tours & Series", () {
+                        Get.toNamed(AppRoutes.selectTour);
+                      }),
+                      const SizedBox(height: 10),
+                      _glassToursList(),
+                      const SizedBox(height: 24),
+                      _sectionTitle("Follow Players", () {
+                        Get.toNamed(AppRoutes.findPlayer);
+                      }),
+                      const SizedBox(height: 10),
+                      _glassPlayersList(),
+                      const SizedBox(height: 24),
+                      _glassMenuList(),
+                      const SizedBox(height: 30),
+                      _glassLogoutButton(context),
+                      const SizedBox(height: 50),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            );
+          }),
         ),
       ),
     );
@@ -262,7 +282,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Text("Hello", style: text14(color: AppColors.white70)),
                 SizedBox(height: 4),
-                Text("Shivam", style: text20(fontWeight: FontWeight.bold)),
+                Text(
+                  _authController.userData.value?.fullName ?? "User",
+                  style: text20(fontWeight: FontWeight.bold),
+                ),
               ],
             ),
           ),
@@ -637,6 +660,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Get.toNamed(AppRoutes.accountDelete);
                 },
               ),
+              _glassMenuItem("Refund Policy", Icons.attach_money, onTap: () {}),
               _glassMenuItem("Privacy Policy", Icons.security, onTap: () {}),
               _glassMenuItem(
                 "Terms and conditions",
@@ -771,14 +795,7 @@ void _showModernLogoutDialog(BuildContext context) {
                   child: ElevatedButton(
                     onPressed: () {
                       Navigator.pop(context); // Close dialog
-                      // TODO: Add your actual logout logic here
-                      // Example: context.read<AuthProvider>().logout();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Logged out successfully"),
-                          backgroundColor: AppColors.error,
-                        ),
-                      );
+                      Get.find<AuthController>().logout();
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.error,

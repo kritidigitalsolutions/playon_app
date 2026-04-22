@@ -1,0 +1,90 @@
+class MatchModel {
+  bool? success;
+  int? total;
+  int? page;
+  int? limit;
+  List<Match>? matches;
+
+  MatchModel({this.success, this.total, this.page, this.limit, this.matches});
+
+  MatchModel.fromJson(Map<String, dynamic> json) {
+    success = json['success'];
+    total = json['total'];
+    page = json['page'];
+    limit = json['limit'];
+    if (json['matches'] != null) {
+      matches = <Match>[];
+      json['matches'].forEach((v) {
+        matches!.add(Match.fromJson(v));
+      });
+    }
+  }
+}
+
+class Match {
+  String? sId;
+  String? title;
+  String? sport;
+  String? teamA;
+  String? teamB;
+  String? teamALogo;
+  String? teamBLogo;
+  String? tournament;
+  String? venue;
+  String? matchDate;
+  String? status;
+  String? thumbnail;
+  String? banner;
+  String? score;
+  String? description;
+  bool? isFeatured;
+  String? liveStartedAt;
+  String? liveEndedAt;
+  String? createdAt;
+  String? updatedAt;
+
+  Match(
+      {this.sId,
+      this.title,
+      this.sport,
+      this.teamA,
+      this.teamB,
+      this.teamALogo,
+      this.teamBLogo,
+      this.tournament,
+      this.venue,
+      this.matchDate,
+      this.status,
+      this.thumbnail,
+      this.banner,
+      this.score,
+      this.description,
+      this.isFeatured,
+      this.liveStartedAt,
+      this.liveEndedAt,
+      this.createdAt,
+      this.updatedAt});
+
+  Match.fromJson(Map<String, dynamic> json) {
+    sId = json['_id'];
+    title = json['title'];
+    sport = json['sport'];
+    teamA = json['teamA'];
+    teamB = json['teamB'];
+    teamALogo = json['teamALogo'];
+    teamBLogo = json['teamBLogo'];
+    tournament = json['tournament'];
+    venue = json['venue'];
+    matchDate = json['matchDate'];
+    status = json['status'];
+    thumbnail = json['thumbnail'];
+    banner = json['banner'];
+    score = json['score'];
+    description = json['description'];
+    isFeatured = json['isFeatured'];
+    liveStartedAt = json['liveStartedAt'];
+    liveEndedAt = json['liveEndedAt'];
+    createdAt = json['createdAt'];
+    updatedAt = json['updatedAt'];
+  }
+}

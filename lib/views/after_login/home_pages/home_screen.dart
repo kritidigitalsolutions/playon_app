@@ -9,12 +9,27 @@ import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/utils/custom_button.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
-import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
+import 'package:play_on_app/model/response_model/match_model.dart' as model;
 
-class HomeScreen extends StatelessWidget {
+import '../../custom_background.dart/custom_widget.dart';
+
+class HomeScreen extends StatefulWidget {
   HomeScreen({super.key});
 
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
   final HomeController ctr = Get.find();
+  final TextEditingController searchController = TextEditingController();
+  final RxString searchQuery = "".obs;
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,10 +80,22 @@ class HomeScreen extends StatelessWidget {
                               ),
                               const SizedBox(width: 6), // Reduced from 8
                               Expanded(
-                                child: Text(
-                                  "Search Matches",
-                                  overflow: TextOverflow.ellipsis,
-                                  style: text13(color: AppColors.textSecondary),
+                                child: TextField(
+                                  controller: searchController,
+                                  onChanged: (value) {
+                                    ctr.searchQuery.value = value;
+                                  },
+                                  style: text13(color: AppColors.white),
+                                  decoration: InputDecoration(
+                                    hintText: "Search Matches",
+                                    hintStyle:
+                                        text13(color: AppColors.textSecondary),
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      vertical: 10,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],
@@ -78,19 +105,27 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 4), // Reduced from 5
-                  AppIconButton(
-                    icon: Icons.person_outline,
+                  Obx(() => AppIconButton(
+                    icon: ctr.isLogin.value ? Icons.person : Icons.login,
                     color: AppColors.white,
                     onTap: () {
-                      Get.toNamed(AppRoutes.profilePage);
+                      if (ctr.isLogin.value) {
+                        Get.toNamed(AppRoutes.profilePage);
+                      } else {
+                        ctr.handleProtectedAction(() {
+                          Get.toNamed(AppRoutes.profilePage);
+                        });
+                      }
                     },
-                  ),
+                  )),
                   const SizedBox(width: 4), // Reduced from 5
                   AppIconButton(
                     icon: Icons.notifications,
                     color: AppColors.warning,
                     onTap: () {
-                      Get.toNamed(AppRoutes.notification);
+                      ctr.handleProtectedAction(() {
+                        Get.toNamed(AppRoutes.notification);
+                      });
                     },
                   ),
                   const SizedBox(width: 4), // Reduced from 5
@@ -122,107 +157,146 @@ class HomeScreen extends StatelessWidget {
             ), // Reduced from 5 but increased for better separation
 
             Expanded(
-              child: ListView(
-                physics: const BouncingScrollPhysics(),
-                padding: EdgeInsets.zero, // Remove default padding
-                children: [
-                  const SizedBox(height: 8), // Reduced from 6
-                  // MacBook Pro Ad Banner
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                    ), // Reduced from 16
-                    child: Container(
-                      height: 160, // Reduced from 180
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        image: const DecorationImage(
-                          image: AssetImage('assets/images/iPhone.png'),
-                          fit: BoxFit.cover,
+              child: Obx(() {
+                if (ctr.isLoading.value) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    await ctr.fetchMatches(
+                      sport: ctr.tabs[ctr.selectedTabIndex.value],
+                    );
+                  },
+                  child: ListView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    children: [
+                    const SizedBox(height: 8),
+                    // MacBook Pro Ad Banner
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Container(
+                        height: 160,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          image: const DecorationImage(
+                            image: AssetImage('assets/images/iPhone.png'),
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 12), // Reduced from 20
-                  // Improved Carousel Slider
-                  CarouselSlider.builder(
-                    itemCount: 5,
-                    itemBuilder: (context, index, realIndex) {
-                      return _buildLiveMatchCard(index);
-                    },
-                    options: CarouselOptions(
-                      height: 200, // Set explicit height
-                      enlargeCenterPage: true,
-                      viewportFraction:
-                          0.85, // Reduced from 0.9 for better side visibility
-                      enableInfiniteScroll: true,
-                      autoPlay: true,
-                      autoPlayInterval: const Duration(
-                        seconds: 4,
-                      ), // Increased from 3
-                      autoPlayAnimationDuration: const Duration(
-                        milliseconds: 800,
+                    const SizedBox(height: 12),
+                    // Live Matches Carousel
+                    Builder(builder: (context) {
+                      var displayLiveMatches = ctr.selectedTabIndex.value == 0
+                          ? ctr.filteredLiveMatches
+                          : ctr.filteredLiveMatches
+                              .where((m) =>
+                                  m.sport?.toLowerCase() ==
+                                  ctr.tabs[ctr.selectedTabIndex.value].toLowerCase())
+                              .toList();
+
+                      if (displayLiveMatches.isEmpty) return const SizedBox.shrink();
+
+                      return CarouselSlider.builder(
+                        itemCount: displayLiveMatches.length,
+                        itemBuilder: (context, index, realIndex) {
+                          return _buildLiveMatchCard(displayLiveMatches[index]);
+                        },
+                        options: CarouselOptions(
+                          height: 200,
+                          enlargeCenterPage: true,
+                          viewportFraction: 0.85,
+                          enableInfiniteScroll: displayLiveMatches.length > 1,
+                          autoPlay: displayLiveMatches.length > 1,
+                          autoPlayInterval: const Duration(seconds: 4),
+                          autoPlayAnimationDuration: const Duration(milliseconds: 800),
+                          autoPlayCurve: Curves.fastOutSlowIn,
+                          enlargeFactor: 0.25,
+                          enlargeStrategy: CenterPageEnlargeStrategy.scale,
+                        ),
+                      );
+                    }),
+
+                    const SizedBox(height: 16),
+                    // Upcoming Matches Section
+                    Padding(
+                      padding: const EdgeInsets.only(left: 12.0),
+                      child: Text(
+                        ctr.selectedTabIndex.value == 0
+                            ? "Upcoming Matches"
+                            : "${ctr.tabs[ctr.selectedTabIndex.value]} Matches",
+                        style: text20(fontWeight: FontWeight.bold),
                       ),
-                      autoPlayCurve: Curves.fastOutSlowIn,
-                      enlargeFactor: 0.25, // Better scale effect
-                      enlargeStrategy: CenterPageEnlargeStrategy.scale,
                     ),
-                  ),
-                  const SizedBox(height: 16), // Reduced from 28
-                  // Upcoming Matches Section
-                  Padding(
-                    padding: const EdgeInsets.only(left: 12.0),
-                    child: Text(
-                      "Upcoming Matches",
-                      style: text20(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  const SizedBox(height: 8), // Reduced from 12
-                  _buildUpcomingMatch(),
+                    const SizedBox(height: 8),
+                    _buildUpcomingMatch(ctr.filteredMatches
+                        .where((m) => m.status?.toLowerCase() == 'upcoming')
+                        .toList()),
 
-                  const SizedBox(height: 16), // Reduced from 28
-                  // Search by Category
-                  _buildSectionHeader("Search by Category", ""),
-                  const SizedBox(height: 8), // Reduced from 12
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                    ), // Reduced from 16
-                    child: Wrap(
-                      spacing: 8, // Reduced from 12
-                      runSpacing: 8, // Reduced from 12
-                      children: [
-                        _buildCategoryChip("Cricket"),
-                        _buildCategoryChip("Football"),
-                        _buildCategoryChip("Basketball"),
-                        _buildCategoryChip("Tennis"),
-                        _buildCategoryChip("Motorsports"),
-                      ],
-                    ),
-                  ),
+                    if (ctr.selectedTabIndex.value == 0) ...[
+                      const SizedBox(height: 16),
+                      _buildSectionHeader("Search by Category", ""),
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: ctr.tabs.skip(1).map((tab) {
+                            return _buildCategoryChip(tab, () {
+                              int index = ctr.tabs.indexOf(tab);
+                              if (index != -1) {
+                                ctr.changeTab(index);
+                              }
+                            });
+                          }).toList(),
+                        ),
+                      ),
+                    ],
 
-                  const SizedBox(height: 16), // Reduced from 30
-                  // Football Section
-                  _buildSectionHeader("Football", "See all"),
-                  const SizedBox(height: 8), // Reduced from 12
-                  _buildHorizontalMatchList(isFootball: true),
+                    const SizedBox(height: 16),
+                    Builder(builder: (context) {
+                      var footballMatches = ctr.filteredMatches.where((m) => m.sport?.toLowerCase() == 'football').toList();
+                      if (footballMatches.isEmpty) return const SizedBox.shrink();
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionHeader("Football", "See all"),
+                          const SizedBox(height: 8),
+                          _buildHorizontalMatchList(
+                            matches: footballMatches,
+                            isFootball: true,
+                          ),
+                        ],
+                      );
+                    }),
 
-                  const SizedBox(height: 16), // Reduced from 30
-                  // Cricket Section
-                  _buildSectionHeader("Cricket", "See all"),
-                  const SizedBox(height: 8), // Reduced from 12
-                  _buildHorizontalMatchList(isFootball: false),
+                    const SizedBox(height: 16),
+                    Builder(builder: (context) {
+                      var cricketMatches = ctr.filteredMatches.where((m) => m.sport?.toLowerCase() == 'cricket').toList();
+                      if (cricketMatches.isEmpty) return const SizedBox.shrink();
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionHeader("Cricket", "See all"),
+                          const SizedBox(height: 8),
+                          _buildHorizontalMatchList(
+                            matches: cricketMatches,
+                            isFootball: false,
+                          ),
+                        ],
+                      );
+                    }),
 
-                  const SizedBox(height: 16), // Reduced from 30
-                  // Basketball Section
-                  _buildSectionHeader("Basketball", "See all"),
-                  const SizedBox(height: 8), // Reduced from 12
-                  _buildHorizontalMatchList(isFootball: true),
-
-                  const SizedBox(height: 80), // Reduced from 100
-                ],
-              ),
+                    const SizedBox(height: 80),
+                  ],
+                )
+                );
+              }),
             ),
           ],
         ),
@@ -230,16 +304,16 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLiveMatchCard(int index) {
+  Widget _buildLiveMatchCard(model.Match match) {
     return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 4,
-      ), // Add margin for better spacing
+      margin: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         color: const Color(0xFF0A1F3D),
-        image: const DecorationImage(
-          image: AssetImage("assets/auth/cri.png"),
+        image: DecorationImage(
+          image: match.banner != null && match.banner!.isNotEmpty
+              ? NetworkImage(match.banner!)
+              : const AssetImage("assets/auth/cri.png") as ImageProvider,
           fit: BoxFit.cover,
         ),
         boxShadow: [
@@ -258,10 +332,7 @@ class HomeScreen extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: AppColors.error,
                     borderRadius: BorderRadius.circular(20),
@@ -272,7 +343,7 @@ class HomeScreen extends StatelessWidget {
                       Container(
                         width: 6,
                         height: 6,
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,
                         ),
@@ -284,7 +355,7 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  "3RD ODI, SYDNEY",
+                  match.tournament ?? "LIVE MATCH",
                   style: text13(color: AppColors.white70),
                 ),
               ],
@@ -296,12 +367,12 @@ class HomeScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "AUS vs IND\nPRE MATCH",
+                    "${match.teamA} vs ${match.teamB}",
                     style: text18(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    "India vs Australia",
+                    "Score: ${match.score ?? '0-0'}",
                     style: text14(color: AppColors.white70),
                   ),
                 ],
@@ -310,9 +381,8 @@ class HomeScreen extends StatelessWidget {
             AppButton(
               title: "Watch Live",
               onTap: () {
-                print(ctr.isLogin.value);
                 ctr.handleProtectedAction(() {
-                  Get.toNamed(AppRoutes.matchDetails);
+                  Get.toNamed(AppRoutes.matchDetails, arguments: match);
                 });
               },
               height: 40,
@@ -374,56 +444,57 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildUpcomingMatch() {
+  Widget _buildUpcomingMatch(List<model.Match> matches) {
+    if (matches.isEmpty) return const SizedBox.shrink();
     return SizedBox(
-      height: 300, // Reduced from 190
+      height: 300,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12), // Reduced from 16
-        itemCount: 5,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        itemCount: matches.length,
         itemBuilder: (context, index) {
+          final match = matches[index];
           return GestureDetector(
             onTap: () {
               ctr.handleProtectedAction(() {
-                Get.toNamed(AppRoutes.matchDetails);
+                Get.toNamed(AppRoutes.matchDetails, arguments: match);
               });
             },
             child: Container(
-              width: 160, // Reduced from 160
-              margin: const EdgeInsets.only(right: 12), // Reduced from 12
-              decoration: BoxDecoration(
-                // color: AppColors.blackCard,
-                // borderRadius: BorderRadius.circular(12),
-              ),
+              width: 160,
+              margin: const EdgeInsets.only(right: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Match Image / Teams
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(6),
                         image: DecorationImage(
-                          image: AssetImage('assets/auth/cri.png'),
+                          image: match.thumbnail != null && match.thumbnail!.isNotEmpty
+                              ? NetworkImage(match.thumbnail!)
+                              : const AssetImage('assets/auth/cri.png') as ImageProvider,
                           fit: BoxFit.cover,
                         ),
                       ),
                     ),
                   ),
                   Padding(
-                    padding: EdgeInsets.only(top: 8), // Reduced from 10
+                    padding: const EdgeInsets.only(top: 8),
                     child: ShaderMask(
                       shaderCallback: (bounds) => LinearGradient(
                         colors: [AppColors.primary, AppColors.error],
                       ).createShader(bounds),
                       child: Text(
-                        "CRICKET",
+                        match.sport?.toUpperCase() ?? "SPORTS",
                         style: text14(fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
                   Text(
-                    "APR 8, 2026",
+                    match.title ?? "Upcoming Match",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: text13(
                       fontWeight: FontWeight.w400,
                       color: AppColors.textSecondary,
@@ -439,57 +510,47 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildHorizontalMatchList({
+    required List<model.Match> matches,
     bool isFootball = false,
-    bool isUpcaming = false,
   }) {
+    if (matches.isEmpty) return const SizedBox.shrink();
     return SizedBox(
-      height: 160, // Reduced from 190
+      height: 160,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12), // Reduced from 16
-        itemCount: 5,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        itemCount: matches.length,
         itemBuilder: (context, index) {
+          final match = matches[index];
           return GestureDetector(
             onTap: () {
-              print(ctr.isLogin.value);
               ctr.handleProtectedAction(() {
-                if (isUpcaming) {
-                  Get.toNamed(AppRoutes.matchDetails);
-                } else {
-                  Get.toNamed(AppRoutes.recapMatch);
-                }
+                Get.toNamed(AppRoutes.matchDetails, arguments: match);
               });
             },
             child: Container(
-              width: 180, // Reduced from 160
-              margin: const EdgeInsets.only(right: 12), // Reduced from 12
-              decoration: BoxDecoration(
-                // color: AppColors.blackCard,
-                // borderRadius: BorderRadius.circular(12),
-              ),
+              width: 180,
+              margin: const EdgeInsets.only(right: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Match Image / Teams
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
-                        // borderRadius: const BorderRadius.vertical(
-                        //   top: Radius.circular(12),
-                        // ),
                         image: DecorationImage(
-                          image: AssetImage(
-                            isFootball
-                                ? 'assets/auth/football.png'
-                                : 'assets/auth/cri.png',
-                          ),
+                          image: match.thumbnail != null && match.thumbnail!.isNotEmpty
+                              ? NetworkImage(match.thumbnail!)
+                              : AssetImage(isFootball
+                                      ? 'assets/auth/football.png'
+                                      : 'assets/auth/cri.png')
+                                  as ImageProvider,
                           fit: BoxFit.cover,
                         ),
                       ),
                     ),
                   ),
                   Padding(
-                    padding: EdgeInsets.only(top: 8), // Reduced from 10
+                    padding: const EdgeInsets.only(top: 8),
                     child: Row(
                       children: [
                         ShaderMask(
@@ -497,28 +558,30 @@ class HomeScreen extends StatelessWidget {
                             colors: [AppColors.primary, AppColors.error],
                           ).createShader(bounds),
                           child: Text(
-                            isFootball ? "FOOTBALL" : "CRICKET",
+                            match.sport?.toUpperCase() ?? (isFootball ? "FOOTBALL" : "CRICKET"),
                             style: text14(fontWeight: FontWeight.bold),
                           ),
                         ),
-                        SizedBox(width: 3),
-                        Text(
-                          "APR 8, 2026",
-                          style: text13(
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.textSecondary,
+                        const SizedBox(width: 3),
+                        Expanded(
+                          child: Text(
+                            match.matchDate?.split('T')[0] ?? "TBA",
+                            maxLines: 1,
+                            style: text13(
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
                   Text(
-                    "IND | Indian Womens Vs Pak Womens",
+                    match.title ?? "${match.teamA} vs ${match.teamB}",
                     overflow: TextOverflow.ellipsis,
                     style: text13(fontWeight: FontWeight.w600),
                   ),
-
-                  const SizedBox(height: 8), // Add bottom spacing
+                  const SizedBox(height: 8),
                 ],
               ),
             ),
@@ -528,18 +591,21 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCategoryChip(String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 18,
-        vertical: 10,
-      ), // Reduced padding
-      decoration: BoxDecoration(
-        color: AppColors.secPrimary.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.white24),
+  Widget _buildCategoryChip(String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 10,
+        ), // Reduced padding
+        decoration: BoxDecoration(
+          color: AppColors.secPrimary.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: Colors.white24),
+        ),
+        child: Text(label, style: text14(color: AppColors.white70)),
       ),
-      child: Text(label, style: text14(color: AppColors.white70)),
     );
   }
 }

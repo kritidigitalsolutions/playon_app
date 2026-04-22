@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/routes/app_pages.dart';
 import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
+import 'package:play_on_app/utils/hive_service/userdetail.dart';
+import 'package:play_on_app/utils/hive_service/userdetail.g.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
 import 'package:play_on_app/views/after_login/channel_page/sport_channel_list.dart';
 import 'package:play_on_app/views/after_login/home_pages/home_screen.dart';
@@ -16,6 +19,17 @@ import 'package:play_on_app/views/after_login/home_pages/watch_list_screen.dart'
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Hive.initFlutter();
+  Hive.registerAdapter(UserDetailsAdapter());
+  
+  try {
+    await Hive.openBox<UserDetails>('userBox');
+  } catch (e) {
+    // If opening the box fails due to corrupted/outdated data, delete it and try again
+    await Hive.deleteBoxFromDisk('userBox');
+    await Hive.openBox<UserDetails>('userBox');
+  }
 
   // 🔥 System UI (Status bar + Navigation bar)
   SystemChrome.setSystemUIOverlayStyle(

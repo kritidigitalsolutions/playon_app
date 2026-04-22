@@ -1,11 +1,9 @@
 import 'package:get/get.dart';
-import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
 import 'package:play_on_app/view_model/before_controller/auth_controller.dart';
 
-class HomeBinding implements Bindings {
+class AuthBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<HomeController>(() => HomeController());
     Get.lazyPut<AuthController>(() => AuthController());
   }
 }

@@ -1,47 +1,24 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:play_on_app/view_model/before_controller/auth_controller.dart';
 import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/utils/custom_button.dart';
 import 'package:play_on_app/utils/custom_snakebar.dart';
 import 'package:play_on_app/utils/custom_text_fields.dart';
-import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 
-class FullNameScreen extends StatefulWidget {
-  const FullNameScreen({super.key});
+class FullNameScreen extends StatelessWidget {
+  FullNameScreen({super.key});
 
-  @override
-  State<FullNameScreen> createState() => _FullNameScreenState();
-}
+  final AuthController ctr = Get.find<AuthController>();
 
-class _FullNameScreenState extends State<FullNameScreen> {
-  final HomeController ctr = Get.find();
-  final TextEditingController _nameController = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
-
-  bool get isValid => _nameController.text.trim().length >= 3;
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
+  bool get isValid => ctr.nameController.text.trim().length >= 3;
 
   void _onContinue() {
     if (isValid) {
-      String fullName = _nameController.text.trim();
-
-      showCustomSnackbar(
-        title: "Welcome!",
-        message: "Hi, $fullName 👋",
-        type: SnackType.success,
-      );
-      ctr.toggleLogin();
-      print(ctr.isLogin.value);
       Get.toNamed(AppRoutes.sportInterrestScreen);
     } else {
       showCustomSnackbar(
@@ -59,7 +36,6 @@ class _FullNameScreenState extends State<FullNameScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // Scrollable Content
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -67,8 +43,6 @@ class _FullNameScreenState extends State<FullNameScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 40),
-
-                      // Icon with Glass Effect
                       Container(
                         width: 80,
                         height: 80,
@@ -99,32 +73,19 @@ class _FullNameScreenState extends State<FullNameScreen> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 32),
-
-                      // Title with Gradient
-                      ShaderMask(
-                        shaderCallback: (bounds) => LinearGradient(
-                          colors: [Colors.white, Colors.white.withOpacity(0.9)],
-                        ).createShader(bounds),
-                        child: Text(
-                          "What's your full name?",
-                          style: text24(
-                            fontWeight: FontWeight.bold,
-                          ).copyWith(fontSize: 32),
-                        ),
+                      Text(
+                        "What's your full name?",
+                        style: text24(
+                          fontWeight: FontWeight.bold,
+                        ).copyWith(fontSize: 32),
                       ),
-
                       const SizedBox(height: 12),
-
                       Text(
                         "This will be displayed on your profile",
                         style: text16(color: AppColors.white70),
                       ),
-
                       const SizedBox(height: 50),
-
-                      // Input Label
                       Text(
                         "Full Name",
                         style: text14(
@@ -132,19 +93,13 @@ class _FullNameScreenState extends State<FullNameScreen> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-
                       const SizedBox(height: 12),
-
-                      // Modern Glass Input Field
                       AppTextField(
                         radius: 8,
-                        controller: _nameController,
+                        controller: ctr.nameController,
                         hintText: "Enter your full name",
                       ),
-
                       const SizedBox(height: 16),
-
-                      // Helper Text
                       Row(
                         children: [
                           Icon(
@@ -159,12 +114,8 @@ class _FullNameScreenState extends State<FullNameScreen> {
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 50),
-
-                      // Continue Button
                       AppButton(title: "Next", onTap: _onContinue),
-
                       const SizedBox(height: 40),
                     ],
                   ),

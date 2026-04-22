@@ -6,6 +6,8 @@ import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 
+import 'package:play_on_app/utils/hive_service/hive_service.dart';
+
 // ==================== SPLASH / ONBOARDING SCREEN ====================
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -25,8 +27,10 @@ class _SplashScreenState extends State<SplashScreen> {
   void _navigateToNextScreen() async {
     await Future.delayed(const Duration(seconds: 3));
 
-    if (!mounted) return; // Prevent navigation if widget is disposed
-    Get.toNamed(AppRoutes.myHomePage);
+    if (!mounted) return;
+
+    // Go to Home Screen by default without requiring login
+    Get.offAllNamed(AppRoutes.myHomePage);
   }
 
   @override
