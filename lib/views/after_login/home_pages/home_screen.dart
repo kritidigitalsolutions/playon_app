@@ -8,9 +8,10 @@ import 'package:play_on_app/res/app_image.dart';
 import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/utils/custom_button.dart';
-import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
+import 'package:play_on_app/view_model/after_controller/notification_controller.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
 
+import '../../../view_model/after_controller/home_contollers/home_controller.dart';
 import '../../custom_background.dart/custom_widget.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -119,14 +120,47 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   )),
                   const SizedBox(width: 4), // Reduced from 5
-                  AppIconButton(
-                    icon: Icons.notifications,
-                    color: AppColors.warning,
-                    onTap: () {
-                      ctr.handleProtectedAction(() {
-                        Get.toNamed(AppRoutes.notification);
-                      });
-                    },
+                  Stack(
+                    children: [
+                      AppIconButton(
+                        icon: Icons.notifications,
+                        color: AppColors.warning,
+                        onTap: () {
+                          ctr.handleProtectedAction(() {
+                            Get.toNamed(AppRoutes.notification);
+                          });
+                        },
+                      ),
+                      Obx(() {
+                        final notiCtr = Get.find<NotificationController>();
+                        return notiCtr.unreadCount.value > 0
+                            ? Positioned(
+                                right: 5,
+                                top: 5,
+                                child: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 16,
+                                    minHeight: 16,
+                                  ),
+                                  child: Text(
+                                    '${notiCtr.unreadCount.value}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              )
+                            : const SizedBox.shrink();
+                      }),
+                    ],
                   ),
                   const SizedBox(width: 4), // Reduced from 5
                 ],
@@ -247,12 +281,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           spacing: 8,
                           runSpacing: 8,
                           children: ctr.tabs.skip(1).map((tab) {
-                            return _buildCategoryChip(tab, () {
-                              int index = ctr.tabs.indexOf(tab);
-                              if (index != -1) {
-                                ctr.changeTab(index);
-                              }
-                            });
+                            return _buildCategoryChip(
+                              tab,
+                              () => ctr.selectSubCategory(tab),
+                              isSelected: ctr.selectedCategory.value == tab,
+                            );
                           }).toList(),
                         ),
                       ),
@@ -591,20 +624,31 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCategoryChip(String label, VoidCallback onTap) {
+  Widget _buildCategoryChip(String label, VoidCallback onTap, {bool isSelected = false}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: 18,
           vertical: 10,
-        ), // Reduced padding
-        decoration: BoxDecoration(
-          color: AppColors.secPrimary.withValues(alpha: 0.6),
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: Colors.white24),
         ),
-        child: Text(label, style: text14(color: AppColors.white70)),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? AppColors.primary.withValues(alpha: 0.3) 
+              : AppColors.secPrimary.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : Colors.white24,
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Text(
+          label, 
+          style: text14(
+            color: isSelected ? Colors.white : AppColors.white70,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
       ),
     );
   }

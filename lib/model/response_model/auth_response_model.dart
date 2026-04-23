@@ -40,6 +40,7 @@ class UserData {
   String? mobile;
   String? email;
   String? profilePic;
+  String? profileImage;
 
   UserData(
       {this.id,
@@ -47,7 +48,8 @@ class UserData {
       this.favoriteSports,
       this.mobile,
       this.email,
-      this.profilePic});
+      this.profilePic,
+      this.profileImage});
 
   UserData.fromJson(Map<String, dynamic> json) {
     id = json['id'] ?? json['_id'];
@@ -56,5 +58,6 @@ class UserData {
     mobile = json['mobile'];
     email = json['email'];
     profilePic = json['profilePic'];
+    profileImage = json['profileImage'];
   }
 }

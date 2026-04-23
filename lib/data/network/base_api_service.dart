@@ -3,7 +3,7 @@ abstract class BaseApiService {
 
   Future<dynamic> postApi(String url, dynamic data);
 
-  Future<dynamic> pacthApi(String url, dynamic data);
+  Future<dynamic> patchApi(String url, dynamic data);
 
   Future<dynamic> putApi(String url, dynamic data);
 

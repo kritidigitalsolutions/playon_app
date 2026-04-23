@@ -10,7 +10,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:play_on_app/utils/custom_snakebar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:play_on_app/view_model/after_controller/notification_controller.dart';
 import 'package:play_on_app/view_model/before_controller/auth_controller.dart';
+import 'package:play_on_app/view_model/after_controller/player_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -21,7 +23,8 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final AuthController _authController = Get.find<AuthController>();
+  final AuthController _authController = Get.put(AuthController());
+  final PlayerController _playerController = Get.put(PlayerController());
   String? _profileImagePath;
   final ImagePicker _picker = ImagePicker();
 
@@ -60,7 +63,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           _profileImagePath = pickedFile.path;
         });
-        await _saveProfileImage(pickedFile.path);
+        // await _saveProfileImage(pickedFile.path); // Remove local save, use API
+
+        await _authController.updateProfile(profileImagePath: pickedFile.path);
 
         showCustomSnackbar(
           title: "Success",
@@ -225,11 +230,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       _glassInfoTile(
                         text:
-                            _authController.userData.value?.email ??
-                            "No email provided",
+                            _authController.userData.value?.fullName ??
+                            "Enter Name",
                         onEdit: () => _showEditDialog(
-                          "Email",
-                          _authController.userData.value?.email ?? "",
+                          "Full Name",
+                          _authController.userData.value?.fullName ?? "",
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -237,21 +242,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         text:
                             _authController.userData.value?.mobile ??
                             "No phone number",
-                        onEdit: () => _showEditDialog(
-                          "Phone Number",
-                          _authController.userData.value?.mobile ?? "",
-                        ),
+                        isEditable: false,
+                        onEdit: () {},
                       ),
                       const SizedBox(height: 24),
-                      _sectionTitle("Tours & Series", () {
-                        Get.toNamed(AppRoutes.selectTour);
-                      }),
+                      _sectionTitle(
+                        "Tours & Series",
+                        () => Get.toNamed(AppRoutes.followedPage),
+                        () => Get.toNamed(AppRoutes.selectTour),
+                      ),
                       const SizedBox(height: 10),
                       _glassToursList(),
                       const SizedBox(height: 24),
-                      _sectionTitle("Follow Players", () {
-                        Get.toNamed(AppRoutes.findPlayer);
-                      }),
+                      _sectionTitle(
+                        "Follow Players",
+                        () => Get.toNamed(AppRoutes.followPlayer),
+                        () => Get.toNamed(AppRoutes.findPlayer),
+                      ),
                       const SizedBox(height: 10),
                       _glassPlayersList(),
                       const SizedBox(height: 24),
@@ -304,9 +311,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: CircleAvatar(
                     radius: 28,
                     backgroundColor: AppColors.white,
-                    backgroundImage: _profileImagePath != null
-                        ? FileImage(File(_profileImagePath!))
-                        : const AssetImage("assets/user.png") as ImageProvider,
+                    backgroundImage: _authController.userData.value?.profileImage != null
+                        ? NetworkImage(_authController.userData.value!.profileImage!)
+                        : _authController.userData.value?.profilePic != null
+                            ? NetworkImage(_authController.userData.value!.profilePic!)
+                            : const AssetImage("assets/user.png") as ImageProvider,
                   ),
                 ),
                 Positioned(
@@ -335,7 +344,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // 🔹 Glass Info Tile with Edit Dialog
-  Widget _glassInfoTile({required String text, required VoidCallback onEdit}) {
+  Widget _glassInfoTile({required String text, required VoidCallback onEdit, bool isEditable = true}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
       child: BackdropFilter(
@@ -352,7 +361,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           child: Row(
             children: [
-              Expanded(child: Text(text, style: text14())),
+              Expanded(child: Text(text, style: text14(color: isEditable ? AppColors.white : AppColors.white70))),
+              if (isEditable)
               InkWell(
                 onTap: onEdit,
                 child: Container(
@@ -463,17 +473,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
-                            // TODO: Save the edited value
+                            if (title == "Full Name") {
+                              _authController.updateProfile(fullName: controller.text);
+                            } else if (title == "Email") {
+                              _authController.updateProfile(email: controller.text);
+                            }
                             Navigator.pop(context);
-                            Get.snackbar(
-                              "Updated",
-                              "$title updated successfully",
-                              backgroundColor: AppColors.primary.withOpacity(
-                                0.9,
-                              ),
-                              colorText: Colors.white,
-                              snackPosition: SnackPosition.TOP,
-                            );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
@@ -500,18 +505,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // 🔹 Section Title
-  Widget _sectionTitle(String title, VoidCallback onTap) {
+  Widget _sectionTitle(String title, VoidCallback onTitleTap, VoidCallback onAddMoreTap) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         TextButton(
-          onPressed: () {
-            Get.toNamed(AppRoutes.followedPage);
-          },
+          onPressed: onTitleTap,
           child: Text("$title >", style: text16(fontWeight: FontWeight.bold)),
         ),
         TextButton(
-          onPressed: onTap,
+          onPressed: onAddMoreTap,
           child: Text("+Add more", style: text13(color: AppColors.primary)),
         ),
       ],
@@ -569,42 +572,66 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // 🔹 Glass Players List
   Widget _glassPlayersList() {
     return SizedBox(
-      height: 100,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: 5,
-        itemBuilder: (_, i) {
-          return ClipRRect(
-            borderRadius: BorderRadius.circular(50),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-              child: Container(
-                margin: const EdgeInsets.only(right: 14),
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: AppColors.white.withValues(alpha: 0.07),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppColors.white.withValues(alpha: 0.25),
-                    width: 1.5,
-                  ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundImage: AssetImage("assets/images/virat.png"),
+      height: 120,
+      child: Obx(() {
+        if (_playerController.loading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final players = _playerController.playerList.take(10).toList();
+        if (players.isEmpty) {
+          return Center(child: Text("No players found", style: text12()));
+        }
+        return ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: players.length,
+          itemBuilder: (_, i) {
+            final player = players[i];
+            return Padding(
+              padding: const EdgeInsets.only(right: 14),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(50),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: AppColors.white.withValues(alpha: 0.07),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.white.withValues(alpha: 0.25),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: CircleAvatar(
+                          radius: 30,
+                          backgroundColor: Colors.grey[800],
+                          backgroundImage: player.image != null
+                              ? NetworkImage(player.image!)
+                              : const AssetImage("assets/images/virat.png") as ImageProvider,
+                        ),
+                      ),
                     ),
-                    SizedBox(height: 6),
-                    Text("Virat Kohli", style: text11()),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 6),
+                  SizedBox(
+                    width: 70,
+                    child: Text(
+                      player.name ?? "",
+                      style: text11(),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          );
-        },
-      ),
+            );
+          },
+        );
+      }),
     );
   }
 
@@ -649,6 +676,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _glassMenuItem(
                 "Notification",
                 Icons.notifications_none,
+                trailing: GetBuilder<NotificationController>(
+                  init: NotificationController(),
+                  builder: (notiCtr) {
+                    return Obx(() => notiCtr.unreadCount.value > 0
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${notiCtr.unreadCount.value}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )
+                        : const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 15,
+                            color: AppColors.textSecondary,
+                          ));
+                  },
+                ),
                 onTap: () {
                   Get.toNamed(AppRoutes.notification);
                 },
@@ -660,14 +716,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Get.toNamed(AppRoutes.accountDelete);
                 },
               ),
-              _glassMenuItem("Refund Policy", Icons.attach_money, onTap: () {}),
-              _glassMenuItem("Privacy Policy", Icons.security, onTap: () {}),
+              _glassMenuItem(
+                "Refund Policy",
+                Icons.attach_money,
+                onTap: () {
+                  Get.toNamed(AppRoutes.refundPolicy);
+                },
+              ),
+              _glassMenuItem(
+                "Privacy Policy",
+                Icons.security,
+                onTap: () {
+                  Get.toNamed(AppRoutes.privacyPolicy);
+                },
+              ),
               _glassMenuItem(
                 "Terms and conditions",
                 Icons.description_outlined,
-                onTap: () {},
+                onTap: () {
+                  Get.toNamed(AppRoutes.termsConditions);
+                },
               ),
-              _glassMenuItem("About Us", Icons.info, onTap: () {}),
+              _glassMenuItem(
+                "About Us",
+                Icons.info,
+                onTap: () {
+                  Get.toNamed(AppRoutes.aboutUs);
+                },
+              ),
             ],
           ),
         ),
@@ -675,7 +751,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _glassMenuItem(String text, IconData icon, {VoidCallback? onTap}) {
+  Widget _glassMenuItem(String text, IconData icon,
+      {VoidCallback? onTap, Widget? trailing}) {
     return InkWell(
       onTap: onTap,
       child: ListTile(
@@ -683,11 +760,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
         leading: Icon(icon, size: 20, color: AppColors.textSecondary),
         title: Text(text, style: text14()),
-        trailing: const Icon(
-          Icons.arrow_forward_ios,
-          size: 15,
-          color: AppColors.textSecondary,
-        ),
+        trailing: trailing ??
+            const Icon(
+              Icons.arrow_forward_ios,
+              size: 15,
+              color: AppColors.textSecondary,
+            ),
       ),
     );
   }

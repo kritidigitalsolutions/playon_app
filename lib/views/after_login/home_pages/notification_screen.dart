@@ -1,9 +1,15 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:play_on_app/model/response_model/notification_model.dart';
 import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/utils/custom_button.dart';
+import 'package:play_on_app/view_model/after_controller/notification_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
+import 'package:intl/intl.dart';
+
+import '../../../data/api_responce_data.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -13,26 +19,13 @@ class NotificationScreen extends StatefulWidget {
 }
 
 class _NotificationScreenState extends State<NotificationScreen> {
-  final List<Map<String, dynamic>> notifications = List.generate(
-    15,
-    (index) => {
-      "id": index,
-      "title": index % 3 == 0
-          ? "Match Started: India vs Australia"
-          : index % 3 == 1
-          ? "Welcome back! Your favorite team is playing live"
-          : "New Reward: 50% off on IPL Pass",
-      "subtitle": "Star Sports • Just now",
-      "time": index == 0 ? "12:30 PM" : "${11 - index}:45 AM",
-      "isRead": index > 5, // First few are unread
-      "fullMessage":
-          "India vs Australia T20 match has started at Wankhede Stadium. "
-          "Virat Kohli is on strike. Don't miss the live action! "
-          "Get exclusive commentary and match stats only on PlayOn.",
-    },
-  );
+  final NotificationController controller = Get.put(NotificationController());
 
-  void _showNotificationDetail(Map<String, dynamic> notif) {
+  void _showNotificationDetail(NotificationData notif) {
+    if (notif.isRead == false) {
+      controller.markAsRead(notif.id!);
+    }
+    
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -52,7 +45,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Handle Bar
               Center(
                 child: Container(
                   width: 50,
@@ -64,34 +56,24 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Title
-              Text(notif['title'], style: text20(fontWeight: FontWeight.bold)),
+              Text(notif.title ?? "", style: text20(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-
-              // Time & Source
               Text(
-                "${notif['subtitle']} • ${notif['time']}",
+                "${notif.type} • ${_formatDate(notif.sentAt)}",
                 style: text13(color: AppColors.white70),
               ),
-
               const SizedBox(height: 24),
-
-              // Full Message
               Expanded(
                 child: SingleChildScrollView(
                   child: Text(
-                    notif['fullMessage'],
+                    notif.message ?? "",
                     style: text15(
                       color: AppColors.white.withValues(alpha: 0.9),
                     ),
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
-
-              // Action Buttons
               Row(
                 children: [
                   Expanded(
@@ -105,14 +87,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: AppButton(
-                      title: "Mark as Read",
+                      title: "Delete",
+                      color: AppColors.error,
                       onTap: () {
-                        // TODO: Mark this notification as read in your list
+                        controller.deleteNotification(notif.id!);
                         Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Marked as read")),
-                        );
                       },
+                      textStyle: text15(color: Colors.white),
                     ),
                   ),
                 ],
@@ -124,24 +105,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
-  void _deleteNotification(int id) {
-    setState(() {
-      notifications.removeWhere((item) => item['id'] == id);
-    });
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("Notification deleted")));
-  }
-
-  void _markAllAsRead() {
-    setState(() {
-      for (var notif in notifications) {
-        notif['isRead'] = true;
-      }
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("All notifications marked as read")),
-    );
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return "";
+    try {
+      final date = DateTime.parse(dateStr);
+      return DateFormat('MMM dd, hh:mm a').format(date);
+    } catch (e) {
+      return dateStr;
+    }
   }
 
   @override
@@ -153,7 +124,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
           child: SafeArea(
             child: Column(
               children: [
-                // Header
                 Row(
                   children: [
                     Text(
@@ -162,117 +132,121 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     ),
                     const Spacer(),
                     TextButton.icon(
-                      onPressed: _markAllAsRead,
+                      onPressed: () => controller.markAllAsRead(),
                       icon: const Icon(Icons.done_all, size: 20),
                       label: const Text("Mark all read"),
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.white70,
                       ),
                     ),
-                    AppIconButton(
-                      icon: Icons.notifications,
-                      color: AppColors.warning,
-                      onTap: () {},
-                    ),
                   ],
                 ),
-
                 const SizedBox(height: 20),
-
-                // Notification List
                 Expanded(
-                  child: notifications.isEmpty
-                      ? const Center(
+                  child: Obx(() {
+                    switch (controller.notificationList.value.status) {
+                      case Status.loading:
+                        return const Center(child: CircularProgressIndicator());
+                      case Status.error:
+                        return Center(
                           child: Text(
-                            "No notifications yet",
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 16,
-                            ),
+                            controller.notificationList.value.message.toString(),
+                            style: const TextStyle(color: Colors.white),
                           ),
-                        )
-                      : ListView.builder(
-                          itemCount: notifications.length,
-                          itemBuilder: (context, index) {
-                            final notif = notifications[index];
-                            final bool isRead = notif['isRead'] ?? false;
+                        );
+                      case Status.completed:
+                        final notifications =
+                            controller.notificationList.value.data?.notifications ?? [];
+                        if (notifications.isEmpty) {
+                          return const Center(
+                            child: Text(
+                              "No notifications yet",
+                              style: TextStyle(color: Colors.white70, fontSize: 16),
+                            ),
+                          );
+                        }
+                        return RefreshIndicator(
+                          onRefresh: () async {
+                            controller.fetchNotifications();
+                            controller.fetchReadCount();
+                          },
+                          child: ListView.builder(
+                            itemCount: notifications.length,
+                            itemBuilder: (context, index) {
+                              final notif = notifications[index];
+                              final bool isRead = notif.isRead ?? false;
 
-                            return Dismissible(
-                              key: Key(notif['id'].toString()),
-                              direction: DismissDirection.endToStart,
-                              background: Container(
-                                alignment: Alignment.centerRight,
-                                padding: const EdgeInsets.only(right: 20),
-                                color: Colors.redAccent,
-                                child: const Icon(
-                                  Icons.delete,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              onDismissed: (_) =>
-                                  _deleteNotification(notif['id']),
-                              child: GestureDetector(
-                                onTap: () => _showNotificationDetail(notif),
-                                child: Container(
+                              return Dismissible(
+                                key: Key(notif.id.toString()),
+                                direction: DismissDirection.endToStart,
+                                background: Container(
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.only(right: 20),
                                   margin: const EdgeInsets.only(bottom: 12),
-                                  child: ClipRRect(
+                                  decoration: BoxDecoration(
+                                    color: Colors.redAccent,
                                     borderRadius: BorderRadius.circular(14),
-                                    child: BackdropFilter(
-                                      filter: ImageFilter.blur(
-                                        sigmaX: 18,
-                                        sigmaY: 18,
-                                      ),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: AppColors.white.withValues(
-                                            alpha: 0.12,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            14,
-                                          ),
-                                          border: Border.all(
-                                            color: AppColors.white.withValues(
-                                              alpha: 0.22,
-                                            ),
-                                            width: 1,
-                                          ),
+                                  ),
+                                  child: const Icon(Icons.delete, color: Colors.white),
+                                ),
+                                onDismissed: (_) =>
+                                    controller.deleteNotification(notif.id!),
+                                child: GestureDetector(
+                                  onTap: () => _showNotificationDetail(notif),
+                                  child: Container(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(14),
+                                      child: BackdropFilter(
+                                        filter: ImageFilter.blur(
+                                          sigmaX: 18,
+                                          sigmaY: 18,
                                         ),
-                                        child: ListTile(
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                                horizontal: 16,
-                                                vertical: 12,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: isRead
+                                                ? AppColors.white.withValues(alpha: 0.05)
+                                                : AppColors.white.withValues(alpha: 0.12),
+                                            borderRadius: BorderRadius.circular(14),
+                                            border: Border.all(
+                                              color: AppColors.white.withValues(
+                                                alpha: isRead ? 0.1 : 0.22,
                                               ),
-                                          leading: !isRead
-                                              ? Container(
-                                                  width: 10,
-                                                  height: 10,
-                                                  decoration:
-                                                      const BoxDecoration(
-                                                        color:
-                                                            Colors.blueAccent,
-                                                        shape: BoxShape.circle,
-                                                      ),
-                                                )
-                                              : null,
-                                          title: Text(
-                                            notif['title'],
-                                            style: text15(
-                                              fontWeight: isRead
-                                                  ? FontWeight.w500
-                                                  : FontWeight.w600,
+                                              width: 1,
                                             ),
                                           ),
-                                          subtitle: Text(
-                                            notif['subtitle'],
-                                            style: text13(
-                                              color: AppColors.white70,
+                                          child: ListTile(
+                                            contentPadding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 12,
                                             ),
-                                          ),
-                                          trailing: Text(
-                                            notif['time'],
-                                            style: text12(
-                                              color: AppColors.white60,
+                                            leading: !isRead
+                                                ? Container(
+                                                    width: 10,
+                                                    height: 10,
+                                                    decoration: const BoxDecoration(
+                                                      color: Colors.blueAccent,
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                  )
+                                                : null,
+                                            title: Text(
+                                              notif.title ?? "",
+                                              style: text15(
+                                                fontWeight: isRead
+                                                    ? FontWeight.w500
+                                                    : FontWeight.w600,
+                                              ),
+                                            ),
+                                            subtitle: Text(
+                                              notif.message ?? "",
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: text13(color: AppColors.white70),
+                                            ),
+                                            trailing: Text(
+                                              _formatDate(notif.sentAt),
+                                              style: text12(color: AppColors.white60),
                                             ),
                                           ),
                                         ),
@@ -280,10 +254,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                     ),
                                   ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
+                              );
+                            },
+                          ),
+                        );
+                      default:
+                        return const SizedBox();
+                    }
+                  }),
                 ),
               ],
             ),

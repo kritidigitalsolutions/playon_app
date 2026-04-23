@@ -75,15 +75,15 @@ class NetworkApiService extends BaseApiService {
   }
 
   @override
-  Future<dynamic> pacthApi(String url, dynamic data) async {
+  Future<dynamic> patchApi(String url, dynamic data) async {
     try {
-      debugPrint("POST API CALL => $url");
-      debugPrint("POST DATA => $data");
+      debugPrint("PATCH API CALL => $url");
+      debugPrint("PATCH DATA => $data");
 
       final response = await _dio.patch(url, data: data);
       return returnResponse(response);
     } on DioException catch (e) {
-      debugPrint("POST API ERROR => ${e.message}");
+      debugPrint("PATCH API ERROR => ${e.message}");
       throw _handleDioError(e);
     }
   }

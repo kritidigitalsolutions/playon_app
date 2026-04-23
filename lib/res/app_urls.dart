@@ -7,6 +7,7 @@ class AppUrls {
 
   // User Endpoints
   static const String completeProfile = '$baseUrl/user/complete-profile';
+  static const String updateProfile = '$baseUrl/user/update-profile';
   static const String deleteAccount = '$baseUrl/user/delete-account';
   static const String userProfile = '$baseUrl/user/profile';
 
@@ -22,4 +23,23 @@ class AppUrls {
   static const String aboutUs = '$baseUrl/legal/about-us';
   static const String refundPolicy = '$baseUrl/legal/refund-policy';
   static const String termsConditions = '$baseUrl/legal/terms-conditions';
+
+  // Plan Endpoints
+  static const String plans = '$baseUrl/plans';
+
+  // Player Endpoints
+  static const String players = '$baseUrl/players';
+  static String toggleFollowPlayer(String id) => '$baseUrl/players/$id/toggle-follow';
+  static const String followedPlayers = '$baseUrl/players/following/me';
+
+  // Notification Endpoints
+  static const String notifications = '$baseUrl/notifications';
+  static const String readAllNotifications = '$baseUrl/notifications/read-all';
+  static const String notificationReadCount = '$baseUrl/notifications/read-count';
+  static String readNotification(String id) => '$baseUrl/notifications/$id/read';
+  static String deleteNotification(String id) => '$baseUrl/notifications/$id';
+
+  // Payment Endpoints
+  static const String createOrder = '$baseUrl/payment/create-order';
+  static const String verifyPayment = '$baseUrl/payment/verify';
 }

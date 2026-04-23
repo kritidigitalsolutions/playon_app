@@ -10,7 +10,9 @@ import 'package:play_on_app/views/after_login/account_pages/follow_tour_player_s
 import 'package:play_on_app/views/after_login/account_pages/plan_pages/choose_match_page.dart';
 import 'package:play_on_app/views/after_login/account_pages/profile_screen.dart';
 import 'package:play_on_app/views/after_login/account_pages/refer_earn_page.dart';
+import 'package:play_on_app/view_model/after_controller/legal_controller.dart';
 import 'package:play_on_app/views/after_login/account_pages/select_tour_screen.dart';
+import 'package:play_on_app/views/after_login/legal_pages/legal_content_page.dart';
 import 'package:play_on_app/views/after_login/channel_page/channel_Play_screen.dart';
 import 'package:play_on_app/views/after_login/home_pages/notification_screen.dart';
 import 'package:play_on_app/views/after_login/match_pages/match_Play_screen.dart';
@@ -21,6 +23,7 @@ import 'package:play_on_app/views/before_login/login_screen.dart';
 import 'package:play_on_app/views/before_login/otp_verify_screen.dart';
 import 'package:play_on_app/views/before_login/splash_screen.dart';
 import 'package:play_on_app/views/before_login/sport_interest_screen.dart';
+import '../views/after_login/account_pages/followed_players_page.dart';
 import 'app_routes.dart';
 
 class AppPages {
@@ -56,7 +59,11 @@ class AppPages {
     ),
     GetPage(name: AppRoutes.channelPlay, page: () => ChannelPlayScreen()),
 
-    GetPage(name: AppRoutes.notification, page: () => NotificationScreen()),
+    GetPage(
+      name: AppRoutes.notification,
+      page: () => const NotificationScreen(),
+      binding: HomeBinding(),
+    ),
 
     // account page
     GetPage(name: AppRoutes.profilePage, page: () => ProfileScreen()),
@@ -68,6 +75,57 @@ class AppPages {
     GetPage(name: AppRoutes.referScreen, page: () => ReferralScreen()),
     GetPage(name: AppRoutes.chooseMatch, page: () => ChooseMatchPage()),
     GetPage(name: AppRoutes.accountDelete, page: () => DeleteAccountScreen()),
+    GetPage(name: AppRoutes.followPlayer, page: () => FollowedPlayersScreen()),
+
+    // legal pages
+    GetPage(
+      name: AppRoutes.privacyPolicy,
+      page: () {
+        final controller = Get.put(LegalController());
+        controller.fetchPrivacyPolicy();
+        return LegalContentPage(
+          title: "Privacy Policy",
+          apiResponse: controller.privacyPolicy,
+          fetchData: controller.fetchPrivacyPolicy,
+        );
+      },
+    ),
+    GetPage(
+      name: AppRoutes.aboutUs,
+      page: () {
+        final controller = Get.put(LegalController());
+        controller.fetchAboutUs();
+        return LegalContentPage(
+          title: "About Us",
+          apiResponse: controller.aboutUs,
+          fetchData: controller.fetchAboutUs,
+        );
+      },
+    ),
+    GetPage(
+      name: AppRoutes.refundPolicy,
+      page: () {
+        final controller = Get.put(LegalController());
+        controller.fetchRefundPolicy();
+        return LegalContentPage(
+          title: "Refund Policy",
+          apiResponse: controller.refundPolicy,
+          fetchData: controller.fetchRefundPolicy,
+        );
+      },
+    ),
+    GetPage(
+      name: AppRoutes.termsConditions,
+      page: () {
+        final controller = Get.put(LegalController());
+        controller.fetchTermsConditions();
+        return LegalContentPage(
+          title: "Terms & Conditions",
+          apiResponse: controller.termsConditions,
+          fetchData: controller.fetchTermsConditions,
+        );
+      },
+    ),
 
     // match details
     GetPage(name: AppRoutes.matchDetails, page: () => MatchDetailScreen()),

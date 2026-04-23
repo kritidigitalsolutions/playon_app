@@ -23,6 +23,12 @@ class AppRoutes {
   static const String referScreen = "/referScreen";
   static const String chooseMatch = "/chooseMatch";
   static const String accountDelete = "/accountDelete";
+  static const String privacyPolicy = "/privacyPolicy";
+  static const String aboutUs = "/aboutUs";
+  static const String refundPolicy = "/refundPolicy";
+  static const String termsConditions = "/termsConditions";
+  static const String followPlayer = "/followPlayer";
+
 
   // match pages
 

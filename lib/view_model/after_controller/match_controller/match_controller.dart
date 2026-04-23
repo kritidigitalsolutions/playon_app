@@ -2,36 +2,56 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
+import 'package:play_on_app/model/response_model/match_model.dart' as model;
 
 class MatchDetailsController extends GetxController {
+  final match = Rxn<model.Match>();
   var isLive = false.obs;
   var remainingTime = "".obs;
   var isReminderOn = false.obs;
   var isLock = true.obs;
 
-  late DateTime matchStartTime;
   Timer? _timer;
 
   @override
   void onInit() {
     super.onInit();
-
-    // 🔥 5 sec timer
-    matchStartTime = DateTime.now().add(const Duration(seconds: 5));
-
-    _startCountdown();
+    
+    if (Get.arguments is model.Match) {
+      match.value = Get.arguments;
+      _initializeMatchStatus();
+    }
   }
 
-  void _startCountdown() {
+  void _initializeMatchStatus() {
+    if (match.value == null) return;
+
+    if (match.value!.status?.toLowerCase() == 'live') {
+      isLive.value = true;
+      remainingTime.value = "Live Now";
+    } else if (match.value!.matchDate != null) {
+      final startTime = DateTime.parse(match.value!.matchDate!);
+      _startCountdown(startTime);
+    }
+  }
+
+  void _startCountdown(DateTime startTime) {
+    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      final diff = matchStartTime.difference(DateTime.now());
+      final diff = startTime.difference(DateTime.now());
 
       if (diff.inSeconds <= 0) {
         isLive.value = true;
         remainingTime.value = "Live Now";
         timer.cancel();
       } else {
-        remainingTime.value = "Starting in ${diff.inSeconds}s";
+        if (diff.inDays > 0) {
+          remainingTime.value = "Starting in ${diff.inDays}d ${diff.inHours % 24}h";
+        } else if (diff.inHours > 0) {
+          remainingTime.value = "Starting in ${diff.inHours}h ${diff.inMinutes % 60}m";
+        } else {
+          remainingTime.value = "Starting in ${diff.inMinutes}m ${diff.inSeconds % 60}s";
+        }
       }
     });
   }

@@ -32,6 +32,16 @@ class AuthRepository {
     }
   }
 
+  Future<dynamic> updateProfile(dynamic data, String token) async {
+    try {
+      _apiService.setToken(token);
+      final response = await _apiService.patchApi(AppUrls.updateProfile, data);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<dynamic> deleteAccount(Map<String, dynamic> data, String token) async {
     try {
       _apiService.setToken(token);

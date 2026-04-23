@@ -13,8 +13,8 @@ import 'package:play_on_app/utils/hive_service/hive_service.dart';
 class HomeController extends GetxController {
   final MatchRepository _matchRepository = MatchRepository();
   final ChannelRepository _channelRepository = ChannelRepository();
+  
   final RxInt currentIndex = 0.obs;
-
   void changeIndex(int index) {
     currentIndex.value = index;
   }
@@ -32,6 +32,20 @@ class HomeController extends GetxController {
   var filteredChannels = <Channel>[].obs;
 
   var searchQuery = "".obs;
+
+  final RxInt selectedTabIndex = 0.obs;
+  final RxString selectedCategory = "".obs;
+
+  final List<String> tabs = [
+    "Home",
+    "Cricket",
+    "Football",
+    "Tennis",
+    "Sports",
+    "Basketball",
+    "Hockey",
+    "Badminton",
+  ];
 
   @override
   void onInit() {
@@ -57,13 +71,15 @@ class HomeController extends GetxController {
       filteredMatches.value = allMatches.where((m) {
         return (m.title?.toLowerCase().contains(q) ?? false) ||
                (m.teamA?.toLowerCase().contains(q) ?? false) ||
-               (m.teamB?.toLowerCase().contains(q) ?? false);
+               (m.teamB?.toLowerCase().contains(q) ?? false) ||
+               (m.sport?.toLowerCase().contains(q) ?? false);
       }).toList();
 
       filteredLiveMatches.value = liveMatches.where((m) {
         return (m.title?.toLowerCase().contains(q) ?? false) ||
                (m.teamA?.toLowerCase().contains(q) ?? false) ||
-               (m.teamB?.toLowerCase().contains(q) ?? false);
+               (m.teamB?.toLowerCase().contains(q) ?? false) ||
+               (m.sport?.toLowerCase().contains(q) ?? false);
       }).toList();
 
       filteredChannels.value = allChannels.where((c) {
@@ -103,9 +119,31 @@ class HomeController extends GetxController {
     }
   }
 
+  void changeTab(int index) {
+    selectedTabIndex.value = index;
+    selectedCategory.value = ""; // Reset sub-category when switching top tabs
+    fetchMatches(sport: tabs[index]);
+  }
+
+  void selectSubCategory(String sport) {
+    if (selectedCategory.value == sport) {
+      selectedCategory.value = ""; // Toggle off
+      fetchMatches(sport: "Home");
+    } else {
+      selectedCategory.value = sport;
+      fetchMatches(sport: sport);
+    }
+  }
+
   Future<void> fetchMatches({String? sport}) async {
     isLoading.value = true;
     try {
+      // Determine what to fetch
+      String? sportToFetch = sport;
+      if (selectedTabIndex.value == 0 && selectedCategory.value.isNotEmpty) {
+        sportToFetch = selectedCategory.value;
+      }
+
       // Fetch Live Matches
       final liveRes = await _matchRepository.getLiveMatches();
       if (liveRes['success'] == true) {
@@ -114,7 +152,7 @@ class HomeController extends GetxController {
       }
 
       // Fetch All Matches with sport filter
-      final allRes = await _matchRepository.getAllMatches(sport: sport);
+      final allRes = await _matchRepository.getAllMatches(sport: sportToFetch);
       if (allRes['success'] == true) {
         final data = MatchModel.fromJson(allRes);
         allMatches.value = data.matches ?? [];
@@ -136,47 +174,20 @@ class HomeController extends GetxController {
 
   void handleProtectedAction(VoidCallback onSuccess) {
     if (isLogin.value) {
-      print("isLogin true  ${isLogin.value}");
       onSuccess();
     } else {
-      print(isLogin.value);
       _showLoginBottomSheet();
     }
   }
 
-  // tab
-
-  final RxInt selectedTabIndex = 0.obs;
-
-  void changeTab(int index) {
-    selectedTabIndex.value = index;
-    fetchMatches(sport: tabs[index]);
-  }
-
-  final List<String> tabs = [
-    "Home",
-    "Cricket",
-    "Football",
-    "Tennis",
-    "Sports",
-    "Basketball",
-    "Hockey",
-    "Badminton",
-  ];
-
   void _showLoginBottomSheet() {
     Get.bottomSheet(
       Container(
-        width: double.infinity, // Full width
-        padding: const EdgeInsets.fromLTRB(
-          20,
-          40,
-          20,
-          30,
-        ), // More top padding for notch area
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(20, 40, 20, 30),
         decoration: BoxDecoration(
           color: AppColors.primary.withValues(alpha: 0.7),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -195,8 +206,6 @@ class HomeController extends GetxController {
               style: TextStyle(color: AppColors.white70, fontSize: 15),
             ),
             const SizedBox(height: 32),
-
-            // Full width Login Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -219,9 +228,7 @@ class HomeController extends GetxController {
                 ),
               ),
             ),
-
             const SizedBox(height: 12),
-
             TextButton(
               onPressed: () => Get.back(),
               child: Text("Cancel", style: text15()),
@@ -229,11 +236,9 @@ class HomeController extends GetxController {
           ],
         ),
       ),
-      // Important settings for full width + top notch
-      backgroundColor: Colors.transparent, // Important
+      backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withOpacity(0.7),
       isScrollControlled: false,
-      // useSafeArea: false,                    // ← This allows it to go into the notch
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),

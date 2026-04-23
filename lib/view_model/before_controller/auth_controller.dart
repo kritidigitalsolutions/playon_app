@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart' as dio;
+import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:play_on_app/model/response_model/auth_response_model.dart';
@@ -146,6 +148,53 @@ class AuthController extends GetxController {
           Get.find<HomeController>().isLogin.value = true;
         }
         Get.offAllNamed(AppRoutes.myHomePage);
+      }
+    } catch (e) {
+      showCustomSnackbar(title: "Error", message: e.toString(), type: SnackType.error);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> updateProfile({String? fullName, String? email, String? profileImagePath}) async {
+    isLoading.value = true;
+    try {
+      final token = HiveService.getToken();
+      if (token == null) return;
+
+      Map<String, dynamic> dataMap = {};
+      if (fullName != null) dataMap["fullName"] = fullName;
+      if (email != null) dataMap["email"] = email;
+      
+      if (profileImagePath != null) {
+        dataMap["profileImage"] = await dio.MultipartFile.fromFile(
+          profileImagePath,
+          filename: profileImagePath.split('/').last,
+        );
+      }
+
+      final formData = dio.FormData.fromMap(dataMap);
+      
+      final response = await _repository.updateProfile(formData, token);
+      
+      if (response['success'] == true) {
+        userData.value = UserData.fromJson(response['user']);
+        
+        // Update Hive local storage
+        final user = HiveService.getUser();
+        if (user != null) {
+          user.name = userData.value?.fullName;
+          user.phone = userData.value?.mobile;
+          user.email = userData.value?.email;
+          user.image = userData.value?.profileImage;
+          await HiveService.saveUser(user);
+        }
+        
+        showCustomSnackbar(
+          title: "Success",
+          message: response['message'] ?? "Profile updated successfully",
+          type: SnackType.success,
+        );
       }
     } catch (e) {
       showCustomSnackbar(title: "Error", message: e.toString(), type: SnackType.error);
