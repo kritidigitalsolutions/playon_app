@@ -199,7 +199,7 @@ class _ChooseMatchPageState extends State<ChooseMatchPage> {
                         child: Wrap(
                           spacing: 12,
                           runSpacing: 12,
-                          children: homeController.tabs.skip(1).map((tab) => _buildCategoryChip(tab)).toList(),
+                          children: homeController.sportsList.skip(1).map((tab) => _buildCategoryChip(tab)).toList(),
                         ),
                       ),
 

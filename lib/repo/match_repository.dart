@@ -74,6 +74,15 @@ class MatchRepository {
     }
   }
 
+  Future<dynamic> getSports() async {
+    try {
+      final response = await _apiServices.getApi(AppUrls.sports);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<dynamic> getFollowedSeries() async {
     try {
       final response = await _apiServices.getApi(AppUrls.followedSeries);
@@ -86,6 +95,35 @@ class MatchRepository {
   Future<dynamic> toggleFollowSeries(String id) async {
     try {
       final response = await _apiServices.patchApi( AppUrls.toggleFollowSeries(id),{});
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<dynamic> watchMatch(String id) async {
+    try {
+      final response = await _apiServices.getApi(AppUrls.watchMatch(id));
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<dynamic> getMatchDetails(String id) async {
+    try {
+      // Trying standard GET /matches/:id
+      final response = await _apiServices.getApi("${AppUrls.matches}/$id");
+      return response;
+    } catch (e) {
+      // Fallback to watchMatch if standard doesn't work, as it also returns match object
+      return await watchMatch(id);
+    }
+  }
+
+  Future<dynamic> getBannerAds() async {
+    try {
+      final response = await _apiServices.getApi(AppUrls.bannerAds);
       return response;
     } catch (e) {
       rethrow;

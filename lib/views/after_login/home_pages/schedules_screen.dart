@@ -31,10 +31,10 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
 
   void _fetchMatches() {
     String dateStr = _selectedDay.toIso8601String().split('T')[0];
-    String? sport = ctr.tabs[ctr.selectedTabIndex.value] == "Home" ||
-            ctr.tabs[ctr.selectedTabIndex.value] == "All Sports"
+    String? sport = ctr.sportsList[ctr.selectedTabIndex.value] == "Home" ||
+            ctr.sportsList[ctr.selectedTabIndex.value] == "All Sports"
         ? null
-        : ctr.tabs[ctr.selectedTabIndex.value];
+        : ctr.sportsList[ctr.selectedTabIndex.value];
     ctr.fetchScheduledMatches(date: dateStr, sport: sport);
   }
 
@@ -72,14 +72,14 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: List.generate(
-                    ctr.tabs.length,
+                    ctr.sportsList.length,
                     (index) => GestureDetector(
                       onTap: () {
                         ctr.selectedTabIndex.value = index;
                         _fetchMatches();
                       },
                       child: _buildCategoryTab(
-                        ctr.tabs[index] == "Home" ? "All Sports" : ctr.tabs[index],
+                        ctr.sportsList[index] == "Home" ? "All Sports" : ctr.sportsList[index],
                         ctr.selectedTabIndex.value == index,
                       ),
                     ),

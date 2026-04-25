@@ -13,11 +13,13 @@ class AppUrls {
 
   // Match Endpoints
   static const String matches = '$baseUrl/matches';
+  static const String sports = '$baseUrl/sports';
   static const String liveMatches = '$baseUrl/matches/live';
   static const String teams = '$baseUrl/teams';
   static const String series = '$baseUrl/series';
   static String toggleFollowSeries(String id) => '$baseUrl/series/$id/follow';
   static const String followedSeries = '$baseUrl/series/followed';
+  static String watchMatch(String id) => '$baseUrl/matches/$id/watch';
 
   // Channel Endpoints
   static const String liveChannels = '$baseUrl/channels/live';
@@ -41,8 +43,10 @@ class AppUrls {
   static String toggleFollowPlayer(String id) => '$baseUrl/players/$id/toggle-follow';
   static const String followedPlayers = '$baseUrl/players/following/me';
 
-  // Notification Endpoints
+  // Banner Ads
+  static const String bannerAds = '$baseUrl/banner-ads';
   static const String notifications = '$baseUrl/notifications';
+  static const String fcmToken = '$baseUrl/notifications/fcm-token';
   static const String readAllNotifications = '$baseUrl/notifications/read-all';
   static const String notificationReadCount = '$baseUrl/notifications/read-count';
   static String readNotification(String id) => '$baseUrl/notifications/$id/read';
@@ -51,4 +55,9 @@ class AppUrls {
   // Payment Endpoints
   static const String createOrder = '$baseUrl/payment/create-order';
   static const String verifyPayment = '$baseUrl/payment/verify';
+
+  // Watchlist Endpoints
+  static const String watchlist = '$baseUrl/watchlist';
+  static const String toggleWatchlist = '$baseUrl/watchlist/toggle';
+  static String checkWatchlist(String type, String id) => '$baseUrl/watchlist/check/$type/$id';
 }

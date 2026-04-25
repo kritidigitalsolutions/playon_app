@@ -199,7 +199,7 @@ class MatchDetailScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 10),
                           if (controller.isLive.value)
-                            CustomElevatedIconButton(
+                              CustomElevatedIconButton(
                               height: 25,
                               iconSize: 15,
                               backgroundColor: controller.isLock.value
@@ -214,10 +214,9 @@ class MatchDetailScreen extends StatelessWidget {
                                   : Icons.remove_red_eye,
                               onPressed: () {
                                 if (controller.isLock.value) {
-                                  controller.toggleLock();
                                   Get.toNamed(AppRoutes.accessPlan);
                                 } else {
-                                  Get.toNamed(AppRoutes.matchPlay);
+                                  Get.toNamed(AppRoutes.matchPlay, arguments: match);
                                 }
                               },
                             ),

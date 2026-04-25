@@ -61,4 +61,16 @@ class NotificationRepository {
       rethrow;
     }
   }
+
+  Future<dynamic> updateFcmToken(String token) async {
+    try {
+      _prepare();
+      final response = await _apiService.putApi(AppUrls.fcmToken, {
+        "token": token
+      });
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

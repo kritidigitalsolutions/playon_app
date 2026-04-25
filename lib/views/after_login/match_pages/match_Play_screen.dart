@@ -10,6 +10,7 @@ import 'package:play_on_app/view_model/after_controller/match_controller/match_c
 import 'package:play_on_app/views/after_login/match_pages/full_video_play_screen.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 import 'package:video_player/video_player.dart';
+import 'package:play_on_app/model/response_model/match_model.dart' as model;
 
 class MatchPlayScreen extends StatefulWidget {
   const MatchPlayScreen({super.key});
@@ -61,37 +62,44 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
           children: [
             /// 🎥 VIDEO
             Obx(() {
-              if (!videoControllerX.isInitialized.value) {
+              if (videoControllerX.isLoading.value) {
                 return const Center(child: CircularProgressIndicator());
+              }
+              if (!videoControllerX.isInitialized.value || videoControllerX.videoController == null) {
+                return const Center(child: Text("Loading stream...", style: TextStyle(color: Colors.white)));
               }
 
               return AspectRatio(
-                aspectRatio: videoControllerX.videoController.value.aspectRatio,
+                aspectRatio: videoControllerX.videoController!.value.aspectRatio,
                 child: Center(
-                  child: VideoPlayer(videoControllerX.videoController),
+                  child: VideoPlayer(videoControllerX.videoController!),
                 ),
               );
             }),
 
             /// 🔴 LIVE BADGE
-            Positioned(
-              top: 10,
-              left: 10,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
+            Obx(() {
+              final match = videoControllerX.match.value;
+              if (match?.status?.toLowerCase() != 'live') return const SizedBox();
+              return Positioned(
+                top: 10,
+                left: 10,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    "LIVE",
+                    style: TextStyle(color: Colors.white, fontSize: 12),
+                  ),
                 ),
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text(
-                  "LIVE",
-                  style: TextStyle(color: Colors.white, fontSize: 12),
-                ),
-              ),
-            ),
+              );
+            }),
 
             /// 🎮 CONTROLS
             Obx(() {
@@ -128,15 +136,17 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    child: VideoProgressIndicator(
-                      videoControllerX.videoController,
-                      allowScrubbing: true,
-                      colors: VideoProgressColors(
-                        playedColor: Colors.red,
-                        backgroundColor: Colors.white24,
-                        bufferedColor: Colors.white38,
-                      ),
-                    ),
+                    child: videoControllerX.videoController != null 
+                      ? VideoProgressIndicator(
+                          videoControllerX.videoController!,
+                          allowScrubbing: true,
+                          colors: VideoProgressColors(
+                            playedColor: Colors.red,
+                            backgroundColor: Colors.white24,
+                            bufferedColor: Colors.white38,
+                          ),
+                        )
+                      : const SizedBox(),
                   ),
 
                   /// ⚙️ RIGHT SIDE BUTTONS
@@ -149,11 +159,13 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                         SizedBox(height: 15),
                         GestureDetector(
                           onTap: () {
-                            Get.to(
-                              () => FullScreenVideoPage(
-                                controller: videoControllerX.videoController,
-                              ),
-                            );
+                            if (videoControllerX.videoController != null) {
+                              Get.to(
+                                () => FullScreenVideoPage(
+                                  controller: videoControllerX.videoController!,
+                                ),
+                              );
+                            }
                           },
                           child: const Icon(
                             Icons.fullscreen,
@@ -173,54 +185,69 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
   }
 
   Widget _buildMatchInfo() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'England vs South Africa',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+    return Obx(() {
+      final match = videoControllerX.match.value;
+      if (match == null) return const SizedBox();
+
+      return Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${match.teamA} vs ${match.teamB}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'ODI Series • 2nd Match',
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      Text(
+                        '${match.tournament} • ${match.sport?.toUpperCase()}',
+                        style: const TextStyle(color: Colors.white70, fontSize: 14),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              AppIconButton(
-                icon: Icons.share,
-                onTap: () {},
-                color: AppColors.white,
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(child: _buildTeamScore('England', '256/6', '50 overs')),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildTeamScore('South Africa', '249/6', '50 overs'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+                AppIconButton(
+                  icon: Icons.share,
+                  onTap: () {},
+                  color: AppColors.white,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildTeamScore(
+                    match.teamA ?? '',
+                    match.score?.split('-').first ?? '0',
+                    '',
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildTeamScore(
+                    match.teamB ?? '',
+                    match.score?.split('-').last ?? '0',
+                    '',
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildTeamScore(String team, String score, String overs) {

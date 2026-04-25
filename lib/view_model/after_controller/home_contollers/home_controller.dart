@@ -9,6 +9,7 @@ import 'package:play_on_app/repo/channel_repository.dart';
 import 'package:play_on_app/model/response_model/match_model.dart';
 import 'package:play_on_app/repo/match_repository.dart';
 import 'package:play_on_app/utils/hive_service/hive_service.dart';
+import 'package:play_on_app/model/response_model/banner_model.dart';
 
 class HomeController extends GetxController {
   final MatchRepository _matchRepository = MatchRepository();
@@ -31,28 +32,24 @@ class HomeController extends GetxController {
   var allChannels = <Channel>[].obs;
   var filteredChannels = <Channel>[].obs;
 
+  var bannerList = <Banners>[].obs;
+  var isBannerLoading = false.obs;
+
   var searchQuery = "".obs;
 
   final RxInt selectedTabIndex = 0.obs;
   final RxString selectedCategory = "".obs;
 
-  final List<String> tabs = [
-    "Home",
-    "Cricket",
-    "Football",
-    "Tennis",
-    "Sports",
-    "Basketball",
-    "Hockey",
-    "Badminton",
-  ];
+  var sportsList = <String>["Home"].obs;
 
   @override
   void onInit() {
     super.onInit();
     isLogin.value = HiveService.isLogin();
+    fetchSports();
     fetchMatches();
     fetchChannels();
+    fetchBanners();
     
     // Setup search listeners
     searchQuery.listen((query) {
@@ -60,31 +57,63 @@ class HomeController extends GetxController {
     });
   }
 
+  Future<void> fetchBanners() async {
+    isBannerLoading.value = true;
+    try {
+      final res = await _matchRepository.getBannerAds();
+      if (res['success'] == true) {
+        final data = BannerModel.fromJson(res);
+        bannerList.assignAll(data.banners ?? []);
+      }
+    } catch (e) {
+      print("Error fetching banners: $e");
+    } finally {
+      isBannerLoading.value = false;
+    }
+  }
+
+  Future<void> fetchSports() async {
+    try {
+      final res = await _matchRepository.getSports();
+      if (res['success'] == true && res['sports'] != null) {
+        List<String> s = ["Home"];
+        for (var item in res['sports']) {
+          if (item['name'] != null) {
+            s.add(item['name']);
+          }
+        }
+        sportsList.assignAll(s);
+      }
+    } catch (e) {
+      print("Error fetching sports: $e");
+    }
+  }
+
   void filterData(String query) {
     if (query.isEmpty) {
-      filteredMatches.value = allMatches;
-      filteredLiveMatches.value = liveMatches;
-      filteredChannels.value = allChannels;
+      filteredMatches.assignAll(allMatches);
+      filteredLiveMatches.assignAll(liveMatches);
+      filteredChannels.assignAll(allChannels);
     } else {
       final q = query.toLowerCase();
       
-      filteredMatches.value = allMatches.where((m) {
+      filteredMatches.assignAll(allMatches.where((m) {
         return (m.title?.toLowerCase().contains(q) ?? false) ||
                (m.teamA?.toLowerCase().contains(q) ?? false) ||
                (m.teamB?.toLowerCase().contains(q) ?? false) ||
                (m.sport?.toLowerCase().contains(q) ?? false);
-      }).toList();
+      }).toList());
 
-      filteredLiveMatches.value = liveMatches.where((m) {
+      filteredLiveMatches.assignAll(liveMatches.where((m) {
         return (m.title?.toLowerCase().contains(q) ?? false) ||
                (m.teamA?.toLowerCase().contains(q) ?? false) ||
                (m.teamB?.toLowerCase().contains(q) ?? false) ||
                (m.sport?.toLowerCase().contains(q) ?? false);
-      }).toList();
+      }).toList());
 
-      filteredChannels.value = allChannels.where((c) {
+      filteredChannels.assignAll(allChannels.where((c) {
         return (c.name?.toLowerCase().contains(q) ?? false);
-      }).toList();
+      }).toList());
     }
   }
 
@@ -94,7 +123,7 @@ class HomeController extends GetxController {
       final res = await _channelRepository.getLiveChannels();
       if (res['success'] == true) {
         final data = ChannelModel.fromJson(res);
-        allChannels.value = data.channels ?? [];
+        allChannels.assignAll(data.channels ?? []);
         filterData(searchQuery.value); // Re-apply filter
       }
     } catch (e) {
@@ -110,7 +139,7 @@ class HomeController extends GetxController {
       final res = await _matchRepository.getAllMatches(sport: sport, date: date);
       if (res['success'] == true) {
         final data = MatchModel.fromJson(res);
-        scheduledMatches.value = data.matches ?? [];
+        scheduledMatches.assignAll(data.matches ?? []);
       }
     } catch (e) {
       print("Error fetching scheduled matches: $e");
@@ -121,50 +150,55 @@ class HomeController extends GetxController {
 
   void changeTab(int index) {
     selectedTabIndex.value = index;
-    selectedCategory.value = ""; // Reset sub-category when switching top tabs
-    fetchMatches(sport: tabs[index]);
+    selectedCategory.value = ""; // Reset middle chip when switching top tabs
+    // We fetch everything to keep the dashboard context available
+    fetchMatches();
   }
 
   void selectSubCategory(String sport) {
     if (selectedCategory.value == sport) {
       selectedCategory.value = ""; // Toggle off
-      fetchMatches(sport: "Home");
     } else {
       selectedCategory.value = sport;
-      fetchMatches(sport: sport);
     }
+    // No need to fetch, we filter the already loaded allMatches
   }
 
   Future<void> fetchMatches({String? sport}) async {
-    isLoading.value = true;
+    // If we already have data, don't show full screen loading, 
+    // just use the linear indicator.
+    if (allMatches.isEmpty) {
+      isLoading.value = true;
+    }
+    
+    // Separate observable for the linear progress bar
+    isSilentLoading.value = true;
+    
     try {
-      // Determine what to fetch
-      String? sportToFetch = sport;
-      if (selectedTabIndex.value == 0 && selectedCategory.value.isNotEmpty) {
-        sportToFetch = selectedCategory.value;
-      }
-
       // Fetch Live Matches
       final liveRes = await _matchRepository.getLiveMatches();
       if (liveRes['success'] == true) {
         final data = MatchModel.fromJson(liveRes);
-        liveMatches.value = data.matches ?? [];
+        liveMatches.assignAll(data.matches ?? []);
       }
 
-      // Fetch All Matches with sport filter
-      final allRes = await _matchRepository.getAllMatches(sport: sportToFetch);
+      // Always fetch all matches for the dashboard
+      final allRes = await _matchRepository.getAllMatches();
       if (allRes['success'] == true) {
         final data = MatchModel.fromJson(allRes);
-        allMatches.value = data.matches ?? [];
+        allMatches.assignAll(data.matches ?? []);
       }
       
-      filterData(searchQuery.value); // Re-apply filter
+      filterData(searchQuery.value);
     } catch (e) {
       print("Error fetching matches: $e");
     } finally {
       isLoading.value = false;
+      isSilentLoading.value = false;
     }
   }
+
+  var isSilentLoading = false.obs;
 
   var isLogin = false.obs;
 

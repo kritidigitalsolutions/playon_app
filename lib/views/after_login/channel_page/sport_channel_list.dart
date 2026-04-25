@@ -123,13 +123,13 @@ class _SportChannelListState extends State<SportChannelList> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: List.generate(
-                    ctr.tabs.length,
+                    ctr.sportsList.length,
                     (index) => GestureDetector(
                       onTap: () {
                         selectedChannelTabIndex.value = index;
                       },
                       child: _buildCategoryTab(
-                        ctr.tabs[index] == "Home" ? "All" : ctr.tabs[index],
+                        ctr.sportsList[index] == "Home" ? "All" : ctr.sportsList[index],
                         selectedChannelTabIndex.value == index,
                       ),
                     ),
@@ -152,7 +152,7 @@ class _SportChannelListState extends State<SportChannelList> {
                     : ctr.filteredChannels
                         .where((c) =>
                             c.category?.toLowerCase() ==
-                            ctr.tabs[selectedChannelTabIndex.value].toLowerCase())
+                            ctr.sportsList[selectedChannelTabIndex.value].toLowerCase())
                         .toList();
 
                 if (displayChannels.isEmpty) {

@@ -26,6 +26,7 @@ import 'package:play_on_app/views/before_login/sport_interest_screen.dart';
 import 'package:play_on_app/views/after_login/account_pages/plan_pages/select_series_page.dart';
 import 'package:play_on_app/views/after_login/account_pages/plan_pages/select_team_page.dart';
 import 'package:play_on_app/views/after_login/account_pages/plan_pages/purchased_items_page.dart';
+import 'package:play_on_app/views/after_login/home_pages/watch_list_screen.dart';
 import '../views/after_login/account_pages/followed_players_page.dart';
 import 'app_routes.dart';
 
@@ -137,5 +138,6 @@ class AppPages {
     GetPage(name: AppRoutes.matchDetails, page: () => MatchDetailScreen()),
     GetPage(name: AppRoutes.matchPlay, page: () => MatchPlayScreen()),
     GetPage(name: AppRoutes.recapMatch, page: () => RecapMatchScreen()),
+    GetPage(name: AppRoutes.watchlist, page: () => CreateWatchlistScreen()),
   ];
 }

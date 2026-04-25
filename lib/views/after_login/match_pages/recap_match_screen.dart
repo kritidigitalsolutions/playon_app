@@ -8,8 +8,10 @@ import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/utils/custom_button.dart';
 import 'package:play_on_app/view_model/after_controller/match_controller/match_controller.dart';
+import 'package:play_on_app/view_model/after_controller/watchlist_controller.dart';
 import 'package:play_on_app/views/after_login/match_pages/full_video_play_screen.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
+import 'package:play_on_app/model/response_model/match_model.dart' as model;
 import 'package:video_player/video_player.dart';
 
 class RecapMatchScreen extends StatefulWidget {
@@ -22,6 +24,22 @@ class RecapMatchScreen extends StatefulWidget {
 class _RecapMatchScreenState extends State<RecapMatchScreen> {
   final videoControllerX = Get.put(VideoControllerX());
   final MatchDetailsController controller = Get.put(MatchDetailsController());
+  final WatchlistController watchlistController = Get.put(WatchlistController());
+
+  final RxBool isInWatchlist = false.obs;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkWatchlistStatus();
+  }
+
+  Future<void> _checkWatchlistStatus() async {
+    final match = videoControllerX.match.value;
+    if (match != null && match.sId != null) {
+      isInWatchlist.value = await watchlistController.isBookmarked("match", match.sId!);
+    }
+  }
 
   // @override
   // void initState() {
@@ -96,13 +114,19 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                 );
               }
 
-              if (!videoControllerX.isInitialized.value) {
+              if (videoControllerX.isLoading.value) {
                 return const Center(child: CircularProgressIndicator());
               }
 
+              if (!videoControllerX.isInitialized.value || videoControllerX.videoController == null) {
+                return const Center(child: Text("Loading recap...", style: TextStyle(color: Colors.white)));
+              }
+
               return AspectRatio(
-                aspectRatio: videoControllerX.videoController.value.aspectRatio,
-                child: VideoPlayer(videoControllerX.videoController),
+                aspectRatio: videoControllerX.videoController!.value.aspectRatio,
+                child: Center(
+                  child: VideoPlayer(videoControllerX.videoController!),
+                ),
               );
             }),
 
@@ -210,15 +234,17 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    child: VideoProgressIndicator(
-                      videoControllerX.videoController,
-                      allowScrubbing: true,
-                      colors: VideoProgressColors(
-                        playedColor: Colors.red,
-                        backgroundColor: Colors.white24,
-                        bufferedColor: Colors.white38,
-                      ),
-                    ),
+                    child: videoControllerX.videoController != null
+                      ? VideoProgressIndicator(
+                          videoControllerX.videoController!,
+                          allowScrubbing: true,
+                          colors: VideoProgressColors(
+                            playedColor: Colors.red,
+                            backgroundColor: Colors.white24,
+                            bufferedColor: Colors.white38,
+                          ),
+                        )
+                      : const SizedBox(),
                   ),
 
                   Positioned(
@@ -229,11 +255,15 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                         const Icon(Icons.volume_up, color: Colors.white),
                         const SizedBox(height: 12),
                         GestureDetector(
-                          onTap: () => Get.to(
-                            () => FullScreenVideoPage(
-                              controller: videoControllerX.videoController,
-                            ),
-                          ),
+                          onTap: () {
+                            if (videoControllerX.videoController != null) {
+                              Get.to(
+                                () => FullScreenVideoPage(
+                                  controller: videoControllerX.videoController!,
+                                ),
+                              );
+                            }
+                          },
                           child: const Icon(
                             Icons.fullscreen,
                             color: Colors.white,
@@ -253,65 +283,102 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
 
   // ================== MATCH INFO SECTION ==================
   Widget _buildMatchInfo() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return Obx(() {
+      final match = videoControllerX.match.value;
+      if (match == null) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "England vs South Africa",
-                      style: text20(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      "ODI Series • 2nd Match",
-                      style: text14(color: AppColors.white70),
-                    ),
-                  ],
-                ),
+              Text(
+                "Loading Match Info...",
+                style: text20(fontWeight: FontWeight.bold),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          CustomElevatedIconButton(
-            height: 30,
-            textStyle: text12(fontWeight: FontWeight.w600),
-            text: "Watch later",
-            icon: Icons.add,
-            onPressed: () {},
-          ),
-        ],
-      ),
-    );
+        );
+      }
+
+      return Container(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${match.teamA} vs ${match.teamB}',
+                        style: text20(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        '${match.tournament} • ${match.sport?.toUpperCase()}',
+                        style: text14(color: AppColors.white70),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Obx(() => CustomElevatedIconButton(
+              height: 30,
+              textStyle: text12(fontWeight: FontWeight.w600),
+              text: isInWatchlist.value ? "Added" : "Watch later",
+              icon: isInWatchlist.value ? Icons.check : Icons.add,
+              onPressed: () async {
+                final match = videoControllerX.match.value;
+                if (match != null && match.sId != null) {
+                  final success = await watchlistController.toggleWatchlist(match.sId!, "match");
+                  if (success) {
+                    isInWatchlist.value = !isInWatchlist.value;
+                    Get.snackbar(
+                      "Watchlist", 
+                      isInWatchlist.value ? "Added to watchlist" : "Removed from watchlist",
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: AppColors.primary.withOpacity(0.8),
+                      colorText: Colors.white,
+                    );
+                  }
+                }
+              },
+            )),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildHighlights() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHighlightCard(
-            'Live Match Score',
-            'Team 1: England\n2 Goals',
-            'Team 2: South Africa\n1 Goals',
-          ),
-          const SizedBox(height: 16),
-          _buildMatchStats(),
-          const SizedBox(height: 16),
-          _buildCurrentPlayersSection(),
-        ],
-      ),
-    );
+    return Obx(() {
+      final match = videoControllerX.match.value;
+      return Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHighlightCard(
+              'Match Recap',
+              'Team 1: ${match?.teamA ?? "N/A"}\n${match?.score?.split('-').first.trim() ?? "0"} Goals',
+              'Team 2: ${match?.teamB ?? "N/A"}\n${match?.score?.split('-').last.trim() ?? "0"} Goals',
+              matchSummary: match?.description,
+            ),
+            const SizedBox(height: 16),
+            _buildMatchStats(match),
+            const SizedBox(height: 16),
+            _buildCurrentPlayersSection(match),
+          ],
+        ),
+      );
+    });
   }
 
-  Widget _buildHighlightCard(String title, String team1, String team2) {
+  Widget _buildHighlightCard(String title, String team1, String team2, {String? matchSummary}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
@@ -339,14 +406,12 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                 'Match Highlights',
                 style: text18(
                   color: AppColors.primary,
-
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 8),
               Text(title, style: text15(fontWeight: FontWeight.w500)),
               const SizedBox(height: 16),
-
               Row(
                 children: [
                   Expanded(
@@ -369,8 +434,7 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                   ),
                 ],
               ),
-              SizedBox(height: 10),
-
+              const SizedBox(height: 10),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -382,7 +446,7 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                     ),
                   ),
                   Text(
-                    "Brazil secured a narrow win with a decisive goal in the final minutes",
+                    matchSummary ?? "Brazil secured a narrow win with a decisive goal in the final minutes",
                     style: text13(
                       color: AppColors.textSecondary,
                       fontWeight: FontWeight.w500,
@@ -397,7 +461,7 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
     );
   }
 
-  Widget _buildMatchStats() {
+  Widget _buildMatchStats(model.Match? match) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
@@ -419,53 +483,119 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Title
               Text(
                 "Match Stats",
                 style: text18(
                   fontWeight: FontWeight.bold,
-                  color: AppColors.primary, // Blue color like in image
+                  color: AppColors.primary,
                 ),
               ),
-
               const SizedBox(height: 4),
-
               Text(
                 "Full Time Score",
                 style: text16(fontWeight: FontWeight.bold),
               ),
-
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    match?.teamA ?? "Team A",
+                    style: text14(fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    match?.score ?? "0 - 0",
+                    style: text18(fontWeight: FontWeight.bold, color: AppColors.primary),
+                  ),
+                  Text(
+                    match?.teamB ?? "Team B",
+                    style: text14(fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
               const SizedBox(height: 24),
-
-              // Possession
               _buildStatRow(
                 label: "Possession",
-                team1: "Brazil",
+                team1: match?.teamA ?? "Team A",
                 team1Value: "54%",
-                team2: "Argentina",
+                team2: match?.teamB ?? "Team B",
                 team2Value: "46%",
               ),
-
               const SizedBox(height: 20),
-
-              // Shots on Target
               _buildStatRow(
                 label: "Shots on Target",
-                team1: "Brazil",
+                team1: match?.teamA ?? "Team A",
                 team1Value: "7",
-                team2: "Argentina",
+                team2: match?.teamB ?? "Team B",
                 team2Value: "5",
               ),
-
               const SizedBox(height: 20),
-
-              // Total Attempts
               _buildStatRow(
                 label: "Total Attempts",
-                team1: "Brazil",
+                team1: match?.teamA ?? "Team A",
                 team1Value: "14",
-                team2: "Argentina",
+                team2: match?.teamB ?? "Team B",
                 team2Value: "11",
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCurrentPlayersSection(model.Match? match) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.white.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.white.withValues(alpha: 0.18),
+              width: 1.3,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Top Performers',
+                style: text18(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildPlayerRow(
+                      'Goal Scorer',
+                      'Neymar Jr. – 1 Goal',
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildPlayerRow(
+                      'Playmaker',
+                      'Lionel Messi – 1 Assist',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildPlayerRow(
+                      'Impact Player',
+                      "Vinícius Jr. – Created multiple chances",
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -556,73 +686,6 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
           ],
         ),
       ],
-    );
-  }
-
-  Widget _buildCurrentPlayersSection() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.white.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.white.withValues(alpha: 0.18),
-              width: 1.3,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Top Performers',
-                style: text18(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Batter Row
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildPlayerRow(
-                      'Goal Scorer',
-                      'Neymar Jr. – 1 Goal',
-                    ),
-                  ),
-
-                  // Non-Striker Row
-                  Expanded(
-                    child: _buildPlayerRow(
-                      'Playmaker',
-                      'Lionel Messi – 1 Assist',
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildPlayerRow(
-                      'Impact Player',
-                      "Vinícius Jr. – Created multiple chances",
-                    ),
-                  ),
-
-                  // Non-Striker Row
-                  SizedBox.shrink(),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 

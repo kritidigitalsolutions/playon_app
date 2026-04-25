@@ -88,3 +88,31 @@ class Match {
     updatedAt = json['updatedAt'];
   }
 }
+
+class WatchMatchResponse {
+  bool? success;
+  String? message;
+  MatchStream? stream;
+  Match? match;
+
+  WatchMatchResponse({this.success, this.message, this.stream, this.match});
+
+  WatchMatchResponse.fromJson(Map<String, dynamic> json) {
+    success = json['success'];
+    message = json['message'];
+    stream = json['stream'] != null ? MatchStream.fromJson(json['stream']) : null;
+    match = json['match'] != null ? Match.fromJson(json['match']) : null;
+  }
+}
+
+class MatchStream {
+  String? streamUrl;
+  String? streamType;
+
+  MatchStream({this.streamUrl, this.streamType});
+
+  MatchStream.fromJson(Map<String, dynamic> json) {
+    streamUrl = json['streamUrl'];
+    streamType = json['streamType'];
+  }
+}

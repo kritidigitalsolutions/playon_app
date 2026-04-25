@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:play_on_app/repo/match_repository.dart';
 import 'package:video_player/video_player.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
+import 'package:play_on_app/view_model/after_controller/plan_controller.dart';
 
 class MatchDetailsController extends GetxController {
   final match = Rxn<model.Match>();
@@ -10,6 +12,9 @@ class MatchDetailsController extends GetxController {
   var remainingTime = "".obs;
   var isReminderOn = false.obs;
   var isLock = true.obs;
+
+  final MatchRepository _repository = MatchRepository();
+  final planController = Get.put(PlanController());
 
   Timer? _timer;
 
@@ -20,6 +25,22 @@ class MatchDetailsController extends GetxController {
     if (Get.arguments is model.Match) {
       match.value = Get.arguments;
       _initializeMatchStatus();
+      
+      // Re-check access whenever plan status changes
+      ever(planController.hasAccess, (_) => checkAccess());
+      checkAccess();
+    }
+  }
+
+  void checkAccess() {
+    if (match.value == null) return;
+    
+    // Check if user has overall access or has purchased this specific match
+    bool hasPurchased = planController.hasPurchasedItem(matchId: match.value!.sId);
+    if (planController.hasAccess.value || hasPurchased) {
+      isLock.value = false;
+    } else {
+      isLock.value = true;
     }
   }
 
@@ -71,7 +92,7 @@ class MatchDetailsController extends GetxController {
     Get.snackbar(
       "Success",
       "Match unlocked successfully!",
-      backgroundColor: Colors.green.withOpacity(0.9),
+      backgroundColor: Colors.green.withValues(alpha: 0.9),
       colorText: Colors.white,
       duration: const Duration(seconds: 2),
     );
@@ -85,23 +106,54 @@ class MatchDetailsController extends GetxController {
 }
 
 class VideoControllerX extends GetxController {
-  late VideoPlayerController videoController;
+  final _matchRepo = MatchRepository();
+  VideoPlayerController? videoController;
 
+  final match = Rxn<model.Match>();
   var isInitialized = false.obs;
   var isPlaying = false.obs;
   var showControls = true.obs;
+  var matchData = Rxn<model.WatchMatchResponse>();
+  var isLoading = true.obs;
 
   @override
   void onInit() {
     super.onInit();
+    
+    if (Get.arguments is model.Match) {
+      match.value = Get.arguments;
+      fetchMatchDetails(match.value!.sId!);
+    }
+  }
 
-    videoController =
-        VideoPlayerController.network(
-            "https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4",
-          )
-          ..initialize().then((_) {
-            isInitialized.value = true;
-          });
+  Future<void> fetchMatchDetails(String matchId) async {
+    isLoading.value = true;
+    try {
+      final response = await _matchRepo.watchMatch(matchId);
+      matchData.value = model.WatchMatchResponse.fromJson(response);
+      
+      // Update match if API returns more detailed info
+      if (matchData.value?.match != null) {
+        match.value = matchData.value!.match;
+      }
+      
+      if (matchData.value?.stream?.streamUrl != null) {
+        initializeVideo(matchData.value!.stream!.streamUrl!);
+      }
+    } catch (e) {
+      Get.snackbar("Error", "Failed to load match details");
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  void initializeVideo(String url) {
+    videoController = VideoPlayerController.network(url)
+      ?..initialize().then((_) {
+        isInitialized.value = true;
+        videoController?.play();
+        isPlaying.value = true;
+      });
 
     // Auto hide controls after 3 sec
     ever(isPlaying, (_) {
@@ -114,11 +166,12 @@ class VideoControllerX extends GetxController {
   }
 
   void togglePlay() {
-    if (videoController.value.isPlaying) {
-      videoController.pause();
+    if (videoController == null) return;
+    if (videoController!.value.isPlaying) {
+      videoController!.pause();
       isPlaying.value = false;
     } else {
-      videoController.play();
+      videoController!.play();
       isPlaying.value = true;
     }
     showControls.value = true;
@@ -130,7 +183,7 @@ class VideoControllerX extends GetxController {
 
   @override
   void onClose() {
-    videoController.dispose();
+    videoController?.dispose();
     super.onClose();
   }
 }

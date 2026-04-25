@@ -1,4 +1,4 @@
-package com.example.play_on_app
+package com.playon.app
 
 import io.flutter.embedding.android.FlutterActivity
 

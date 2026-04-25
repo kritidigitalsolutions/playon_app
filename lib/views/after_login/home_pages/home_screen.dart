@@ -85,6 +85,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   controller: searchController,
                                   onChanged: (value) {
                                     ctr.searchQuery.value = value;
+                                    if (value.isNotEmpty) {
+                                      ctr.selectedCategory.value = "";
+                                    }
                                   },
                                   style: text13(color: AppColors.white),
                                   decoration: InputDecoration(
@@ -176,9 +179,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ), // Reduced from 16
                 child: Row(
                   children: List.generate(
-                    ctr.tabs.length,
+                    ctr.sportsList.length,
                     (index) => _buildTab(
-                      ctr.tabs[index],
+                      ctr.sportsList[index],
                       index,
                       ctr.selectedTabIndex.value == index,
                     ),
@@ -192,87 +195,151 @@ class _HomeScreenState extends State<HomeScreen> {
 
             Expanded(
               child: Obx(() {
-                if (ctr.isLoading.value) {
+                if (ctr.isLoading.value && ctr.allMatches.isEmpty && ctr.liveMatches.isEmpty) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                
+
                 return RefreshIndicator(
                   onRefresh: () async {
                     await ctr.fetchMatches(
-                      sport: ctr.tabs[ctr.selectedTabIndex.value],
+                      sport: ctr.sportsList[ctr.selectedTabIndex.value],
                     );
                   },
                   child: ListView(
                     physics: const BouncingScrollPhysics(),
                     padding: EdgeInsets.zero,
                     children: [
-                    const SizedBox(height: 8),
-                    // MacBook Pro Ad Banner
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Container(
-                        height: 160,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          image: const DecorationImage(
-                            image: AssetImage('assets/images/iPhone.png'),
-                            fit: BoxFit.cover,
+                      if (ctr.isSilentLoading.value)
+                        LinearProgressIndicator(
+                          minHeight: 2,
+                          backgroundColor: Colors.transparent,
+                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                        ),
+                      const SizedBox(height: 8),
+                      // Dynamic Ad Banners
+                      if (ctr.searchQuery.value.isEmpty) ...[
+                        Obx(() {
+                          if (ctr.isBannerLoading.value && ctr.bannerList.isEmpty) {
+                            return const SizedBox(
+                              height: 160,
+                              child: Center(child: CircularProgressIndicator()),
+                            );
+                          }
+                          if (ctr.bannerList.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+                          return CarouselSlider.builder(
+                            itemCount: ctr.bannerList.length,
+                            options: CarouselOptions(
+                              height: 160,
+                              viewportFraction: 1.0,
+                              autoPlay: ctr.bannerList.length > 1,
+                              autoPlayInterval: const Duration(seconds: 5),
+                              enlargeCenterPage: false,
+                            ),
+                            itemBuilder: (context, index, realIndex) {
+                              final banner = ctr.bannerList[index];
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                child: InkWell(
+                                  onTap: () {
+                                    // Handle banner click if needed, e.g., open link
+                                    if (banner.link != null && banner.link!.isNotEmpty) {
+                                      // TODO: Implement link opening
+                                    }
+                                  },
+                                  child: Container(
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(16),
+                                      image: DecorationImage(
+                                        image: NetworkImage(banner.image!),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        }),
+                        const SizedBox(height: 12),
+                      ],
+
+                      // Live Matches Carousel
+                      if (ctr.searchQuery.value.isEmpty) ...[
+                        Builder(builder: (context) {
+                          // Dashboard (Live/Upcoming) only filters by sport if it's a top-level sport tab.
+                          // Category chips (selectedCategory) should NOT filter the dashboard sections.
+                          String dashboardSport = (ctr.selectedTabIndex.value != 0
+                              ? ctr.sportsList[ctr.selectedTabIndex.value]
+                              : "");
+
+                          var displayLiveMatches = ctr.filteredLiveMatches.toList();
+                          if (dashboardSport.isNotEmpty) {
+                            displayLiveMatches = displayLiveMatches
+                                .where((m) =>
+                                    m.sport?.toLowerCase() ==
+                                    dashboardSport.toLowerCase())
+                                .toList();
+                          }
+
+                          if (displayLiveMatches.isEmpty)
+                            return const SizedBox.shrink();
+
+                          return CarouselSlider.builder(
+                            itemCount: displayLiveMatches.length,
+                            itemBuilder: (context, index, realIndex) {
+                              return _buildLiveMatchCard(
+                                  displayLiveMatches[index]);
+                            },
+                            options: CarouselOptions(
+                              height: 200,
+                              enlargeCenterPage: true,
+                              viewportFraction: 0.85,
+                              enableInfiniteScroll:
+                                  displayLiveMatches.length > 1,
+                              autoPlay: displayLiveMatches.length > 1,
+                              autoPlayInterval: const Duration(seconds: 4),
+                              autoPlayAnimationDuration:
+                                  const Duration(milliseconds: 800),
+                              autoPlayCurve: Curves.fastOutSlowIn,
+                              enlargeFactor: 0.25,
+                              enlargeStrategy: CenterPageEnlargeStrategy.scale,
+                            ),
+                          );
+                        }),
+                        const SizedBox(height: 16),
+                        // Upcoming Matches Section
+                        Padding(
+                          padding: const EdgeInsets.only(left: 12.0),
+                          child: Text(
+                            "Upcoming Matches",
+                            style: text20(fontWeight: FontWeight.bold),
                           ),
                         ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-                    // Live Matches Carousel
-                    Builder(builder: (context) {
-                      var displayLiveMatches = ctr.selectedTabIndex.value == 0
-                          ? ctr.filteredLiveMatches
-                          : ctr.filteredLiveMatches
+                        const SizedBox(height: 8),
+                        Builder(builder: (context) {
+                          String dashboardSport = (ctr.selectedTabIndex.value != 0
+                              ? ctr.sportsList[ctr.selectedTabIndex.value]
+                              : "");
+                          var upcomingMatches = ctr.filteredMatches
                               .where((m) =>
-                                  m.sport?.toLowerCase() ==
-                                  ctr.tabs[ctr.selectedTabIndex.value].toLowerCase())
+                                  m.status?.toLowerCase() == 'upcoming')
                               .toList();
+                          if (dashboardSport.isNotEmpty) {
+                            upcomingMatches = upcomingMatches
+                                .where((m) =>
+                                    m.sport?.toLowerCase() ==
+                                    dashboardSport.toLowerCase())
+                                .toList();
+                          }
+                          return _buildUpcomingMatch(upcomingMatches);
+                        }),
+                        const SizedBox(height: 16),
+                      ],
 
-                      if (displayLiveMatches.isEmpty) return const SizedBox.shrink();
-
-                      return CarouselSlider.builder(
-                        itemCount: displayLiveMatches.length,
-                        itemBuilder: (context, index, realIndex) {
-                          return _buildLiveMatchCard(displayLiveMatches[index]);
-                        },
-                        options: CarouselOptions(
-                          height: 200,
-                          enlargeCenterPage: true,
-                          viewportFraction: 0.85,
-                          enableInfiniteScroll: displayLiveMatches.length > 1,
-                          autoPlay: displayLiveMatches.length > 1,
-                          autoPlayInterval: const Duration(seconds: 4),
-                          autoPlayAnimationDuration: const Duration(milliseconds: 800),
-                          autoPlayCurve: Curves.fastOutSlowIn,
-                          enlargeFactor: 0.25,
-                          enlargeStrategy: CenterPageEnlargeStrategy.scale,
-                        ),
-                      );
-                    }),
-
-                    const SizedBox(height: 16),
-                    // Upcoming Matches Section
-                    Padding(
-                      padding: const EdgeInsets.only(left: 12.0),
-                      child: Text(
-                        ctr.selectedTabIndex.value == 0
-                            ? "Upcoming Matches"
-                            : "${ctr.tabs[ctr.selectedTabIndex.value]} Matches",
-                        style: text20(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    _buildUpcomingMatch(ctr.filteredMatches
-                        .where((m) => m.status?.toLowerCase() == 'upcoming')
-                        .toList()),
-
-                    if (ctr.selectedTabIndex.value == 0) ...[
-                      const SizedBox(height: 16),
+                      // Category Chips - Reduced padding
                       _buildSectionHeader("Search by Category", ""),
                       const SizedBox(height: 8),
                       Padding(
@@ -280,54 +347,125 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Wrap(
                           spacing: 8,
                           runSpacing: 8,
-                          children: ctr.tabs.skip(1).map((tab) {
+                          children: ctr.sportsList.skip(1).map<Widget>((tab) {
                             return _buildCategoryChip(
                               tab,
-                              () => ctr.selectSubCategory(tab),
+                              () {
+                                searchController.clear();
+                                ctr.searchQuery.value = "";
+                                ctr.selectSubCategory(tab);
+                              },
                               isSelected: ctr.selectedCategory.value == tab,
                             );
                           }).toList(),
                         ),
                       ),
+
+                      const SizedBox(height: 16),
+                      
+                      // Results Section (Recap/Filtered)
+                      Builder(builder: (context) {
+                        String currentSportFilter = ctr.selectedCategory.value.isNotEmpty
+                            ? ctr.selectedCategory.value
+                            : (ctr.selectedTabIndex.value != 0
+                                ? ctr.sportsList[ctr.selectedTabIndex.value]
+                                : "");
+                        
+                        // Show "Search Results" or Sport name header
+                        String headerTitle = ctr.searchQuery.value.isNotEmpty 
+                            ? "Search Results" 
+                            : (currentSportFilter.isNotEmpty ? currentSportFilter : "Recap");
+
+                        // Filtering matches for the results section
+                        var matchesToFilter = ctr.searchQuery.value.isNotEmpty
+                            ? ctr.filteredMatches
+                            : ctr.allMatches;
+
+                        var completedMatches = matchesToFilter
+                            .where((m) =>
+                                (m.status?.toLowerCase() == 'finished' ||
+                                    m.status?.toLowerCase() == 'completed') &&
+                                (currentSportFilter.isEmpty ||
+                                    m.sport?.toLowerCase() ==
+                                        currentSportFilter.toLowerCase()))
+                            .toList();
+
+                        // If on Home and no specific category selected, show sport-wise sections
+                        if (ctr.selectedTabIndex.value == 0 && 
+                            ctr.selectedCategory.value.isEmpty && 
+                            ctr.searchQuery.value.isEmpty) {
+                          return Column(
+                            children: ctr.sportsList.skip(1).map((sport) {
+                              var sportMatches = ctr.allMatches
+                                  .where((m) =>
+                                      (m.status?.toLowerCase() == 'finished' ||
+                                          m.status?.toLowerCase() == 'completed') &&
+                                      m.sport?.toLowerCase() == sport.toLowerCase())
+                                  .toList();
+                              
+                              if (sportMatches.isEmpty) return const SizedBox.shrink();
+                              
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildSectionHeader(sport, "See all",
+                                      onActionTap: () {
+                                    int index = ctr.sportsList.indexOf(sport);
+                                    if (index != -1) {
+                                      ctr.changeTab(index);
+                                    }
+                                  }),
+                                  const SizedBox(height: 8),
+                                  _buildRecapMatchList(matches: sportMatches),
+                                  const SizedBox(height: 16),
+                                ],
+                              );
+                            }).toList(),
+                          );
+                        }
+
+                        // Otherwise show a grid of results
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(left: 12, bottom: 8),
+                              child: Text(
+                                headerTitle,
+                                style: text24(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            if (completedMatches.isEmpty)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 40),
+                                child: Center(
+                                    child: Text("No completed matches found",
+                                        style: text14(color: AppColors.white70))),
+                              )
+                            else
+                              GridView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 16,
+                                  childAspectRatio: 0.85,
+                                ),
+                                itemCount: completedMatches.length,
+                                itemBuilder: (context, index) {
+                                  return _buildRecapGridItem(completedMatches[index]);
+                                },
+                              ),
+                          ],
+                        );
+                      }),
+
+                      const SizedBox(height: 80),
                     ],
-
-                    const SizedBox(height: 16),
-                    Builder(builder: (context) {
-                      var footballMatches = ctr.filteredMatches.where((m) => m.sport?.toLowerCase() == 'football').toList();
-                      if (footballMatches.isEmpty) return const SizedBox.shrink();
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSectionHeader("Football", "See all"),
-                          const SizedBox(height: 8),
-                          _buildHorizontalMatchList(
-                            matches: footballMatches,
-                            isFootball: true,
-                          ),
-                        ],
-                      );
-                    }),
-
-                    const SizedBox(height: 16),
-                    Builder(builder: (context) {
-                      var cricketMatches = ctr.filteredMatches.where((m) => m.sport?.toLowerCase() == 'cricket').toList();
-                      if (cricketMatches.isEmpty) return const SizedBox.shrink();
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSectionHeader("Cricket", "See all"),
-                          const SizedBox(height: 8),
-                          _buildHorizontalMatchList(
-                            matches: cricketMatches,
-                            isFootball: false,
-                          ),
-                        ],
-                      );
-                    }),
-
-                    const SizedBox(height: 80),
-                  ],
-                )
+                  ),
                 );
               }),
             ),
@@ -457,7 +595,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title, String action) {
+  Widget _buildSectionHeader(String title, String action, {VoidCallback? onActionTap}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12), // Reduced from 16
       child: Row(
@@ -465,11 +603,14 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Text(title, style: text20(fontWeight: FontWeight.bold)),
           if (action.isNotEmpty)
-            Text(
-              action,
-              style: TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w500,
+            GestureDetector(
+              onTap: onActionTap,
+              child: Text(
+                action,
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
         ],
@@ -570,6 +711,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
                         image: DecorationImage(
                           image: match.thumbnail != null && match.thumbnail!.isNotEmpty
                               ? NetworkImage(match.thumbnail!)
@@ -620,6 +762,135 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildRecapMatchList({required List<model.Match> matches}) {
+    return SizedBox(
+      height: 180, // Increased height slightly to accommodate text
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        itemCount: matches.length,
+        itemBuilder: (context, index) {
+          final match = matches[index];
+          return GestureDetector(
+            onTap: () {
+              ctr.handleProtectedAction(() {
+                Get.toNamed(AppRoutes.recapMatch, arguments: match);
+              });
+            },
+            child: Container(
+              width: 180,
+              margin: const EdgeInsets.only(right: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            image: DecorationImage(
+                              image: match.thumbnail != null && match.thumbnail!.isNotEmpty
+                                  ? NetworkImage(match.thumbnail!)
+                                  : const AssetImage('assets/auth/cri.png') as ImageProvider,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.5),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.play_arrow, color: Colors.white, size: 30),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      match.title ?? "${match.teamA} vs ${match.teamB}",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text13(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  Text(
+                    match.tournament ?? "",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: text11(color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildRecapGridItem(model.Match match) {
+    return GestureDetector(
+      onTap: () {
+        ctr.handleProtectedAction(() {
+          Get.toNamed(AppRoutes.recapMatch, arguments: match);
+        });
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    image: DecorationImage(
+                      image: match.thumbnail != null && match.thumbnail!.isNotEmpty
+                          ? NetworkImage(match.thumbnail!)
+                          : const AssetImage('assets/auth/cri.png') as ImageProvider,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.play_arrow, color: Colors.white, size: 24),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              match.title ?? "${match.teamA} vs ${match.teamB}",
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: text13(fontWeight: FontWeight.w600),
+            ),
+          ),
+          Text(
+            match.tournament ?? "",
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: text11(color: AppColors.textSecondary),
+          ),
+        ],
       ),
     );
   }
