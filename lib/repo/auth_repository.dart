@@ -24,7 +24,6 @@ class AuthRepository {
 
   Future<dynamic> completeProfile(Map<String, dynamic> data, String token) async {
     try {
-      _apiService.setToken(token);
       final response = await _apiService.putApi(AppUrls.completeProfile, data);
       return response;
     } catch (e) {
@@ -34,7 +33,6 @@ class AuthRepository {
 
   Future<dynamic> updateProfile(dynamic data, String token) async {
     try {
-      _apiService.setToken(token);
       final response = await _apiService.patchApi(AppUrls.updateProfile, data);
       return response;
     } catch (e) {
@@ -44,7 +42,6 @@ class AuthRepository {
 
   Future<dynamic> deleteAccount(Map<String, dynamic> data, String token) async {
     try {
-      _apiService.setToken(token);
       final response = await _apiService.deleteApi(AppUrls.deleteAccount, data);
       return response;
     } catch (e) {
@@ -54,7 +51,6 @@ class AuthRepository {
 
   Future<dynamic> getUserProfile(String token) async {
     try {
-      _apiService.setToken(token);
       final response = await _apiService.getApi(AppUrls.userProfile);
       return response;
     } catch (e) {

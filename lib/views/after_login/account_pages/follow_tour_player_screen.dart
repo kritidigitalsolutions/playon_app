@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:play_on_app/model/response_model/series_model.dart';
+import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
-import 'dart:ui';
-
+import 'package:play_on_app/view_model/after_controller/player_controller.dart';
+import 'package:play_on_app/view_model/after_controller/series_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
+import 'dart:ui';
+import 'package:play_on_app/model/response_model/player_model.dart';
+
+import '../../../routes/app_routes.dart';
 
 class FollowingScreen extends StatefulWidget {
   const FollowingScreen({super.key});
@@ -12,7 +19,9 @@ class FollowingScreen extends StatefulWidget {
 }
 
 class _FollowingScreenState extends State<FollowingScreen> {
-  int _selectedTab = 0; // 0 = Tours, 1 = Players
+  final PlayerController _playerController = Get.find<PlayerController>();
+  final SeriesController _seriesController = Get.put(SeriesController());
+  final RxSet<String> _expandedSeriesIds = <String>{}.obs;
 
   @override
   Widget build(BuildContext context) {
@@ -21,45 +30,24 @@ class _FollowingScreenState extends State<FollowingScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // Header with Back Button
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.arrow_back_ios,
-                      color: Colors.white,
-                      size: 18,
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
+                      onPressed: () => Get.back(),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 4),
                     Text(
-                      "Following",
+                      "Followed Series",
                       style: text20(fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
               ),
-
-              // Tabs: Tours | Players
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    _buildTab("Tours", 0),
-                    const SizedBox(width: 8),
-                    _buildTab("Players", 1),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Content Area
-              Expanded(
-                child: _selectedTab == 0
-                    ? _buildToursList()
-                    : _buildPlayersList(),
-              ),
+              const SizedBox(height: 8),
+              _buildSeriesList(),
             ],
           ),
         ),
@@ -67,184 +55,271 @@ class _FollowingScreenState extends State<FollowingScreen> {
     );
   }
 
-  // Tab Button
-  Widget _buildTab(String title, int index) {
-    final bool isSelected = _selectedTab == index;
-
+  Widget _buildSeriesList() {
     return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() => _selectedTab = index);
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? Colors.white.withOpacity(0.15)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(25),
-            border: isSelected
-                ? Border.all(color: Colors.white.withOpacity(0.3))
-                : null,
+      child: Obx(() {
+      if (_seriesController.isLoading.value) {
+        return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+      }
+      
+      final followedSeries = _seriesController.followedSeriesList;
+      
+      if (followedSeries.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.emoji_events_outlined, size: 64, color: Colors.white24),
+              const SizedBox(height: 16),
+              Text("No followed series", style: text16(color: Colors.white38)),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => Get.toNamed(AppRoutes.selectSeries),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                ),
+                child: Text("Explore Series", style: text14(fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
-          child: Text(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.white70,
-              fontSize: 16,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+        );
+      }
+      return ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: followedSeries.length,
+        itemBuilder: (context, index) {
+          return _buildSeriesCard(followedSeries[index]);
+        },
+      );
+    }
+    )
+    );
+  }
+
+  Widget _buildSeriesCard(Series series) {
+    return Obx(() {
+      final isExpanded = _expandedSeriesIds.contains(series.sId);
+      return AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.18)),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    if (isExpanded) {
+                      _expandedSeriesIds.remove(series.sId);
+                    } else {
+                      _expandedSeriesIds.add(series.sId!);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    color: Colors.transparent,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            color: Colors.white10,
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: series.banner != null && series.banner!.isNotEmpty
+                                ? Image.network(series.banner!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.emoji_events, color: Colors.amber, size: 30))
+                                : const Icon(Icons.emoji_events, color: Colors.amber, size: 30),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(series.title ?? "", style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                              const SizedBox(height: 4),
+                              Text("${_formatDate(series.startDate)} - ${_formatDate(series.endDate)}", style: const TextStyle(color: Colors.white60, fontSize: 13)),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                          color: Colors.white70,
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.check_circle, color: Color(0xFF4CAF50), size: 28),
+                          onPressed: () => _seriesController.toggleFollowSeries(series.sId!),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (isExpanded) ...[
+                  const Divider(color: Colors.white10, height: 1),
+                  _buildExpandedContent(series),
+                ],
+              ],
             ),
           ),
         ),
+      );
+    });
+  }
+
+  Widget _buildExpandedContent(Series series) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Matches", style: text14(fontWeight: FontWeight.bold, color: AppColors.primary)),
+          const SizedBox(height: 12),
+          _buildInlineMatchesList(series),
+          const SizedBox(height: 20),
+          Text("Players", style: text14(fontWeight: FontWeight.bold, color: AppColors.primary)),
+          const SizedBox(height: 12),
+          _buildInlinePlayersView(series),
+        ],
       ),
     );
   }
 
-  // ====================== TOURS LIST ======================
-  Widget _buildToursList() {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: 6,
-      itemBuilder: (context, index) {
-        return _buildTourCard();
-      },
-    );
-  }
-
-  Widget _buildTourCard() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
+  Widget _buildInlineMatchesList(Series series) {
+    if (series.matches == null || series.matches!.isEmpty) {
+      return const Text("No matches scheduled", style: TextStyle(color: Colors.white38, fontSize: 12));
+    }
+    return Column(
+      children: series.matches!.take(3).map((match) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.08),
+            color: Colors.white.withOpacity(0.05),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.white.withOpacity(0.18)),
           ),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Trophy Icon
-              Image.asset(
-                'assets/images/cup.png', // Replace with your actual trophy image
-                width: 48,
-                height: 48,
-                errorBuilder: (context, error, stackTrace) => const Icon(
-                  Icons.emoji_events,
-                  color: Colors.amber,
-                  size: 48,
-                ),
-              ),
-              const SizedBox(width: 16),
-
-              // Tour Details
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "India Tour of Australia 2026",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      "15 Apr, 2026",
-                      style: TextStyle(color: Colors.white60, fontSize: 13),
-                    ),
+                    Text(match.matchName ?? "", style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+                    Text(_formatDateWithTime(match.date), style: const TextStyle(color: Colors.white60, fontSize: 11)),
                   ],
                 ),
               ),
-
-              // Green Check
-              const Icon(
-                Icons.check_circle,
-                color: Color(0xFF4CAF50),
-                size: 28,
+              Text(
+                match.status?.toUpperCase() ?? "",
+                style: TextStyle(
+                  color: match.status?.toLowerCase() == 'live' ? Colors.redAccent : Colors.white38,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
-        ),
-      ),
+        );
+      }).toList(),
     );
   }
 
-  // ====================== PLAYERS LIST ======================
-  Widget _buildPlayersList() {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: 6,
-      itemBuilder: (context, index) {
-        return _buildPlayerCard();
-      },
-    );
-  }
-
-  Widget _buildPlayerCard() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.white.withOpacity(0.18)),
+  Widget _buildInlinePlayersView(Series series) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(series.teamA ?? "Team A", style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              _buildInlinePlayerIdList(series.teamAPlayers),
+            ],
           ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(series.teamB ?? "Team B", style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              _buildInlinePlayerIdList(series.teamBPlayers),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInlinePlayerIdList(List<String>? playerIds) {
+    if (playerIds == null || playerIds.isEmpty) {
+      return const Text("No players", style: TextStyle(color: Colors.white24, fontSize: 11));
+    }
+    return Column(
+      children: playerIds.take(5).map((playerId) {
+        final player = _playerController.allAvailablePlayers.firstWhereOrNull((p) => p.id == playerId);
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 4),
           child: Row(
             children: [
-              // Player Avatar
-              ClipRRect(
-                borderRadius: BorderRadius.circular(50),
-                child: Image.asset(
-                  'assets/images/virat.png', // Replace with your player image
-                  width: 52,
-                  height: 52,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    width: 52,
-                    height: 52,
-                    color: Colors.blueGrey.shade800,
-                    child: const Icon(
-                      Icons.person,
-                      color: Colors.white70,
-                      size: 28,
-                    ),
-                  ),
-                ),
+              CircleAvatar(
+                radius: 10,
+                backgroundColor: Colors.white10,
+                backgroundImage: player?.image != null ? NetworkImage(player!.image!) : null,
+                child: player?.image == null ? const Icon(Icons.person, size: 10, color: Colors.white38) : null,
               ),
-              const SizedBox(width: 16),
-
-              // Player Name
-              const Expanded(
+              const SizedBox(width: 6),
+              Expanded(
                 child: Text(
-                  "Virat Kohli",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  player?.name ?? "Player",
+                  style: const TextStyle(color: Colors.white60, fontSize: 11),
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-
-              // Green Check
-              const Icon(
-                Icons.check_circle,
-                color: Color(0xFF4CAF50),
-                size: 28,
               ),
             ],
           ),
-        ),
-      ),
+        );
+      }).toList(),
     );
+  }
+
+
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return "";
+    try {
+      final date = DateTime.parse(dateStr);
+      return "${date.day} ${_getMonth(date.month)}";
+    } catch (e) {
+      return "";
+    }
+  }
+
+  String _formatDateWithTime(String? dateStr) {
+    if (dateStr == null) return "";
+    try {
+      final date = DateTime.parse(dateStr);
+      return "${date.day} ${_getMonth(date.month)} ${date.year}, ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
+    } catch (e) {
+      return "";
+    }
+  }
+
+  String _getMonth(int month) {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return months[month - 1];
   }
 }

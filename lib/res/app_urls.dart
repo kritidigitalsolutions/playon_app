@@ -14,6 +14,10 @@ class AppUrls {
   // Match Endpoints
   static const String matches = '$baseUrl/matches';
   static const String liveMatches = '$baseUrl/matches/live';
+  static const String teams = '$baseUrl/teams';
+  static const String series = '$baseUrl/series';
+  static String toggleFollowSeries(String id) => '$baseUrl/series/$id/follow';
+  static const String followedSeries = '$baseUrl/series/followed';
 
   // Channel Endpoints
   static const String liveChannels = '$baseUrl/channels/live';
@@ -26,6 +30,11 @@ class AppUrls {
 
   // Plan Endpoints
   static const String plans = '$baseUrl/plans';
+  static const String mySubscription = '$baseUrl/subscriptions/my';
+  static const String subscriptionHistory = '$baseUrl/subscriptions/history';
+  static const String checkAccess = '$baseUrl/subscriptions/check-access';
+  static String cancelSubscription(String id) => '$baseUrl/subscriptions/cancel/$id';
+  static String deleteSubscription(String id) => '$baseUrl/subscriptions/delete/$id';
 
   // Player Endpoints
   static const String players = '$baseUrl/players';

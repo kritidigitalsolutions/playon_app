@@ -44,7 +44,7 @@ class FollowedPlayersScreen extends StatelessWidget {
                         children: [
                           const Icon(Icons.person_add_alt_1_outlined, size: 64, color: Colors.white24),
                           const SizedBox(height: 16),
-                          Text("You are not following any players yet", 
+                          Text("You are not following any players yet",
                               style: text16(color: Colors.white38)),
                           const SizedBox(height: 8),
                           Text("Keep your eyes on the game", style: text12(color: Colors.white24)),

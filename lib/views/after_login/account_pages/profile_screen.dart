@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:play_on_app/model/response_model/series_model.dart';
 import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/utils/custom_button.dart';
 import 'dart:ui';
-import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:play_on_app/utils/custom_snakebar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:play_on_app/view_model/after_controller/notification_controller.dart';
 import 'package:play_on_app/view_model/before_controller/auth_controller.dart';
 import 'package:play_on_app/view_model/after_controller/player_controller.dart';
+import 'package:play_on_app/view_model/after_controller/series_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -25,6 +26,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final AuthController _authController = Get.put(AuthController());
   final PlayerController _playerController = Get.put(PlayerController());
+  final SeriesController _seriesController = Get.put(SeriesController());
   String? _profileImagePath;
   final ImagePicker _picker = ImagePicker();
 
@@ -35,7 +37,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _authController.getUserProfile();
   }
 
-  // Load saved image path from SharedPreferences
   Future<void> _loadProfileImage() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -43,13 +44,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  // Save image path to SharedPreferences
-  Future<void> _saveProfileImage(String path) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('profile_image_path', path);
-  }
-
-  // Pick image from gallery or camera
   Future<void> _pickImage(ImageSource source) async {
     try {
       final XFile? pickedFile = await _picker.pickImage(
@@ -63,10 +57,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           _profileImagePath = pickedFile.path;
         });
-        // await _saveProfileImage(pickedFile.path); // Remove local save, use API
-
         await _authController.updateProfile(profileImagePath: pickedFile.path);
-
         showCustomSnackbar(
           title: "Success",
           message: "Profile picture updated!",
@@ -82,7 +73,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // Show image picker options
   void _showImagePickerOptions() {
     showModalBottomSheet(
       context: context,
@@ -95,13 +85,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: AppColors.secPrimary.withOpacity(0.95),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20),
-              ),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.2),
-                width: 1,
-              ),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -109,16 +94,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Container(
                   width: 40,
                   height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.3), borderRadius: BorderRadius.circular(2)),
                 ),
                 const SizedBox(height: 20),
-                Text(
-                  "Update Profile Picture",
-                  style: text18(fontWeight: FontWeight.bold),
-                ),
+                Text("Update Profile Picture", style: text18(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 20),
                 _imagePickerOption(
                   icon: Icons.camera_alt,
@@ -150,12 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       });
                       final prefs = await SharedPreferences.getInstance();
                       await prefs.remove('profile_image_path');
-
-                      showCustomSnackbar(
-                        title: "Removed",
-                        message: "Profile picture removed",
-                        type: SnackType.info,
-                      );
+                      showCustomSnackbar(title: "Removed", message: "Profile picture removed", type: SnackType.info);
                     },
                   ),
                 ],
@@ -168,12 +142,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _imagePickerOption({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-    Color? iconColor,
-  }) {
+  Widget _imagePickerOption({required IconData icon, required String title, required VoidCallback onTap, Color? iconColor}) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -192,11 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: (iconColor ?? AppColors.primary).withOpacity(0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(
-                icon,
-                color: iconColor ?? AppColors.primary,
-                size: 24,
-              ),
+              child: Icon(icon, color: iconColor ?? AppColors.primary, size: 24),
             ),
             const SizedBox(width: 16),
             Text(title, style: text16(fontWeight: FontWeight.w600)),
@@ -212,11 +177,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: BackgroundWithOutImg(
         child: SafeArea(
           child: Obx(() {
-            if (_authController.isLoading.value &&
-                _authController.userData.value == null) {
-              return const Center(
-                child: CircularProgressIndicator(color: AppColors.primary),
-              );
+            if (_authController.isLoading.value && _authController.userData.value == null) {
+              return const Center(child: CircularProgressIndicator(color: AppColors.primary));
             }
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -225,23 +187,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 20),
                 Expanded(
                   child: ListView(
-                    physics: BouncingScrollPhysics(),
-                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
                     children: [
                       _glassInfoTile(
-                        text:
-                            _authController.userData.value?.fullName ??
-                            "Enter Name",
-                        onEdit: () => _showEditDialog(
-                          "Full Name",
-                          _authController.userData.value?.fullName ?? "",
-                        ),
+                        text: _authController.userData.value?.fullName ?? "Enter Name",
+                        onEdit: () => _showEditDialog("Full Name", _authController.userData.value?.fullName ?? ""),
                       ),
                       const SizedBox(height: 10),
                       _glassInfoTile(
-                        text:
-                            _authController.userData.value?.mobile ??
-                            "No phone number",
+                        text: _authController.userData.value?.mobile ?? "No phone number",
                         isEditable: false,
                         onEdit: () {},
                       ),
@@ -252,7 +207,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         () => Get.toNamed(AppRoutes.selectTour),
                       ),
                       const SizedBox(height: 10),
-                      _glassToursList(),
+                      _glassFollowedSeriesList(),
                       const SizedBox(height: 24),
                       _sectionTitle(
                         "Follow Players",
@@ -277,7 +232,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // 🔹 Header with Image Picker
   Widget _header() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
@@ -288,11 +242,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text("Hello", style: text14(color: AppColors.white70)),
-                SizedBox(height: 4),
-                Text(
-                  _authController.userData.value?.fullName ?? "User",
-                  style: text20(fontWeight: FontWeight.bold),
-                ),
+                const SizedBox(height: 4),
+                Text(_authController.userData.value?.fullName ?? "User", style: text20(fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -301,13 +252,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Stack(
               children: [
                 Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.primary.withOpacity(0.5),
-                      width: 2,
-                    ),
-                  ),
+                  decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.primary.withOpacity(0.5), width: 2)),
                   child: CircleAvatar(
                     radius: 28,
                     backgroundColor: AppColors.white,
@@ -323,16 +268,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   right: 0,
                   child: Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.secPrimary, width: 2),
-                    ),
-                    child: const Icon(
-                      Icons.camera_alt,
-                      size: 14,
-                      color: Colors.white,
-                    ),
+                    decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle, border: Border.all(color: AppColors.secPrimary, width: 2)),
+                    child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
                   ),
                 ),
               ],
@@ -343,7 +280,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // 🔹 Glass Info Tile with Edit Dialog
   Widget _glassInfoTile({required String text, required VoidCallback onEdit, bool isEditable = true}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
@@ -352,36 +288,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: AppColors.white.withValues(alpha: 0.12),
+            color: AppColors.white.withOpacity(0.12),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: AppColors.white.withValues(alpha: 0.18),
-              width: 1.2,
-            ),
+            border: Border.all(color: AppColors.white.withOpacity(0.18), width: 1.2),
           ),
           child: Row(
             children: [
               Expanded(child: Text(text, style: text14(color: isEditable ? AppColors.white : AppColors.white70))),
               if (isEditable)
-              InkWell(
-                onTap: onEdit,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 7,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.8),
-                    ),
-                  ),
-                  child: Text(
-                    "Edit",
-                    style: text13(fontWeight: FontWeight.w500),
+                InkWell(
+                  onTap: onEdit,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.primary.withOpacity(0.8))),
+                    child: Text("Edit", style: text13(fontWeight: FontWeight.w500)),
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -389,12 +311,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Show Edit Dialog
   void _showEditDialog(String title, String currentValue) {
-    final TextEditingController controller = TextEditingController(
-      text: currentValue,
-    );
-
+    final TextEditingController controller = TextEditingController(text: currentValue);
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -408,19 +326,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               decoration: BoxDecoration(
                 color: AppColors.secPrimary.withOpacity(0.95),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.2),
-                  width: 1,
-                ),
+                border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "Edit $title",
-                    style: text20(fontWeight: FontWeight.bold),
-                  ),
+                  Text("Edit $title", style: text20(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 20),
                   TextField(
                     controller: controller,
@@ -430,25 +342,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       hintStyle: text14(color: AppColors.white70),
                       filled: true,
                       fillColor: Colors.white.withOpacity(0.05),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.2),
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.2),
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: AppColors.primary,
-                          width: 2,
-                        ),
-                      ),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.white.withOpacity(0.2))),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.white.withOpacity(0.2))),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -457,16 +353,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Expanded(
                         child: TextButton(
                           onPressed: () => Navigator.pop(context),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Text(
-                            "Cancel",
-                            style: text16(color: AppColors.white70),
-                          ),
+                          style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                          child: Text("Cancel", style: text16(color: AppColors.white70)),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -480,17 +368,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             }
                             Navigator.pop(context);
                           },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Text(
-                            "Save",
-                            style: text16(fontWeight: FontWeight.bold),
-                          ),
+                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                          child: Text("Save", style: text16(fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],
@@ -504,14 +383,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // 🔹 Section Title
   Widget _sectionTitle(String title, VoidCallback onTitleTap, VoidCallback onAddMoreTap) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        TextButton(
-          onPressed: onTitleTap,
-          child: Text("$title >", style: text16(fontWeight: FontWeight.bold)),
+        GestureDetector(
+          onTap: onTitleTap,
+          child: Text("$title >", style: text16(fontWeight: FontWeight.bold, color: Colors.white)),
         ),
         TextButton(
           onPressed: onAddMoreTap,
@@ -521,55 +399,66 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // 🔹 Glass Tours List
-  Widget _glassToursList() {
+  Widget _glassFollowedSeriesList() {
     return SizedBox(
       height: 110,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: 4,
-        itemBuilder: (_, i) {
-          return ClipRRect(
-            borderRadius: BorderRadius.circular(14),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-              child: Container(
-                width: 92,
-                margin: const EdgeInsets.only(right: 12),
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppColors.white.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: AppColors.white.withValues(alpha: 0.15),
-                    width: 1,
+      child: Obx(() {
+        if (_seriesController.followedSeriesList.isEmpty) {
+          return Center(child: Text("No followed series", style: text12(color: Colors.white38)));
+        }
+        return ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: _seriesController.followedSeriesList.length,
+          itemBuilder: (_, i) {
+            final series = _seriesController.followedSeriesList[i];
+            return GestureDetector(
+              onTap: () => Get.toNamed(AppRoutes.followedPage, arguments: series),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  child: Container(
+                    width: 92,
+                    margin: const EdgeInsets.only(right: 12),
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.white.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.white.withOpacity(0.15), width: 1),
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white10),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(22),
+                            child: series.banner != null && series.banner!.isNotEmpty
+                                ? Image.network(series.banner!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.emoji_events, color: Colors.amber, size: 24))
+                                : const Icon(Icons.emoji_events, color: Colors.amber, size: 24),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          series.title ?? "",
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: text10(),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                child: Column(
-                  children: [
-                    const CircleAvatar(
-                      radius: 22,
-                      backgroundImage: AssetImage("assets/images/cup.png"),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "India Tour of Australia 2026",
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: text10(),
-                    ),
-                  ],
-                ),
               ),
-            ),
-          );
-        },
-      ),
+            );
+          },
+        );
+      }),
     );
   }
 
-  // 🔹 Glass Players List
   Widget _glassPlayersList() {
     return SizedBox(
       height: 120,
@@ -577,9 +466,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (_playerController.loading.value) {
           return const Center(child: CircularProgressIndicator());
         }
-        final players = _playerController.playerList.take(10).toList();
+        final players = _playerController.followedPlayers;
         if (players.isEmpty) {
-          return Center(child: Text("No players found", style: text12()));
+          return Center(child: Text("No followed players", style: text12(color: Colors.white38)));
         }
         return ListView.builder(
           scrollDirection: Axis.horizontal,
@@ -598,19 +487,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: AppColors.white.withValues(alpha: 0.07),
+                          color: AppColors.white.withOpacity(0.07),
                           shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppColors.white.withValues(alpha: 0.25),
-                            width: 1.5,
-                          ),
+                          border: Border.all(color: AppColors.white.withOpacity(0.25), width: 1.5),
                         ),
                         child: CircleAvatar(
                           radius: 30,
                           backgroundColor: Colors.grey[800],
-                          backgroundImage: player.image != null
-                              ? NetworkImage(player.image!)
-                              : const AssetImage("assets/images/virat.png") as ImageProvider,
+                          backgroundImage: player.image != null ? NetworkImage(player.image!) : const AssetImage("assets/images/virat.png") as ImageProvider,
                         ),
                       ),
                     ),
@@ -635,7 +519,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // 🔹 Glass Menu List
   Widget _glassMenuList() {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
@@ -645,34 +528,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.085),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.15),
-              width: 1.2,
-            ),
+            border: Border.all(color: Colors.white.withOpacity(0.15), width: 1.2),
           ),
           child: Column(
             children: [
-              _glassMenuItem(
-                "Manage Subscription",
-                Icons.workspace_premium,
-                onTap: () {
-                  Get.toNamed(AppRoutes.accessPlan);
-                },
-              ),
-              _glassMenuItem(
-                "Activate TV",
-                Icons.tv,
-                onTap: () {
-                  Get.toNamed(AppRoutes.activateTV);
-                },
-              ),
-              _glassMenuItem(
-                "Refer and earn",
-                Icons.card_giftcard,
-                onTap: () {
-                  Get.toNamed(AppRoutes.referScreen);
-                },
-              ),
+              _glassMenuItem("Manage Subscription", Icons.workspace_premium, onTap: () => Get.toNamed(AppRoutes.accessPlan)),
+              _glassMenuItem("Activate TV", Icons.tv, onTap: () => Get.toNamed(AppRoutes.activateTV)),
+              _glassMenuItem("Refer and earn", Icons.card_giftcard, onTap: () => Get.toNamed(AppRoutes.referScreen)),
               _glassMenuItem(
                 "Notification",
                 Icons.notifications_none,
@@ -681,69 +543,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   builder: (notiCtr) {
                     return Obx(() => notiCtr.unreadCount.value > 0
                         ? Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              '${notiCtr.unreadCount.value}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(10)),
+                            child: Text('${notiCtr.unreadCount.value}', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                           )
-                        : const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 15,
-                            color: AppColors.textSecondary,
-                          ));
+                        : const Icon(Icons.arrow_forward_ios, size: 15, color: AppColors.textSecondary));
                   },
                 ),
-                onTap: () {
-                  Get.toNamed(AppRoutes.notification);
-                },
+                onTap: () => Get.toNamed(AppRoutes.notification),
               ),
-              _glassMenuItem(
-                "Account Delete",
-                Icons.delete_forever,
-                onTap: () {
-                  Get.toNamed(AppRoutes.accountDelete);
-                },
-              ),
-              _glassMenuItem(
-                "Refund Policy",
-                Icons.attach_money,
-                onTap: () {
-                  Get.toNamed(AppRoutes.refundPolicy);
-                },
-              ),
-              _glassMenuItem(
-                "Privacy Policy",
-                Icons.security,
-                onTap: () {
-                  Get.toNamed(AppRoutes.privacyPolicy);
-                },
-              ),
-              _glassMenuItem(
-                "Terms and conditions",
-                Icons.description_outlined,
-                onTap: () {
-                  Get.toNamed(AppRoutes.termsConditions);
-                },
-              ),
-              _glassMenuItem(
-                "About Us",
-                Icons.info,
-                onTap: () {
-                  Get.toNamed(AppRoutes.aboutUs);
-                },
-              ),
+              _glassMenuItem("Account Delete", Icons.delete_forever, onTap: () => Get.toNamed(AppRoutes.accountDelete)),
+              _glassMenuItem("Refund Policy", Icons.attach_money, onTap: () => Get.toNamed(AppRoutes.refundPolicy)),
+              _glassMenuItem("Privacy Policy", Icons.security, onTap: () => Get.toNamed(AppRoutes.privacyPolicy)),
+              _glassMenuItem("Terms and conditions", Icons.description_outlined, onTap: () => Get.toNamed(AppRoutes.termsConditions)),
+              _glassMenuItem("About Us", Icons.info, onTap: () => Get.toNamed(AppRoutes.aboutUs)),
             ],
           ),
         ),
@@ -751,8 +564,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _glassMenuItem(String text, IconData icon,
-      {VoidCallback? onTap, Widget? trailing}) {
+  Widget _glassMenuItem(String text, IconData icon, {VoidCallback? onTap, Widget? trailing}) {
     return InkWell(
       onTap: onTap,
       child: ListTile(
@@ -760,17 +572,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
         leading: Icon(icon, size: 20, color: AppColors.textSecondary),
         title: Text(text, style: text14()),
-        trailing: trailing ??
-            const Icon(
-              Icons.arrow_forward_ios,
-              size: 15,
-              color: AppColors.textSecondary,
-            ),
+        trailing: trailing ?? const Icon(Icons.arrow_forward_ios, size: 15, color: AppColors.textSecondary),
       ),
     );
   }
 
-  // 🔹 Glass Logout Button
   Widget _glassLogoutButton(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
@@ -787,7 +593,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-// Modern Logout Confirmation Dialog
 void _showModernLogoutDialog(BuildContext context) {
   showDialog(
     context: context,
@@ -800,93 +605,40 @@ void _showModernLogoutDialog(BuildContext context) {
         decoration: BoxDecoration(
           color: AppColors.secPrimary,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: AppColors.white.withOpacity(0.2),
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.black.withOpacity(0.3),
-              blurRadius: 30,
-              spreadRadius: -10,
-            ),
-          ],
+          border: Border.all(color: AppColors.white.withOpacity(0.2), width: 1.5),
+          boxShadow: [BoxShadow(color: AppColors.black.withOpacity(0.3), blurRadius: 30, spreadRadius: -10)],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Icon
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.15),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.logout_rounded,
-                size: 48,
-                color: AppColors.error,
-              ),
+              decoration: BoxDecoration(color: AppColors.error.withOpacity(0.15), shape: BoxShape.circle),
+              child: const Icon(Icons.logout_rounded, size: 48, color: AppColors.error),
             ),
-
             const SizedBox(height: 20),
-
             Text("Log Out?", style: text24(fontWeight: FontWeight.bold)),
-
             const SizedBox(height: 8),
-
-            Text(
-              "Are you sure you want to log out?\nYou'll need to sign in again to continue.",
-              textAlign: TextAlign.center,
-              style: text15(color: AppColors.white70),
-            ),
-
+            Text("Are you sure you want to log out?\nYou'll need to sign in again to continue.", textAlign: TextAlign.center, style: text15(color: AppColors.white70)),
             const SizedBox(height: 28),
-
-            // Action Buttons
             Row(
               children: [
-                // Cancel Button
                 Expanded(
                   child: TextButton(
                     onPressed: () => Navigator.pop(context),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      "Cancel",
-                      style: text16(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.white70,
-                      ),
-                    ),
+                    style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    child: Text("Cancel", style: text16(fontWeight: FontWeight.w600, color: AppColors.white70)),
                   ),
                 ),
-
                 const SizedBox(width: 12),
-
-                // Logout Button
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.pop(context); // Close dialog
+                      Navigator.pop(context);
                       Get.find<AuthController>().logout();
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.error,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      "Yes, Log Out",
-                      style: text16(fontWeight: FontWeight.bold),
-                    ),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0),
+                    child: Text("Yes, Log Out", style: text16(fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],

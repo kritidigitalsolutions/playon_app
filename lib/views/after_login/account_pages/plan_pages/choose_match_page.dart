@@ -13,6 +13,8 @@ import 'package:play_on_app/utils/custom_button.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 
+import 'package:play_on_app/view_model/after_controller/plan_controller.dart';
+
 class ChooseMatchPage extends StatefulWidget {
   const ChooseMatchPage({super.key});
 
@@ -22,6 +24,7 @@ class ChooseMatchPage extends StatefulWidget {
 
 class _ChooseMatchPageState extends State<ChooseMatchPage> {
   final HomeController homeController = Get.find<HomeController>();
+  final PlanController planController = Get.find<PlanController>();
   late Plan? selectedPlan;
 
   @override
@@ -29,6 +32,18 @@ class _ChooseMatchPageState extends State<ChooseMatchPage> {
     super.initState();
     selectedPlan = Get.arguments as Plan?;
   }
+
+  // ... (inside buildHorizontalMatchList or buildLiveMatchCard)
+  // Instead of Get.toNamed(AppRoutes.matchDetails, ...)
+  // It should probably be:
+  void _onMatchSelected(Match match) {
+    if (selectedPlan != null) {
+      planController.buyPlan(selectedPlan!.id!,
+          matchId: match.sId
+      );
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -243,53 +258,64 @@ class _ChooseMatchPageState extends State<ChooseMatchPage> {
   }
 
   Widget _buildLiveMatchCard(Match match) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: const Color(0xFF0A1F3D),
-        image: DecorationImage(
-          image: NetworkImage(match.banner ?? ""),
-          fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.4), BlendMode.darken),
+    return Obx(() {
+      final isPurchased = planController.hasPurchasedItem(matchId: match.sId);
+      return Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: const Color(0xFF0A1F3D),
+          image: DecorationImage(
+            image: NetworkImage(match.banner ?? ""),
+            fit: BoxFit.cover,
+            colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.4), BlendMode.darken),
+          ),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: AppColors.error, borderRadius: BorderRadius.circular(20)),
-                  child: Text("LIVE", style: text12(fontWeight: FontWeight.bold)),
-                ),
-                const Spacer(),
-                Text(match.venue ?? "", style: text13(color: AppColors.white70)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Text("${match.teamA} vs ${match.teamB}", style: text18(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 6),
-                  Text(match.title ?? "", style: text14(color: AppColors.white70)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(color: AppColors.error, borderRadius: BorderRadius.circular(20)),
+                    child: Text("LIVE", style: text12(fontWeight: FontWeight.bold)),
+                  ),
+                  const Spacer(),
+                  Text(match.venue ?? "", style: text13(color: AppColors.white70)),
                 ],
               ),
-            ),
-            AppButton(
-              height: 35,
-              title: "Watch Now",
-              onTap: () => Get.toNamed(AppRoutes.matchDetails, arguments: match),
-            ),
-          ],
+              const SizedBox(height: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text("${match.teamA} vs ${match.teamB}", style: text18(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 6),
+                    Text(match.title ?? "", style: text14(color: AppColors.white70)),
+                  ],
+                ),
+              ),
+              AppButton(
+                height: 35,
+                title: isPurchased ? "Watch Now" : (selectedPlan != null ? "Select Match" : "Watch Now"),
+                onTap: () {
+                  if (isPurchased) {
+                    Get.toNamed(AppRoutes.matchDetails, arguments: match);
+                  } else if (selectedPlan != null) {
+                    planController.buyPlan(selectedPlan!.id!, matchId: match.sId);
+                  } else {
+                    Get.toNamed(AppRoutes.matchDetails, arguments: match);
+                  }
+                },
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildSectionHeader(String title, String action) {
@@ -324,36 +350,47 @@ class _ChooseMatchPageState extends State<ChooseMatchPage> {
         itemCount: matches.length,
         itemBuilder: (context, index) {
           final match = matches[index];
-          return Container(
-            width: 160,
-            margin: const EdgeInsets.only(right: 12),
-            decoration: BoxDecoration(color: AppColors.blackCard, borderRadius: BorderRadius.circular(12)),
-            child: Column(
-              children: [
-                Container(
-                  height: 100,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                    image: DecorationImage(image: NetworkImage(match.banner ?? ""), fit: BoxFit.cover),
+          return Obx(() {
+            final isPurchased = planController.hasPurchasedItem(matchId: match.sId);
+            return Container(
+              width: 160,
+              margin: const EdgeInsets.only(right: 12),
+              decoration: BoxDecoration(color: AppColors.blackCard, borderRadius: BorderRadius.circular(12)),
+              child: Column(
+                children: [
+                  Container(
+                    height: 100,
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                      image: DecorationImage(image: NetworkImage(match.banner ?? ""), fit: BoxFit.cover),
+                    ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Text("${match.teamA} vs ${match.teamB}", textAlign: TextAlign.center, style: text13(), maxLines: 1, overflow: TextOverflow.ellipsis),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                  child: AppButton(
-                    title: "Watch Now",
-                    onTap: () => Get.toNamed(AppRoutes.matchDetails, arguments: match),
-                    radius: 8,
-                    height: 25,
-                    textStyle: text12(fontWeight: FontWeight.bold),
+                  Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Text("${match.teamA} vs ${match.teamB}", textAlign: TextAlign.center, style: text13(), maxLines: 1, overflow: TextOverflow.ellipsis),
                   ),
-                ),
-              ],
-            ),
-          );
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    child: AppButton(
+                      title: isPurchased ? "Watch Now" : (selectedPlan != null ? "Select Match" : "Watch Now"),
+                      onTap: () {
+                        if (isPurchased) {
+                          Get.toNamed(AppRoutes.matchDetails, arguments: match);
+                        } else if (selectedPlan != null) {
+                          planController.buyPlan(selectedPlan!.id!, matchId: match.sId);
+                        } else {
+                          Get.toNamed(AppRoutes.matchDetails, arguments: match);
+                        }
+                      },
+                      radius: 8,
+                      height: 25,
+                      textStyle: text12(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          });
         },
       ),
     );

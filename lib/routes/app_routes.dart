@@ -22,6 +22,9 @@ class AppRoutes {
   static const String activateTV = "/activateTV";
   static const String referScreen = "/referScreen";
   static const String chooseMatch = "/chooseMatch";
+  static const String selectTeam = "/selectTeam";
+  static const String selectSeries = "/selectSeries";
+  static const String purchasedItems = "/purchasedItems";
   static const String accountDelete = "/accountDelete";
   static const String privacyPolicy = "/privacyPolicy";
   static const String aboutUs = "/aboutUs";

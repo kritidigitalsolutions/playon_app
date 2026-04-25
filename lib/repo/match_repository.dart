@@ -38,4 +38,57 @@ class MatchRepository {
       rethrow;
     }
   }
+
+  Future<dynamic> getTeams({String? sport, String? country, String? search}) async {
+    try {
+      String url = AppUrls.teams;
+      List<String> queryParams = [];
+
+      if (sport != null && sport.isNotEmpty) {
+        queryParams.add("sport=${sport.toLowerCase()}");
+      }
+      if (country != null && country.isNotEmpty) {
+        queryParams.add("country=$country");
+      }
+      if (search != null && search.isNotEmpty) {
+        queryParams.add("name=$search");
+      }
+
+      if (queryParams.isNotEmpty) {
+        url += "?${queryParams.join("&")}";
+      }
+
+      final response = await _apiServices.getApi(url);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<dynamic> getSeries() async {
+    try {
+      final response = await _apiServices.getApi(AppUrls.series);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<dynamic> getFollowedSeries() async {
+    try {
+      final response = await _apiServices.getApi(AppUrls.followedSeries);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<dynamic> toggleFollowSeries(String id) async {
+    try {
+      final response = await _apiServices.patchApi( AppUrls.toggleFollowSeries(id),{});
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

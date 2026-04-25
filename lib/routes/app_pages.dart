@@ -23,6 +23,9 @@ import 'package:play_on_app/views/before_login/login_screen.dart';
 import 'package:play_on_app/views/before_login/otp_verify_screen.dart';
 import 'package:play_on_app/views/before_login/splash_screen.dart';
 import 'package:play_on_app/views/before_login/sport_interest_screen.dart';
+import 'package:play_on_app/views/after_login/account_pages/plan_pages/select_series_page.dart';
+import 'package:play_on_app/views/after_login/account_pages/plan_pages/select_team_page.dart';
+import 'package:play_on_app/views/after_login/account_pages/plan_pages/purchased_items_page.dart';
 import '../views/after_login/account_pages/followed_players_page.dart';
 import 'app_routes.dart';
 
@@ -74,6 +77,9 @@ class AppPages {
     GetPage(name: AppRoutes.activateTV, page: () => ActivateTvScreen()),
     GetPage(name: AppRoutes.referScreen, page: () => ReferralScreen()),
     GetPage(name: AppRoutes.chooseMatch, page: () => ChooseMatchPage()),
+    GetPage(name: AppRoutes.selectTeam, page: () => const SelectTeamPage()),
+    GetPage(name: AppRoutes.selectSeries, page: () => const SelectSeriesPage()),
+    GetPage(name: AppRoutes.purchasedItems, page: () => const PurchasedItemsPage()),
     GetPage(name: AppRoutes.accountDelete, page: () => DeleteAccountScreen()),
     GetPage(name: AppRoutes.followPlayer, page: () => FollowedPlayersScreen()),
 

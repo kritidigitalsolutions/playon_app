@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:play_on_app/utils/hive_service/hive_service.dart';
 import '../exception/app_exception.dart';
 import 'base_api_service.dart';
 
@@ -15,10 +16,14 @@ class NetworkApiService extends BaseApiService {
       ),
     );
 
-    /// Interceptor for logging
+    /// Interceptor for logging and Authorization
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
+          final token = HiveService.getToken();
+          if (token != null && token.isNotEmpty) {
+            options.headers["Authorization"] = "Bearer $token";
+          }
           debugPrint("➡️ REQUEST [${options.method}] => ${options.uri}");
           debugPrint("Headers: ${options.headers}");
           debugPrint("Data: ${options.data}");
