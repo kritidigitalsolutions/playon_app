@@ -1,12 +1,13 @@
+import 'package:play_on_app/model/response_model/match_model.dart' as model;
 import 'package:get/get.dart';
 import 'package:play_on_app/model/response_model/subscription_model.dart';
 import 'package:play_on_app/repo/plan_repository.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
-import 'package:play_on_app/utils/custom_snakebar.dart';
 import 'package:play_on_app/view_model/before_controller/auth_controller.dart';
 
 import '../../data/api_responce_data.dart';
 import '../../model/response_model/plan_model.dart';
+import '../../utils/custom_snakebar.dart';
 
 class PlanController extends GetxController {
   final _api = PlanRepository();
@@ -16,9 +17,18 @@ class PlanController extends GetxController {
   final mySubscription = ApiResponse<MySubscriptionResponse>.loading().obs;
   final subscriptionHistory = ApiResponse<SubscriptionHistoryResponse>.loading().obs;
   final hasAccess = false.obs;
+  final isAdFree = false.obs;
 
   bool isPlanActive(String? planId, {String? slug}) {
     if (planId == null) return false;
+    
+    // If it's a plan that requires choosing an item, it shouldn't show as "Purchased" globally
+    // because the user can buy it for another item.
+    if (slug == "one-match-pass" || slug == "series-pass" || slug == "team-pass" || 
+        slug?.contains("match") == true || slug?.contains("series") == true || slug?.contains("team") == true) {
+      return false;
+    }
+
     final subs = mySubscription.value.data?.subscriptions ?? [];
     
     // Check if any active subscription matches this planId
@@ -29,27 +39,50 @@ class PlanController extends GetxController {
     );
   }
 
+  // Comprehensive check if user can watch a specific match
+  bool canWatchMatch(model.Match? match) {
+    if (match == null) return false;
+    if (hasAccess.value) return true; // Global full access
+
+    final activeSubs = mySubscription.value.data?.subscriptions ?? [];
+    final allSubs = activeSubs.where((sub) => sub.status == 'active').toList();
+
+    // 1. Check if specific match is purchased
+    if (allSubs.any((sub) => sub.matchId == match.sId)) return true;
+
+    // 2. Check if the series (tournament) this match belongs to is purchased
+    // Using tournament name or ID if available
+    if (allSubs.any((sub) => sub.seriesId != null && 
+        (sub.seriesId == match.tournament || sub.seriesId == match.sId))) return true;
+
+    // 3. Check if any of the teams in this match are purchased
+    if (allSubs.any((sub) => sub.teamId != null && 
+        (sub.teamId == match.teamA || sub.teamId == match.teamB))) return true;
+
+    return false;
+  }
+
   // Check if user has already purchased a specific item
   bool hasPurchasedItem({String? matchId, String? seriesId, String? teamId}) {
+    if (hasAccess.value) return true; // Global access grants everything
+
     final history = subscriptionHistory.value.data?.subscriptions ?? [];
     final activeSubs = mySubscription.value.data?.subscriptions ?? [];
-    
-    // Combine both just in case, though mySubscription should have active ones
-    final allSubs = [...history, ...activeSubs];
+    final allSubs = [...history, ...activeSubs].where((sub) => sub.status == 'active').toList();
 
     if (matchId != null) {
-      return allSubs.any((sub) => sub.status == 'active' && sub.matchId == matchId);
+      return allSubs.any((sub) => sub.matchId == matchId);
     }
     if (seriesId != null) {
-      return allSubs.any((sub) => sub.status == 'active' && sub.seriesId == seriesId);
+      return allSubs.any((sub) => sub.seriesId == seriesId);
     }
     if (teamId != null) {
-      return allSubs.any((sub) => sub.status == 'active' && sub.teamId == teamId);
+      return allSubs.any((sub) => sub.teamId == teamId);
     }
     return false;
   }
 
-  var isPaymentProcessing = false.obs;
+  final isPaymentProcessing = false.obs;
   String? _currentPlanId;
   String? _currentMatchId;
   String? _currentSeriesId;
@@ -65,7 +98,6 @@ class PlanController extends GetxController {
     fetchPlans();
     fetchMySubscription();
     fetchSubscriptionHistory();
-    checkAccess();
   }
 
   @override
@@ -74,8 +106,8 @@ class PlanController extends GetxController {
     super.onClose();
   }
 
+
   void fetchPlans() {
-    planList.value = ApiResponse.loading();
     _api.getPlans().then((value) {
       planList.value = ApiResponse.completed(PlanModel.fromJson(value));
     }).onError((error, stackTrace) {
@@ -84,16 +116,15 @@ class PlanController extends GetxController {
   }
 
   void fetchMySubscription() {
-    mySubscription.value = ApiResponse.loading();
     _api.getMySubscription().then((value) {
       mySubscription.value = ApiResponse.completed(MySubscriptionResponse.fromJson(value));
+      checkAccess();
     }).onError((error, stackTrace) {
       mySubscription.value = ApiResponse.error(error.toString());
     });
   }
 
   void fetchSubscriptionHistory() {
-    subscriptionHistory.value = ApiResponse.loading();
     _api.getSubscriptionHistory().then((value) {
       subscriptionHistory.value = ApiResponse.completed(SubscriptionHistoryResponse.fromJson(value));
     }).onError((error, stackTrace) {
@@ -102,24 +133,34 @@ class PlanController extends GetxController {
   }
 
   void checkAccess() {
-    _api.checkAccess().then((value) {
-      final response = CheckAccessResponse.fromJson(value);
-      hasAccess.value = response.hasAccess ?? false;
-    }).onError((error, stackTrace) {
-      hasAccess.value = false;
-    });
+    final subs = mySubscription.value.data?.subscriptions ?? [];
+    
+    // Check for any plan that gives full access (no specific itemId)
+    final hasGlobalAccess = subs.any((sub) => 
+      sub.status == 'active' && 
+      (sub.planId?.slug == 'full-access' || sub.planId?.slug == 'unlimited-sports-pass' || 
+       (sub.matchId == null && sub.seriesId == null && sub.teamId == null))
+    );
+    
+    hasAccess.value = hasGlobalAccess;
+    
+    // Check for ad-free status: Only the "Go Ad-Free" plan removes ads
+    // Every other plan (Match Pass, Unlimited Sports, etc.) should still show ads
+    isAdFree.value = subs.any((sub) => 
+      sub.status == 'active' && 
+      (sub.planId?.buttonText == 'Go Ad-Free' || sub.planId?.slug == 'ad-free-pass')
+    );
   }
 
   Future<void> cancelSubscription(String id) async {
     try {
       final response = await _api.cancelSubscription(id);
       if (response['success'] == true) {
-        showCustomSnackbar(title: "Success", message: "Subscription cancelled successfully", type: SnackType.success);
+        showCustomSnackbar(title: 'Success', message: 'Subscription cancelled successfully', type: SnackType.success);
         fetchMySubscription();
-        fetchSubscriptionHistory();
       }
     } catch (e) {
-      showCustomSnackbar(title: "Error", message: "Failed to cancel subscription: $e", type: SnackType.error);
+      showCustomSnackbar(title: 'Error', message: e.toString(), type: SnackType.error);
     }
   }
 
@@ -127,11 +168,11 @@ class PlanController extends GetxController {
     try {
       final response = await _api.deleteSubscription(id);
       if (response['success'] == true) {
-        showCustomSnackbar(title: "Success", message: "Subscription deleted successfully", type: SnackType.success);
+        showCustomSnackbar(title: 'Success', message: 'Subscription deleted successfully', type: SnackType.success);
         fetchSubscriptionHistory();
       }
     } catch (e) {
-      showCustomSnackbar(title: "Error", message: "Failed to delete subscription: $e", type: SnackType.error);
+      showCustomSnackbar(title: 'Error', message: e.toString(), type: SnackType.error);
     }
   }
 
@@ -141,78 +182,72 @@ class PlanController extends GetxController {
     _currentMatchId = matchId;
     _currentSeriesId = seriesId;
     _currentTeamId = teamId;
-    try {
-      final response = await _api.createOrder(planId,
-          itemId: itemId, seriesId: seriesId, matchId: matchId, teamId: teamId);
-      if (response['success'] == true) {
-        final order = response['order'];
-        final key = response['key'];
-        final authController = Get.find<AuthController>();
-        final userData = authController.userData.value;
 
+    try {
+      final response = await _api.createOrder(planId, itemId: itemId, seriesId: seriesId, matchId: matchId, teamId: teamId);
+      
+      if (response['success'] == true) {
+        final orderData = response['order'];
+        final auth = Get.find<AuthController>();
+        final key = response['key'] ?? 'rzp_test_YourKeyHere';
+        
         var options = {
           'key': key,
-          'amount': order['amount'] * 100, // Amount in paise
+          'amount': orderData['amount'], // Backend usually returns amount in paise for Razorpay
           'name': 'PlayOn',
-          'order_id': order['id'],
-          'description': response['plan']['title'],
+          'order_id': orderData['id'],
+          'description': response['plan']?['title'] ?? 'Subscription Payment',
           'prefill': {
-            'contact': userData?.mobile ?? '',
-            'email': userData?.email ?? '',
-            'name': userData?.fullName ?? ''
+            'contact': auth.userData.value?.mobile ?? '',
+            'email': auth.userData.value?.email ?? ''
           },
           'external': {
             'wallets': ['paytm']
           }
         };
+
         _razorpay.open(options);
       }
     } catch (e) {
-      showCustomSnackbar(title: "Error", message: "Failed to initiate payment: $e", type: SnackType.error);
-    } finally {
       isPaymentProcessing.value = false;
+      showCustomSnackbar(title: 'Error', message: e.toString(), type: SnackType.error);
     }
   }
 
-  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
-    isPaymentProcessing.value = true;
-    try {
-      final verifyData = {
-        "razorpay_order_id": response.orderId,
-        "razorpay_payment_id": response.paymentId,
-        "razorpay_signature": response.signature,
-        "planId": _currentPlanId,
-        "matchId": _currentMatchId,
-        "seriesId": _currentSeriesId,
-        "teamId": _currentTeamId,
-      };
+  void _handlePaymentSuccess(PaymentSuccessResponse response) {
+    final Map<String, dynamic> verifyData = {
+      'razorpay_payment_id': response.paymentId!,
+      'razorpay_order_id': response.orderId!,
+      'razorpay_signature': response.signature!,
+      'planId': _currentPlanId!,
+    };
 
-      final result = await _api.verifyPayment(verifyData);
-      if (result['success'] == true) {
-        showCustomSnackbar(title: "Success", message: "Payment verified successfully!", type: SnackType.success);
-        Get.find<AuthController>().getUserProfile(); // Refresh user data to show subscription
-        fetchMySubscription();
-        fetchSubscriptionHistory();
-        checkAccess();
-        Get.back();
-      } else {
-        showCustomSnackbar(title: "Error", message: "Payment verification failed", type: SnackType.error);
-      }
-    } catch (e) {
-      showCustomSnackbar(title: "Error", message: "Verification error: $e", type: SnackType.error);
-    } finally {
+    if (_currentMatchId != null) verifyData['matchId'] = _currentMatchId;
+    if (_currentSeriesId != null) verifyData['seriesId'] = _currentSeriesId;
+    if (_currentTeamId != null) verifyData['teamId'] = _currentTeamId;
+
+    _api.verifyPayment(verifyData).then((value) {
       isPaymentProcessing.value = false;
-    }
+      showCustomSnackbar(title: 'Success', message: 'Payment successful', type: SnackType.success);
+      fetchMySubscription();
+      fetchSubscriptionHistory();
+      
+      // Navigate back if on plan selection page
+      if (Get.currentRoute.contains('Select')) {
+        Get.back();
+      }
+    }).catchError((error) {
+      isPaymentProcessing.value = false;
+      showCustomSnackbar(title: 'Error', message: 'Payment verification failed', type: SnackType.error);
+    });
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
-    showCustomSnackbar(
-        title: "Payment Failed",
-        message: "Code: ${response.code}\nMessage: ${response.message}",
-        type: SnackType.error);
+    isPaymentProcessing.value = false;
+    showCustomSnackbar(title: 'Error', message: response.message ?? 'Payment failed', type: SnackType.error);
   }
 
   void _handleExternalWallet(ExternalWalletResponse response) {
-    showCustomSnackbar(title: "External Wallet", message: response.walletName ?? "", type: SnackType.info);
+    isPaymentProcessing.value = false;
   }
 }

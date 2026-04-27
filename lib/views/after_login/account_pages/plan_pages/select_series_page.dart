@@ -9,6 +9,8 @@ import 'package:play_on_app/view_model/after_controller/plan_controller.dart';
 import 'package:play_on_app/view_model/after_controller/series_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 
+import '../../../custom_background.dart/custum_date.dart';
+
 class SelectSeriesPage extends StatefulWidget {
   const SelectSeriesPage({super.key});
 
@@ -134,7 +136,8 @@ class _SelectSeriesPageState extends State<SelectSeriesPage> {
                               Text(series.title ?? "", style: text16(fontWeight: FontWeight.bold)),
                               if (series.startDate != null)
                                 Text(
-                                  "${series.startDate}${series.endDate != null ? ' - ${series.endDate}' : ''}",
+                                  "${formatDate(series.startDate!)}"
+                                      "${series.endDate != null ? ' - ${formatDate(series.endDate!)}' : ''}",
                                   style: text12(color: AppColors.white70),
                                 ),
                             ],
@@ -163,13 +166,23 @@ class _SelectSeriesPageState extends State<SelectSeriesPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text("Matches: ${series.totalMatches ?? 0}", style: text12(color: AppColors.white70)),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("Total Matches: ${series.totalMatches ?? 0}", style: text12(color: AppColors.white70)),
+                            const SizedBox(height: 4),
+                            Text("Sport: ${series.sport?.capitalizeFirst ?? 'N/A'}", style: text12(color: AppColors.white70)),
+                          ],
+                        ),
                         Obx(() {
                           final isPurchased = planController.hasPurchasedItem(seriesId: series.sId);
                           return ElevatedButton(
                             onPressed: () {
                               if (isPurchased) {
-                                // Maybe go to matches list of this series
+                                // Navigate to a filtered view or show success
+                                Get.back();
+                                Get.snackbar("Access Granted", "You have full access to ${series.title}", 
+                                  backgroundColor: Colors.green.withOpacity(0.7), colorText: Colors.white);
                               } else if (selectedPlan?.id != null && series.sId != null) {
                                 planController.buyPlan(selectedPlan!.id!, seriesId: series.sId);
                               }
@@ -179,7 +192,7 @@ class _SelectSeriesPageState extends State<SelectSeriesPage> {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                               padding: const EdgeInsets.symmetric(horizontal: 20),
                             ),
-                            child: Text(isPurchased ? "Purchased" : "Select Series",
+                            child: Text(isPurchased ? "Watch Now" : "Select Series",
                                 style: text12(fontWeight: FontWeight.bold, color: Colors.white)),
                           );
                         }),

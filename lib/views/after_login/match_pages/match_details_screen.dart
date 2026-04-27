@@ -10,8 +10,11 @@ import 'package:play_on_app/utils/custom_button.dart';
 import 'package:play_on_app/view_model/after_controller/match_controller/match_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 
+import '../../../view_model/after_controller/plan_controller.dart';
+
 class MatchDetailScreen extends StatelessWidget {
   final MatchDetailsController controller = Get.put(MatchDetailsController());
+  final PlanController planController = Get.find<PlanController>();
 
   MatchDetailScreen({super.key});
 

@@ -188,8 +188,7 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                           text: "Unlock Now",
                           icon: Icons.lock,
                           onPressed: () {
-                            Get.toNamed(AppRoutes.accessPlan);
-                            controller.unlockMatch();
+                            Get.toNamed(AppRoutes.accessPlan, arguments: controller.match.value);
                           },
                         ),
                       ],
@@ -357,6 +356,10 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
   Widget _buildHighlights() {
     return Obx(() {
       final match = videoControllerX.match.value;
+      
+      // If no stats are available, don't show the sections or show placeholders
+      final hasStats = match?.description != null || match?.score != null;
+      
       return Container(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -364,12 +367,15 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
           children: [
             _buildHighlightCard(
               'Match Recap',
-              'Team 1: ${match?.teamA ?? "N/A"}\n${match?.score?.split('-').first.trim() ?? "0"} Goals',
-              'Team 2: ${match?.teamB ?? "N/A"}\n${match?.score?.split('-').last.trim() ?? "0"} Goals',
+              '${match?.teamA ?? "Team A"}: ${match?.score?.split('-').first.trim() ?? "0"} Goals',
+              '${match?.teamB ?? "Team B"}: ${match?.score?.split('-').last.trim() ?? "0"} Goals',
               matchSummary: match?.description,
             ),
-            const SizedBox(height: 16),
-            _buildMatchStats(match),
+            if (hasStats) ...[
+              const SizedBox(height: 16),
+              _buildMatchStats(match),
+            ],
+            // Only show performers if we have some data or it's a major match
             const SizedBox(height: 16),
             _buildCurrentPlayersSection(match),
           ],
@@ -545,6 +551,10 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
   }
 
   Widget _buildCurrentPlayersSection(model.Match? match) {
+    // If it's a real match, we might want to hide these placeholders if we don't have real data
+    // For now, I'll keep them but make them slightly more generic if no data exists
+    final hasPerformers = match?.tournament?.contains("World Cup") ?? false;
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
@@ -574,29 +584,31 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                 children: [
                   Expanded(
                     child: _buildPlayerRow(
-                      'Goal Scorer',
-                      'Neymar Jr. – 1 Goal',
+                      'Match Status',
+                      match?.status ?? 'Completed',
                     ),
                   ),
                   Expanded(
                     child: _buildPlayerRow(
-                      'Playmaker',
-                      'Lionel Messi – 1 Assist',
+                      'Venue',
+                      'International Stadium',
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildPlayerRow(
-                      'Impact Player',
-                      "Vinícius Jr. – Created multiple chances",
+              if (hasPerformers) ...[
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildPlayerRow(
+                        'Featured',
+                        "High intensity match with multiple goal attempts.",
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ]
             ],
           ),
         ),

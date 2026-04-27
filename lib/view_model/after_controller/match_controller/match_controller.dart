@@ -28,6 +28,7 @@ class MatchDetailsController extends GetxController {
       
       // Re-check access whenever plan status changes
       ever(planController.hasAccess, (_) => checkAccess());
+      ever(planController.mySubscription, (_) => checkAccess());
       checkAccess();
     }
   }
@@ -35,13 +36,8 @@ class MatchDetailsController extends GetxController {
   void checkAccess() {
     if (match.value == null) return;
     
-    // Check if user has overall access or has purchased this specific match
-    bool hasPurchased = planController.hasPurchasedItem(matchId: match.value!.sId);
-    if (planController.hasAccess.value || hasPurchased) {
-      isLock.value = false;
-    } else {
-      isLock.value = true;
-    }
+    // Check if user has overall access or has purchased this specific match/series/team
+    isLock.value = !planController.canWatchMatch(match.value);
   }
 
   void _initializeMatchStatus() {

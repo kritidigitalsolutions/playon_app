@@ -11,6 +11,11 @@ import 'package:play_on_app/model/response_model/player_model.dart';
 
 import '../../../routes/app_routes.dart';
 
+import 'package:play_on_app/view_model/after_controller/plan_controller.dart';
+import 'package:play_on_app/model/response_model/match_model.dart' as match_model;
+
+import '../../../utils/custom_button.dart';
+
 class FollowingScreen extends StatefulWidget {
   const FollowingScreen({super.key});
 
@@ -21,6 +26,7 @@ class FollowingScreen extends StatefulWidget {
 class _FollowingScreenState extends State<FollowingScreen> {
   final PlayerController _playerController = Get.find<PlayerController>();
   final SeriesController _seriesController = Get.put(SeriesController());
+  final PlanController _planController = Get.find<PlanController>();
   final RxSet<String> _expandedSeriesIds = <String>{}.obs;
 
   @override
@@ -104,9 +110,9 @@ class _FollowingScreenState extends State<FollowingScreen> {
         duration: const Duration(milliseconds: 300),
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.08),
+          color: Colors.white.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withOpacity(0.18)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
@@ -158,10 +164,26 @@ class _FollowingScreenState extends State<FollowingScreen> {
                           color: Colors.white70,
                         ),
                         const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.check_circle, color: Color(0xFF4CAF50), size: 28),
-                          onPressed: () => _seriesController.toggleFollowSeries(series.sId!),
-                        ),
+                        Obx(() {
+                          final isPurchased = _planController.hasPurchasedItem(seriesId: series.sId);
+                          if (isPurchased) {
+                            return CustomElevatedIconButton(
+                              height: 25,
+                              iconSize: 12,
+                              backgroundColor: AppColors.success,
+                              textStyle: text11(fontWeight: FontWeight.bold),
+                              text: "Watch",
+                              icon: Icons.play_arrow,
+                              onPressed: () {
+                                // You could navigate to first match or a series detail
+                              },
+                            );
+                          }
+                          return IconButton(
+                            icon: const Icon(Icons.check_circle, color: Color(0xFF4CAF50), size: 28),
+                            onPressed: () => _seriesController.toggleFollowSeries(series.sId!),
+                          );
+                        }),
                       ],
                     ),
                   ),
@@ -206,7 +228,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
@@ -229,6 +251,20 @@ class _FollowingScreenState extends State<FollowingScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              const SizedBox(width: 8),
+              Obx(() {
+                final isAccessible = _planController.canWatchMatch(match_model.Match(
+                  sId: match.sId,
+                  tournament: series.sId,
+                  teamA: series.teamA,
+                  teamB: series.teamB,
+                ));
+                
+                if (isAccessible) {
+                  return Icon(Icons.play_circle_fill, color: AppColors.success, size: 20);
+                }
+                return Icon(Icons.lock_outline, color: Colors.white24, size: 16);
+              }),
             ],
           ),
         );

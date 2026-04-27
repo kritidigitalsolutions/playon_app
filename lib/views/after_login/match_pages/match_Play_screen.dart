@@ -4,13 +4,15 @@ import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 import 'package:play_on_app/res/app_colors.dart';
+import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/utils/custom_button.dart';
 import 'package:play_on_app/view_model/after_controller/match_controller/match_controller.dart';
 import 'package:play_on_app/views/after_login/match_pages/full_video_play_screen.dart';
-import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 import 'package:video_player/video_player.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
+
+import '../../custom_background.dart/custom_widget.dart';
 
 class MatchPlayScreen extends StatefulWidget {
   const MatchPlayScreen({super.key});
@@ -21,6 +23,7 @@ class MatchPlayScreen extends StatefulWidget {
 
 class _MatchPlayScreenState extends State<MatchPlayScreen> {
   final videoControllerX = Get.put(VideoControllerX());
+  final MatchDetailsController controller = Get.put(MatchDetailsController());
   int _selectedTabIndex = 0;
 
   @override
@@ -60,8 +63,21 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
         color: Colors.black,
         child: Stack(
           children: [
-            /// 🎥 VIDEO
+            /// 🎥 VIDEO (Only show if unlocked)
             Obx(() {
+              if (controller.isLock.value) {
+                return Container(
+                  color: Colors.black,
+                  child: const Center(
+                    child: Icon(
+                      Icons.play_circle_outline,
+                      size: 80,
+                      color: Colors.white38,
+                    ),
+                  ),
+                );
+              }
+
               if (videoControllerX.isLoading.value) {
                 return const Center(child: CircularProgressIndicator());
               }
@@ -101,9 +117,52 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
               );
             }),
 
+            /// 🔒 LOCK OVERLAY
+            Obx(() {
+              if (controller.isLock.value) {
+                return Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withOpacity(0.88),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.lock_rounded,
+                          size: 75,
+                          color: Colors.white70,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          "This Match is Locked",
+                          style: text20(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "Subscribe to watch live",
+                          style: text15(color: Colors.white70),
+                        ),
+                        const SizedBox(height: 24),
+
+                        CustomElevatedIconButton(
+                          height: 30,
+                          iconSize: 18,
+                          text: "Unlock Now",
+                          icon: Icons.lock,
+                          onPressed: () {
+                            Get.toNamed(AppRoutes.accessPlan, arguments: controller.match.value);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              return const SizedBox();
+            }),
+
             /// 🎮 CONTROLS
             Obx(() {
-              if (!videoControllerX.showControls.value) {
+              if (controller.isLock.value || !videoControllerX.showControls.value) {
                 return const SizedBox();
               }
 

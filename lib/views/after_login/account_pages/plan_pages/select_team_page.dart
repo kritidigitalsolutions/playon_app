@@ -198,7 +198,9 @@ class _SelectTeamPageState extends State<SelectTeamPage> {
       return GestureDetector(
         onTap: () {
           if (isPurchased) {
-            Get.snackbar("Already Purchased", "You already have access to ${team['name']}");
+            // Navigate to matches for this team or just show info
+            Get.snackbar("Access Granted", "You have access to all matches for ${team['name']}",
+                backgroundColor: Colors.green.withOpacity(0.7), colorText: Colors.white);
           } else if (selectedPlan?.id != null) {
             planController.buyPlan(selectedPlan!.id!, teamId: team['_id']);
           }
@@ -209,10 +211,10 @@ class _SelectTeamPageState extends State<SelectTeamPage> {
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
               decoration: BoxDecoration(
-                color: isPurchased ? AppColors.primary.withValues(alpha: 0.2) : AppColors.white.withValues(alpha: 0.1),
+                color: isPurchased ? AppColors.primary.withValues(alpha: 0.1) : AppColors.white.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isPurchased ? AppColors.primary : AppColors.white.withValues(alpha: 0.2),
+                  color: isPurchased ? AppColors.primary : AppColors.white.withValues(alpha: 0.1),
                   width: 1.5,
                 ),
               ),
@@ -262,11 +264,18 @@ class _SelectTeamPageState extends State<SelectTeamPage> {
                       ),
                     ],
                   ),
-                  if (isPurchased)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Text("(Purchased)", style: text10(color: AppColors.success, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isPurchased ? Colors.green : AppColors.primary,
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    child: Text(
+                      isPurchased ? "Watch Now" : "Select Team",
+                      style: text10(fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                  ),
                 ],
               ),
             ),

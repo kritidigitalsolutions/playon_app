@@ -61,6 +61,7 @@ class HomeController extends GetxController {
     isBannerLoading.value = true;
     try {
       final res = await _matchRepository.getBannerAds();
+      print("Banner Response: $res");
       if (res['success'] == true) {
         final data = BannerModel.fromJson(res);
         bannerList.assignAll(data.banners ?? []);
@@ -175,6 +176,7 @@ class HomeController extends GetxController {
     isSilentLoading.value = true;
     
     try {
+      fetchBanners();
       // Fetch Live Matches
       final liveRes = await _matchRepository.getLiveMatches();
       if (liveRes['success'] == true) {

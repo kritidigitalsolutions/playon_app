@@ -104,7 +104,7 @@ class PlanRepository {
       if (token != null) {
         _apiService.setToken(token);
       }
-      final response = await _apiService.getApi(AppUrls.cancelSubscription(id));
+      final response = await _apiService.patchApi(AppUrls.cancelSubscription(id), {});
       return response;
     } catch (e) {
       rethrow;
