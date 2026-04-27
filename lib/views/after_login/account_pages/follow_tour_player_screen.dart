@@ -11,6 +11,7 @@ import 'package:play_on_app/model/response_model/player_model.dart';
 
 import '../../../routes/app_routes.dart';
 
+import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
 import 'package:play_on_app/view_model/after_controller/plan_controller.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as match_model;
 
@@ -166,19 +167,19 @@ class _FollowingScreenState extends State<FollowingScreen> {
                         const SizedBox(width: 8),
                         Obx(() {
                           final isPurchased = _planController.hasPurchasedItem(seriesId: series.sId);
-                          if (isPurchased) {
-                            return CustomElevatedIconButton(
-                              height: 25,
-                              iconSize: 12,
-                              backgroundColor: AppColors.success,
-                              textStyle: text11(fontWeight: FontWeight.bold),
-                              text: "Watch",
-                              icon: Icons.play_arrow,
-                              onPressed: () {
-                                // You could navigate to first match or a series detail
-                              },
-                            );
-                          }
+                          // if (isPurchased) {
+                          //   return CustomElevatedIconButton(
+                          //     height: 25,
+                          //     iconSize: 12,
+                          //     backgroundColor: AppColors.success,
+                          //     textStyle: text11(fontWeight: FontWeight.bold),
+                          //     text: "Watch",
+                          //     icon: Icons.play_arrow,
+                          //     onPressed: () {
+                          //       // You could navigate to first match or a series detail
+                          //     },
+                          //   );
+                          // }
                           return IconButton(
                             icon: const Icon(Icons.check_circle, color: Color(0xFF4CAF50), size: 28),
                             onPressed: () => _seriesController.toggleFollowSeries(series.sId!),
@@ -222,50 +223,73 @@ class _FollowingScreenState extends State<FollowingScreen> {
     if (series.matches == null || series.matches!.isEmpty) {
       return const Text("No matches scheduled", style: TextStyle(color: Colors.white38, fontSize: 12));
     }
+    final HomeController homeController = Get.find<HomeController>();
+
     return Column(
       children: series.matches!.take(3).map((match) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(match.matchName ?? "", style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
-                    Text(_formatDateWithTime(match.date), style: const TextStyle(color: Colors.white60, fontSize: 11)),
-                  ],
+        // Try to find full match data from HomeController to get thumbnail
+        final fullMatchData = homeController.allMatches.firstWhereOrNull((m) => m.sId == match.sId);
+
+        return GestureDetector(
+          onTap: () {
+            // Map SeriesMatch to Match model for navigation
+            final matchObj = match_model.Match(
+              sId: match.sId,
+              title: fullMatchData?.title ?? match.matchName,
+              matchDate: match.date,
+              status: match.status,
+              tournament: series.title,
+              teamA: series.teamA,
+              teamB: series.teamB,
+              thumbnail: fullMatchData?.thumbnail, // Pass the actual image
+              banner: fullMatchData?.banner,
+              sport: fullMatchData?.sport ?? series.sport,
+            );
+            Get.toNamed(AppRoutes.matchDetails, arguments: matchObj);
+          },
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(match.matchName ?? "", style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+                      Text(_formatDateWithTime(match.date), style: const TextStyle(color: Colors.white60, fontSize: 11)),
+                    ],
+                  ),
                 ),
-              ),
-              Text(
-                match.status?.toUpperCase() ?? "",
-                style: TextStyle(
-                  color: match.status?.toLowerCase() == 'live' ? Colors.redAccent : Colors.white38,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
+                Text(
+                  match.status?.toUpperCase() ?? "",
+                  style: TextStyle(
+                    color: match.status?.toLowerCase() == 'live' ? Colors.redAccent : Colors.white38,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Obx(() {
-                final isAccessible = _planController.canWatchMatch(match_model.Match(
-                  sId: match.sId,
-                  tournament: series.sId,
-                  teamA: series.teamA,
-                  teamB: series.teamB,
-                ));
-                
-                if (isAccessible) {
-                  return Icon(Icons.play_circle_fill, color: AppColors.success, size: 20);
-                }
-                return Icon(Icons.lock_outline, color: Colors.white24, size: 16);
-              }),
-            ],
+                const SizedBox(width: 8),
+                Obx(() {
+                  final isAccessible = _planController.canWatchMatch(match_model.Match(
+                    sId: match.sId,
+                    tournament: series.sId,
+                    teamA: series.teamA,
+                    teamB: series.teamB,
+                  ));
+                  
+                  if (isAccessible) {
+                    return Icon(Icons.play_circle_fill, color: AppColors.success, size: 20);
+                  }
+                  return Icon(Icons.lock_outline, color: Colors.white24, size: 16);
+                }),
+              ],
+            ),
           ),
         );
       }).toList(),
@@ -308,25 +332,32 @@ class _FollowingScreenState extends State<FollowingScreen> {
     return Column(
       children: playerIds.take(5).map((playerId) {
         final player = _playerController.allAvailablePlayers.firstWhereOrNull((p) => p.id == playerId);
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 4),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 10,
-                backgroundColor: Colors.white10,
-                backgroundImage: player?.image != null ? NetworkImage(player!.image!) : null,
-                child: player?.image == null ? const Icon(Icons.person, size: 10, color: Colors.white38) : null,
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  player?.name ?? "Player",
-                  style: const TextStyle(color: Colors.white60, fontSize: 11),
-                  overflow: TextOverflow.ellipsis,
+        return GestureDetector(
+          onTap: () {
+            if (player != null) {
+              Get.toNamed(AppRoutes.playerDetail, arguments: player);
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 10,
+                  backgroundColor: Colors.white10,
+                  backgroundImage: player?.image != null ? NetworkImage(player!.image!) : null,
+                  child: player?.image == null ? const Icon(Icons.person, size: 10, color: Colors.white38) : null,
                 ),
-              ),
-            ],
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    player?.name ?? "Player",
+                    style: const TextStyle(color: Colors.white60, fontSize: 11),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       }).toList(),

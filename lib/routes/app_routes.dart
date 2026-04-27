@@ -9,6 +9,7 @@ class AppRoutes {
   // my home pages
 
   static const String myHomePage = "/myHmePage";
+  static const String home = "/home";
   static const String notification = '/notification';
   static const String channelPlay = '/channelPlay';
 
@@ -31,6 +32,7 @@ class AppRoutes {
   static const String refundPolicy = "/refundPolicy";
   static const String termsConditions = "/termsConditions";
   static const String followPlayer = "/followPlayer";
+  static const String playerDetail = "/playerDetail";
 
 
   // match pages

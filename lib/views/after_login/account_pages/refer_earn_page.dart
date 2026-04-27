@@ -2,10 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/utils/custom_button.dart';
+import 'package:play_on_app/utils/hive_service/hive_service.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ReferralScreen extends StatelessWidget {
   const ReferralScreen({super.key});
+  Future<void> _openWhatsApp() async {
+    final user = HiveService.getUser();
+
+    final text = "Hey! Join me on PlayOn App to watch live sports and matches. "
+        "Use my referral to get an exclusive 50% discount on your first match pass! 🏏⚽\n"
+        "Download now: https://playon.com/download?ref=${user?.phone ?? 'playon'}";
+
+    final url = Uri.parse(
+      "https://wa.me/?text=${Uri.encodeComponent(text)}",
+    );
+
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      throw Exception("Could not open WhatsApp");
+    }
+  }
+
+  // void _shareReferral() {
+  //   final user = HiveService.getUser();
+  //   final name = user?.name ?? "your friend";
+  //   final text = "Hey! Join me on PlayOn App to watch live sports and matches. "
+  //       "Use my referral to get an exclusive 50% discount on your first match pass! 🏏⚽\n"
+  //       "Download now: https://playon.com/download?ref=${user?.phone ?? 'playon'}";
+  //
+  //   Share.share(text, subject: 'Join PlayOn and watch Live Sports!');
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +116,9 @@ class ReferralScreen extends StatelessWidget {
                     borderRadius: 8,
                     text: "Invite via WhatsApp",
                     icon: Icons.chat,
-                    onPressed: () {},
+                    onPressed: () {
+                      _openWhatsApp();
+                    },
                   ),
                 ),
               ],

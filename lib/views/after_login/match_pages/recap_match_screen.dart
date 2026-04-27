@@ -367,8 +367,8 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
           children: [
             _buildHighlightCard(
               'Match Recap',
-              '${match?.teamA ?? "Team A"}: ${match?.score?.split('-').first.trim() ?? "0"} Goals',
-              '${match?.teamB ?? "Team B"}: ${match?.score?.split('-').last.trim() ?? "0"} Goals',
+              '${match?.teamA ?? "Team A"}: ${match?.score?.split('-').first.trim() ?? "0"}',
+              '${match?.teamB ?? "Team B"}: ${match?.score?.split('-').last.trim() ?? "0"}',
               matchSummary: match?.description,
             ),
             if (hasStats) ...[

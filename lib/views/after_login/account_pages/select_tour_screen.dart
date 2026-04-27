@@ -3,7 +3,9 @@ import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'dart:ui';
 
-import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
+import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
+import 'package:play_on_app/routes/app_routes.dart';
+import 'package:play_on_app/model/response_model/match_model.dart' as match_model;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -14,7 +16,11 @@ import 'package:play_on_app/view_model/after_controller/player_controller.dart';
 import 'package:play_on_app/view_model/after_controller/series_controller.dart';
 import 'dart:ui';
 
-import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
+import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
+import 'package:play_on_app/routes/app_routes.dart';
+import 'package:play_on_app/model/response_model/match_model.dart' as match_model;
+
+import '../../custom_background.dart/custom_widget.dart';
 
 class SelectTourScreen extends StatefulWidget {
   const SelectTourScreen({super.key});
@@ -256,36 +262,57 @@ class _SelectTourScreenState extends State<SelectTourScreen> {
     if (series.matches == null || series.matches!.isEmpty) {
       return const Text("No matches scheduled", style: TextStyle(color: Colors.white38, fontSize: 12));
     }
+    final HomeController homeController = Get.find<HomeController>();
+
     return Column(
       children: series.matches!.take(3).map((match) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(match.matchName ?? "", style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
-                    Text(_formatDateWithTime(match.date), style: const TextStyle(color: Colors.white60, fontSize: 11)),
-                  ],
+        final fullMatchData = homeController.allMatches.firstWhereOrNull((m) => m.sId == match.sId);
+
+        return GestureDetector(
+          onTap: () {
+            final matchObj = match_model.Match(
+              sId: match.sId,
+              title: fullMatchData?.title ?? match.matchName,
+              matchDate: match.date,
+              status: match.status,
+              tournament: series.title,
+              teamA: series.teamA,
+              teamB: series.teamB,
+              thumbnail: fullMatchData?.thumbnail,
+              banner: fullMatchData?.banner,
+              sport: fullMatchData?.sport ?? series.sport,
+            );
+            Get.toNamed(AppRoutes.matchDetails, arguments: matchObj);
+          },
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(match.matchName ?? "", style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+                      Text(_formatDateWithTime(match.date), style: const TextStyle(color: Colors.white60, fontSize: 11)),
+                    ],
+                  ),
                 ),
-              ),
-              Text(
-                match.status?.toUpperCase() ?? "",
-                style: TextStyle(
-                  color: match.status?.toLowerCase() == 'live' ? Colors.redAccent : Colors.white38,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
+                Text(
+                  match.status?.toUpperCase() ?? "",
+                  style: TextStyle(
+                    color: match.status?.toLowerCase() == 'live' ? Colors.redAccent : Colors.white38,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       }).toList(),

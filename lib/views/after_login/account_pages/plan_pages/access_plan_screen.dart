@@ -15,7 +15,7 @@ import '../../../../model/response_model/subscription_model.dart';
 class AccessPlansScreen extends StatelessWidget {
   AccessPlansScreen({super.key});
 
-  final PlanController controller = Get.put(PlanController());
+  final PlanController controller = Get.find<PlanController>();
 
   @override
   Widget build(BuildContext context) {
@@ -208,9 +208,32 @@ class AccessPlansScreen extends StatelessWidget {
                       title: "Cancel Subscription",
                       color: AppColors.error,
                       onTap: () {
-                        if (sub.id != null) {
-                          controller.cancelSubscription(sub.id!);
-                        }
+                        Get.dialog(
+                          AlertDialog(
+                            backgroundColor: Colors.grey[900],
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            title: Text("Cancel Subscription", style: text18(fontWeight: FontWeight.bold)),
+                            content: Text(
+                              "Are you sure you want to cancel this subscription? You will still have access until the end of the current billing period.",
+                              style: text14(color: AppColors.white70),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Get.back(),
+                                child: Text("No", style: text14(color: AppColors.white)),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  Get.back();
+                                  if (sub.id != null) {
+                                    controller.cancelSubscription(sub.id!);
+                                  }
+                                },
+                                child: Text("Yes, Cancel", style: text14(color: AppColors.error, fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          ),
+                        );
                       },
                     ),
                   const SizedBox(height: 20),

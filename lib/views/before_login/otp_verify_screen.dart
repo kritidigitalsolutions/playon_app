@@ -106,6 +106,25 @@ class OtpVerifyScreen extends StatelessWidget {
                         ctr.verifyOtp();
                       },
                     )),
+
+                    const SizedBox(height: 24),
+
+                    Obx(() => Center(
+                      child: GestureDetector(
+                        onTap: ctr.resendSeconds.value == 0 ? () => ctr.sendOtp() : null,
+                        child: Text(
+                          ctr.resendSeconds.value == 0
+                              ? "Resend OTP"
+                              : "Resend OTP in ${ctr.resendSeconds.value}s",
+                          style: text16(
+                            fontWeight: FontWeight.w600,
+                            color: ctr.resendSeconds.value == 0
+                                ? AppColors.primary
+                                : Colors.grey,
+                          ),
+                        ),
+                      ),
+                    )),
                   ],
                 ),
               ),

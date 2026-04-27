@@ -1,5 +1,6 @@
 class AppUrls {
-  static const String baseUrl = 'http://192.168.1.3:8000/api';
+  // static const String baseUrl = 'http://192.168.1.3:8000/api';
+  static const String baseUrl = 'https://play-on-weld.vercel.app/api';
 
   // Auth Endpoints
   static const String sendOtp = '$baseUrl/auth/send-otp';
@@ -60,4 +61,7 @@ class AppUrls {
   static const String watchlist = '$baseUrl/watchlist';
   static const String toggleWatchlist = '$baseUrl/watchlist/toggle';
   static String checkWatchlist(String type, String id) => '$baseUrl/watchlist/check/$type/$id';
+
+  // TV Endpoints
+  static const String generateTvCode = '$baseUrl/tv/generate-code';
 }

@@ -12,6 +12,7 @@ import 'package:play_on_app/views/after_login/account_pages/profile_screen.dart'
 import 'package:play_on_app/views/after_login/account_pages/refer_earn_page.dart';
 import 'package:play_on_app/view_model/after_controller/legal_controller.dart';
 import 'package:play_on_app/views/after_login/account_pages/select_tour_screen.dart';
+import 'package:play_on_app/views/after_login/home_pages/home_screen.dart';
 import 'package:play_on_app/views/after_login/legal_pages/legal_content_page.dart';
 import 'package:play_on_app/views/after_login/channel_page/channel_Play_screen.dart';
 import 'package:play_on_app/views/after_login/home_pages/notification_screen.dart';
@@ -28,6 +29,8 @@ import 'package:play_on_app/views/after_login/account_pages/plan_pages/select_te
 import 'package:play_on_app/views/after_login/account_pages/plan_pages/purchased_items_page.dart';
 import 'package:play_on_app/views/after_login/home_pages/watch_list_screen.dart';
 import '../views/after_login/account_pages/followed_players_page.dart';
+import '../views/after_login/account_pages/player_detail_screen.dart';
+import 'package:play_on_app/bindings/plan_binding.dart';
 import 'app_routes.dart';
 
 class AppPages {
@@ -70,19 +73,21 @@ class AppPages {
     ),
 
     // account page
-    GetPage(name: AppRoutes.profilePage, page: () => ProfileScreen()),
-    GetPage(name: AppRoutes.accessPlan, page: () => AccessPlansScreen()),
+    GetPage(name: AppRoutes.profilePage, page: () => ProfileScreen(), binding: PlanBinding()),
+    GetPage(name: AppRoutes.accessPlan, page: () => AccessPlansScreen(), binding: PlanBinding()),
     GetPage(name: AppRoutes.findPlayer, page: () => SearchPlayersScreen()),
     GetPage(name: AppRoutes.selectTour, page: () => SelectTourScreen()),
     GetPage(name: AppRoutes.followedPage, page: () => FollowingScreen()),
     GetPage(name: AppRoutes.activateTV, page: () => ActivateTvScreen()),
     GetPage(name: AppRoutes.referScreen, page: () => ReferralScreen()),
-    GetPage(name: AppRoutes.chooseMatch, page: () => ChooseMatchPage()),
-    GetPage(name: AppRoutes.selectTeam, page: () => const SelectTeamPage()),
-    GetPage(name: AppRoutes.selectSeries, page: () => const SelectSeriesPage()),
-    GetPage(name: AppRoutes.purchasedItems, page: () => const PurchasedItemsPage()),
+    GetPage(name: AppRoutes.chooseMatch, page: () => ChooseMatchPage(), binding: PlanBinding()),
+    GetPage(name: AppRoutes.selectTeam, page: () => const SelectTeamPage(), binding: PlanBinding()),
+    GetPage(name: AppRoutes.selectSeries, page: () => const SelectSeriesPage(), binding: PlanBinding()),
+    GetPage(name: AppRoutes.purchasedItems, page: () => const PurchasedItemsPage(), binding: PlanBinding()),
     GetPage(name: AppRoutes.accountDelete, page: () => DeleteAccountScreen()),
     GetPage(name: AppRoutes.followPlayer, page: () => FollowedPlayersScreen()),
+    GetPage(name: AppRoutes.playerDetail, page: () => const PlayerDetailScreen()),
+    GetPage(name: AppRoutes.home, page: () => const HomeScreen()),
 
     // legal pages
     GetPage(

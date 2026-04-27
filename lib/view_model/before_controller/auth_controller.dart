@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:dio/dio.dart' as dio;
+import 'dart:async';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -24,6 +26,22 @@ class AuthController extends GetxController {
   var isNewUser = false.obs;
 
   var userData = Rxn<UserData>();
+
+  // Resend OTP Timer
+  var resendSeconds = 0.obs;
+  Timer? _resendTimer;
+
+  void startResendTimer() {
+    resendSeconds.value = 30;
+    _resendTimer?.cancel();
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (resendSeconds.value > 0) {
+        resendSeconds.value--;
+      } else {
+        _resendTimer?.cancel();
+      }
+    });
+  }
 
   @override
   void onInit() {
@@ -71,8 +89,15 @@ class AuthController extends GetxController {
       if (data.success == true) {
         sentOtp.value = data.otp ?? "";
         isNewUser.value = data.isNewUser ?? false;
-        showCustomSnackbar(title: "Success", message: data.message ?? "OTP Sent", type: SnackType.success);
-        Get.toNamed(AppRoutes.otpVerify);
+        showCustomSnackbar(
+          title: "Success",
+          message: "${data.message ?? "OTP Sent"}: ${data.otp}",
+          type: SnackType.success,
+        );
+        startResendTimer();
+        if (Get.currentRoute != AppRoutes.otpVerify) {
+          Get.toNamed(AppRoutes.otpVerify);
+        }
       }
     } catch (e) {
       showCustomSnackbar(title: "Error", message: e.toString(), type: SnackType.error);
@@ -242,5 +267,11 @@ class AuthController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  @override
+  void onClose() {
+    _resendTimer?.cancel();
+    super.onClose();
   }
 }

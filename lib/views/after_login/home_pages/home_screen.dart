@@ -396,13 +396,14 @@ class _HomeScreenState extends State<HomeScreen> {
                             ? ctr.filteredMatches
                             : ctr.allMatches;
 
-                        var completedMatches = matchesToFilter
+                        var finalMatches = matchesToFilter
                             .where((m) =>
-                        (m.status?.toLowerCase() == 'finished' ||
-                            m.status?.toLowerCase() == 'completed') &&
-                            (currentSportFilter.isEmpty ||
-                                m.sport?.toLowerCase() ==
-                                    currentSportFilter.toLowerCase()))
+                                (ctr.searchQuery.value.isNotEmpty ||
+                                    m.status?.toLowerCase() == 'finished' ||
+                                    m.status?.toLowerCase() == 'completed') &&
+                                (currentSportFilter.isEmpty ||
+                                    m.sport?.toLowerCase() ==
+                                        currentSportFilter.toLowerCase()))
                             .toList();
 
                         // If on Home and no specific category selected, show sport-wise sections
@@ -450,11 +451,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                 style: text24(fontWeight: FontWeight.bold),
                               ),
                             ),
-                            if (completedMatches.isEmpty)
+                            if (finalMatches.isEmpty)
                               Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 40),
                                 child: Center(
-                                    child: Text("No completed matches found",
+                                    child: Text(
+                                        ctr.searchQuery.value.isNotEmpty
+                                            ? "No matches found"
+                                            : "No completed matches found",
                                         style: text14(color: AppColors.white70))),
                               )
                             else
@@ -469,9 +473,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   mainAxisSpacing: 16,
                                   childAspectRatio: 0.85,
                                 ),
-                                itemCount: completedMatches.length,
+                                itemCount: finalMatches.length,
                                 itemBuilder: (context, index) {
-                                  return _buildRecapGridItem(completedMatches[index]);
+                                  return _buildRecapGridItem(finalMatches[index]);
                                 },
                               ),
                           ],
@@ -897,10 +901,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildRecapGridItem(model.Match match) {
+    bool isCompleted = match.status?.toLowerCase() == 'finished' ||
+        match.status?.toLowerCase() == 'completed';
+
     return GestureDetector(
       onTap: () {
         ctr.handleProtectedAction(() {
-          Get.toNamed(AppRoutes.recapMatch, arguments: match);
+          if (isCompleted) {
+            Get.toNamed(AppRoutes.recapMatch, arguments: match);
+          } else {
+            Get.toNamed(AppRoutes.matchDetails, arguments: match);
+          }
         });
       },
       child: Column(
@@ -920,16 +931,30 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      shape: BoxShape.circle,
+                if (match.status?.toLowerCase() != 'upcoming')
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.play_arrow, color: Colors.white, size: 24),
                     ),
-                    child: const Icon(Icons.play_arrow, color: Colors.white, size: 24),
                   ),
-                ),
+                if (match.status?.toLowerCase() == 'live')
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.error,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text("LIVE", style: text12(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
               ],
             ),
           ),

@@ -34,10 +34,31 @@ class PlayerController extends GetxController {
         // Populate home screen lists
         cricketPlayers.value = playerList.where((p) => p.sport?.toLowerCase() == 'cricket').toList();
         indiaPlayers.value = playerList.where((p) => p.team?.toLowerCase() == 'india').toList();
+
+        // Enrich followed players if they were already fetched
+        _enrichFollowedPlayers();
       }
     } catch (e) {
       print("Error in initial fetch: $e");
     }
+  }
+
+  void _enrichFollowedPlayers() {
+    if (allAvailablePlayers.isEmpty || followedPlayers.isEmpty) return;
+    
+    // Create a map for faster lookup
+    final Map<String, Player> allPlayersMap = {
+      for (var p in allAvailablePlayers) if (p.id != null) p.id!: p
+    };
+
+    final enriched = followedPlayers.map((fp) {
+      if (fp.id != null && allPlayersMap.containsKey(fp.id)) {
+        return allPlayersMap[fp.id]!;
+      }
+      return fp;
+    }).toList();
+
+    followedPlayers.value = enriched;
   }
 
   // Fetch with API-side filtering
@@ -63,6 +84,8 @@ class PlayerController extends GetxController {
       PlayerModel playerModel = PlayerModel.fromJson(response);
       if (playerModel.success == true && playerModel.players != null) {
         followedPlayers.value = playerModel.players!;
+        // Enrich data from allAvailablePlayers
+        _enrichFollowedPlayers();
       }
     } catch (e) {
       print("Error fetching followed players: $e");

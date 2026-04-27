@@ -100,7 +100,7 @@ class CreateWatchlistScreen extends StatelessWidget {
       children: [
         GestureDetector(
           onTap: () {
-             Get.toNamed(AppRoutes.myHomePage);
+            Get.offAllNamed(AppRoutes.myHomePage);
           },
           child: ClipRRect(
             borderRadius: BorderRadius.circular(50),
@@ -110,10 +110,10 @@ class CreateWatchlistScreen extends StatelessWidget {
                 width: 88,
                 height: 88,
                 decoration: BoxDecoration(
-                  color: AppColors.white.withOpacity(0.12),
+                  color: AppColors.white.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: AppColors.white.withOpacity(0.25),
+                    color: AppColors.white.withValues(alpha: 0.25),
                     width: 2,
                   ),
                 ),

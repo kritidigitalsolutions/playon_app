@@ -9,6 +9,7 @@ import 'package:play_on_app/view_model/after_controller/plan_controller.dart';
 import 'package:play_on_app/view_model/after_controller/series_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 
+import '../../../../routes/app_routes.dart';
 import '../../../custom_background.dart/custum_date.dart';
 
 class SelectSeriesPage extends StatefulWidget {
@@ -179,10 +180,7 @@ class _SelectSeriesPageState extends State<SelectSeriesPage> {
                           return ElevatedButton(
                             onPressed: () {
                               if (isPurchased) {
-                                // Navigate to a filtered view or show success
-                                Get.back();
-                                Get.snackbar("Access Granted", "You have full access to ${series.title}", 
-                                  backgroundColor: Colors.green.withOpacity(0.7), colorText: Colors.white);
+                                Get.toNamed(AppRoutes.followedPage);
                               } else if (selectedPlan?.id != null && series.sId != null) {
                                 planController.buyPlan(selectedPlan!.id!, seriesId: series.sId);
                               }

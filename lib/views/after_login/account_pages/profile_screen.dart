@@ -475,42 +475,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
           itemCount: players.length,
           itemBuilder: (_, i) {
             final player = players[i];
-            return Padding(
-              padding: const EdgeInsets.only(right: 14),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(50),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: AppColors.white.withOpacity(0.07),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.white.withOpacity(0.25), width: 1.5),
-                        ),
-                        child: CircleAvatar(
-                          radius: 30,
-                          backgroundColor: Colors.grey[800],
-                          backgroundImage: player.image != null ? NetworkImage(player.image!) : const AssetImage("assets/images/virat.png") as ImageProvider,
+            return GestureDetector(
+              onTap: () => Get.toNamed(AppRoutes.playerDetail, arguments: player),
+              child: Padding(
+                padding: const EdgeInsets.only(right: 14),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(50),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: AppColors.white.withOpacity(0.07),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.white.withOpacity(0.25), width: 1.5),
+                          ),
+                          child: CircleAvatar(
+                            radius: 30,
+                            backgroundColor: Colors.grey[800],
+                            backgroundImage: player.image != null ? NetworkImage(player.image!) : const AssetImage("assets/images/virat.png") as ImageProvider,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  SizedBox(
-                    width: 70,
-                    child: Text(
-                      player.name ?? "",
-                      style: text11(),
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      width: 70,
+                      child: Text(
+                        player.name ?? "",
+                        style: text11(),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           },
