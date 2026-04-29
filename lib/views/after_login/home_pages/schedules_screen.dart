@@ -90,6 +90,90 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
 
             const SizedBox(height: 16),
 
+            // Calendar Section - Moved outside of Obx to prevent full refresh
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.15),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: TableCalendar(
+                      firstDay: DateTime(2024, 1, 1),
+                      lastDay: DateTime(2028, 12, 31),
+                      focusedDay: _focusedDay,
+                      selectedDayPredicate: (day) =>
+                          isSameDay(_selectedDay, day),
+                      onDaySelected: (selectedDay, focusedDay) {
+                        setState(() {
+                          _selectedDay = selectedDay;
+                          _focusedDay = focusedDay;
+                        });
+                        _fetchMatches();
+                      },
+                      calendarStyle: CalendarStyle(
+                        outsideDaysVisible: false,
+                        defaultTextStyle: const TextStyle(
+                          color: Colors.white70,
+                        ),
+                        weekendTextStyle: const TextStyle(
+                          color: Colors.white70,
+                        ),
+                        selectedTextStyle: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        todayTextStyle: const TextStyle(
+                          color: Colors.white,
+                        ),
+                        selectedDecoration: const BoxDecoration(
+                          color: Color(0xFF2196F3),
+                          shape: BoxShape.circle,
+                        ),
+                        todayDecoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        defaultDecoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      headerStyle: const HeaderStyle(
+                        titleCentered: true,
+                        formatButtonVisible: false,
+                        titleTextStyle: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        leftChevronIcon: Icon(
+                          Icons.chevron_left,
+                          color: Colors.white70,
+                        ),
+                        rightChevronIcon: Icon(
+                          Icons.chevron_right,
+                          color: Colors.white70,
+                        ),
+                      ),
+                      daysOfWeekStyle: const DaysOfWeekStyle(
+                        weekdayStyle: TextStyle(color: Colors.white60),
+                        weekendStyle: TextStyle(color: Colors.white60),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
             const SizedBox(height: 20),
 
             // Matches List
@@ -99,108 +183,30 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                return ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.08),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.15),
-                              width: 1.2,
-                            ),
-                          ),
-                          child: TableCalendar(
-                            firstDay: DateTime(2024, 1, 1),
-                            lastDay: DateTime(2028, 12, 31),
-                            focusedDay: _focusedDay,
-                            selectedDayPredicate: (day) =>
-                                isSameDay(_selectedDay, day),
-                            onDaySelected: (selectedDay, focusedDay) {
-                              setState(() {
-                                _selectedDay = selectedDay;
-                                _focusedDay = focusedDay;
-                              });
-                              _fetchMatches();
-                            },
-                            calendarStyle: CalendarStyle(
-                              outsideDaysVisible: false,
-                              defaultTextStyle: const TextStyle(
-                                color: Colors.white70,
-                              ),
-                              weekendTextStyle: const TextStyle(
-                                color: Colors.white70,
-                              ),
-                              selectedTextStyle: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              todayTextStyle: const TextStyle(
-                                color: Colors.white,
-                              ),
-                              selectedDecoration: const BoxDecoration(
-                                color: Color(0xFF2196F3),
-                                shape: BoxShape.circle,
-                              ),
-                              todayDecoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              defaultDecoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            headerStyle: const HeaderStyle(
-                              titleCentered: true,
-                              formatButtonVisible: false,
-                              titleTextStyle: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              leftChevronIcon: Icon(
-                                Icons.chevron_left,
-                                color: Colors.white70,
-                              ),
-                              rightChevronIcon: Icon(
-                                Icons.chevron_right,
-                                color: Colors.white70,
-                              ),
-                            ),
-                            daysOfWeekStyle: const DaysOfWeekStyle(
-                              weekdayStyle: TextStyle(color: Colors.white60),
-                              weekendStyle: TextStyle(color: Colors.white60),
-                            ),
-                          ),
-                        ),
+                if (ctr.scheduledMatches.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 40.0),
+                      child: Text(
+                        "No matches scheduled for this date",
+                        style: TextStyle(color: Colors.white70, fontSize: 16),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    if (ctr.scheduledMatches.isEmpty)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.only(top: 40.0),
-                          child: Text(
-                            "No matches scheduled for this date",
-                            style: TextStyle(color: Colors.white70, fontSize: 16),
-                          ),
-                        ),
-                      )
-                    else
-                      ...ctr.scheduledMatches.map((match) => Padding(
-                            padding: const EdgeInsets.only(bottom: 16.0),
-                            child: _buildMatchCard(
-                              match: match,
-                            ),
-                          )),
-                    const SizedBox(height: 40),
-                  ],
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: ctr.scheduledMatches.length,
+                  itemBuilder: (context, index) {
+                    final match = ctr.scheduledMatches[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: _buildMatchCard(
+                        match: match,
+                      ),
+                    );
+                  },
                 );
               }),
             ),

@@ -129,4 +129,13 @@ class MatchRepository {
       rethrow;
     }
   }
+
+  Future<dynamic> getMatchHighlights(String matchId) async {
+    try {
+      final response = await _apiServices.getApi(AppUrls.matchHighlights(matchId));
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

@@ -413,14 +413,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildEmptyState(String message, IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            decoration: BoxDecoration(
+              color: AppColors.white.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.white.withOpacity(0.12), width: 1.2),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: AppColors.primary.withOpacity(0.8), size: 28),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  message,
+                  style: text13(color: AppColors.white70, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Tap to explore",
+                  style: text11(color: AppColors.primary.withOpacity(0.7)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _glassFollowedSeriesList() {
-    return SizedBox(
-      height: 110,
-      child: Obx(() {
-        if (_seriesController.followedSeriesList.isEmpty) {
-          return Center(child: Text("No followed series", style: text12(color: Colors.white38)));
-        }
-        return ListView.builder(
+    return Obx(() {
+      if (_seriesController.followedSeriesList.isEmpty) {
+        return _buildEmptyState(
+          "No series followed yet",
+          Icons.emoji_events_outlined,
+          () => Get.toNamed(AppRoutes.selectTour),
+        );
+      }
+      return SizedBox(
+        height: 110,
+        child: ListView.builder(
           scrollDirection: Axis.horizontal,
           itemCount: _seriesController.followedSeriesList.length,
           itemBuilder: (_, i) {
@@ -468,23 +516,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             );
           },
-        );
-      }),
-    );
+        ),
+      );
+    });
   }
 
   Widget _glassPlayersList() {
-    return SizedBox(
-      height: 120,
-      child: Obx(() {
-        if (_playerController.loading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final players = _playerController.followedPlayers;
-        if (players.isEmpty) {
-          return Center(child: Text("No followed players", style: text12(color: Colors.white38)));
-        }
-        return ListView.builder(
+    return Obx(() {
+      if (_playerController.loading.value) {
+        return const SizedBox(
+          height: 100,
+          child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        );
+      }
+      final players = _playerController.followedPlayers;
+      if (players.isEmpty) {
+        return _buildEmptyState(
+          "No players followed yet",
+          Icons.person_add_outlined,
+          () => Get.toNamed(AppRoutes.findPlayer),
+        );
+      }
+      return SizedBox(
+        height: 120,
+        child: ListView.builder(
           scrollDirection: Axis.horizontal,
           itemCount: players.length,
           itemBuilder: (_, i) {
@@ -531,9 +586,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             );
           },
-        );
-      }),
-    );
+        ),
+      );
+    });
   }
 
   Widget _glassMenuList() {

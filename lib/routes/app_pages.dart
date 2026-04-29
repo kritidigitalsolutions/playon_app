@@ -19,6 +19,7 @@ import 'package:play_on_app/views/after_login/home_pages/notification_screen.dar
 import 'package:play_on_app/views/after_login/match_pages/match_Play_screen.dart';
 import 'package:play_on_app/views/after_login/match_pages/match_details_screen.dart';
 import 'package:play_on_app/views/after_login/match_pages/recap_match_screen.dart';
+import 'package:play_on_app/views/after_login/match_pages/highlights_player_screen.dart';
 import 'package:play_on_app/views/before_login/fullname_enter_screen.dart';
 import 'package:play_on_app/views/before_login/login_screen.dart';
 import 'package:play_on_app/views/before_login/otp_verify_screen.dart';
@@ -144,6 +145,7 @@ class AppPages {
     GetPage(name: AppRoutes.matchDetails, page: () => MatchDetailScreen()),
     GetPage(name: AppRoutes.matchPlay, page: () => MatchPlayScreen()),
     GetPage(name: AppRoutes.recapMatch, page: () => RecapMatchScreen()),
+    GetPage(name: AppRoutes.highlightsPlayer, page: () => HighlightsPlayerScreen()),
     GetPage(name: AppRoutes.watchlist, page: () => CreateWatchlistScreen()),
     GetPage(
       name: AppRoutes.seeAllMatches,

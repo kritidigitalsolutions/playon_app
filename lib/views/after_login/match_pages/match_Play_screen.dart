@@ -7,6 +7,7 @@ import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/utils/custom_button.dart';
+import 'package:play_on_app/views/custom_background.dart/ad_banner_widget.dart';
 import 'package:play_on_app/view_model/after_controller/match_controller/match_controller.dart';
 import 'package:play_on_app/views/after_login/match_pages/full_video_play_screen.dart';
 import 'package:video_player/video_player.dart';
@@ -43,6 +44,12 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
 
                 // Tab Section
                 _buildTabBar(),
+
+                // Ad Banner
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: AdBannerWidget(),
+                ),
 
                 // Content based on selected tab
                 _buildTabContent(),
@@ -407,7 +414,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Match Highlights',
+            'Highlights & Moments',
             style: TextStyle(
               color: Colors.white,
               fontSize: 18,
@@ -415,10 +422,48 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
             ),
           ),
           const SizedBox(height: 16),
+          Obx(() {
+            if (controller.isHighlightsLoading.value) {
+              return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+            }
+
+            if (controller.highlights.isEmpty) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Text(
+                    "No highlights available for this match",
+                    style: text14(color: AppColors.white70),
+                  ),
+                ),
+              );
+            }
+
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: controller.highlights.length,
+              itemBuilder: (context, index) {
+                final item = controller.highlights[index];
+                return _buildMomentCard(
+                  item.title ?? "Highlights",
+                  "Duration: ${item.duration ?? '0:00'}",
+                  item.thumbnail ?? 'https://via.placeholder.com/300x200',
+                  item.duration ?? '0:00',
+                  onPlay: () {
+                    if (item.videoUrl != null) {
+                      videoControllerX.initializeVideo(item.videoUrl!);
+                    }
+                  },
+                );
+              },
+            );
+          }),
+          const SizedBox(height: 16),
           _buildHighlightCard(
             'Live Match Score',
-            'Team 1: England\n256/6 (50 overs)',
-            'Team 2: South Africa\n249/6 (50 overs)',
+            '${controller.match.value?.teamA}: ${controller.match.value?.score?.split('-').first ?? '0'}',
+            '${controller.match.value?.teamB}: ${controller.match.value?.score?.split('-').last ?? '0'}',
           ),
           const SizedBox(height: 16),
           _buildCurrentPlayersSection(),
@@ -958,10 +1003,11 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
 
   Widget _buildMomentCard(
     String title,
-    String bowler,
+    String subtitle,
     String imageUrl,
-    String duration,
-  ) {
+    String duration, {
+    VoidCallback? onPlay,
+  }) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
@@ -1002,7 +1048,6 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                         );
                       },
                     ),
-                    // Subtle play overlay
                     Positioned.fill(
                       child: Container(
                         decoration: BoxDecoration(
@@ -1037,49 +1082,20 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      "Duration : 0.18",
+                      subtitle,
                       style: text13(color: AppColors.textSecondary),
                     ),
                   ],
                 ),
               ),
 
-              // Duration Badge
+              // Play Button
               AppButton(
                 title: "Play Now",
-                onTap: () {},
+                onTap: onPlay ?? () {},
                 height: 25,
                 textStyle: text12(),
               ),
-              // CustomElevatedIconButton(
-              //   height: 25,
-              //   textStyle: text12(),
-              //   text: "Play Now",
-              //   icon: Icons.play_arrow_outlined,
-              //   onPressed: () {},
-              // ),
-              // Container(
-              //   padding: const EdgeInsets.symmetric(
-              //     horizontal: 14,
-              //     vertical: 7,
-              //   ),
-              //   decoration: BoxDecoration(
-              //     color: const Color(0xFF2196F3).withOpacity(0.9),
-              //     borderRadius: BorderRadius.circular(20),
-              //     border: Border.all(
-              //       color: Colors.white.withOpacity(0.3),
-              //       width: 1,
-              //     ),
-              //   ),
-              //   child: Text(
-              //     duration,
-              //     style: const TextStyle(
-              //       color: Colors.white,
-              //       fontSize: 12,
-              //       fontWeight: FontWeight.w600,
-              //     ),
-              //   ),
-              // ),
             ],
           ),
         ),

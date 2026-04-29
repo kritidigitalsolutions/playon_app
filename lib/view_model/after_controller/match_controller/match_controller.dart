@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:play_on_app/model/response_model/highlight_model.dart';
 import 'package:play_on_app/repo/match_repository.dart';
 import 'package:video_player/video_player.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
@@ -14,6 +15,9 @@ class MatchDetailsController extends GetxController {
   var remainingTime = "".obs;
   var isReminderOn = false.obs;
   var isLock = true.obs;
+
+  var highlights = <HighlightItem>[].obs;
+  var isHighlightsLoading = false.obs;
 
   final MatchRepository _repository = MatchRepository();
   final planController = Get.put(PlanController());
@@ -35,6 +39,25 @@ class MatchDetailsController extends GetxController {
       ever(planController.hasAccess, (_) => checkAccess());
       ever(planController.mySubscription, (_) => checkAccess());
       checkAccess();
+
+      // Fetch Highlights
+      fetchHighlights();
+    }
+  }
+
+  Future<void> fetchHighlights() async {
+    if (match.value?.sId == null) return;
+    isHighlightsLoading.value = true;
+    try {
+      final res = await _repository.getMatchHighlights(match.value!.sId!);
+      if (res['success'] == true) {
+        final data = HighlightModel.fromJson(res);
+        highlights.assignAll(data.data?.highlights ?? []);
+      }
+    } catch (e) {
+      print("Error fetching highlights: $e");
+    } finally {
+      isHighlightsLoading.value = false;
     }
   }
 
@@ -191,9 +214,23 @@ class VideoControllerX extends GetxController {
     }
   }
 
-  Future<void> fetchMatchDetails(String matchId) async {
+  Future<void> fetchMatchDetails(String matchId, {bool isHighlight = false}) async {
     isLoading.value = true;
     try {
+      if (isHighlight) {
+        final res = await _matchRepo.getMatchHighlights(matchId);
+        if (res['success'] == true) {
+          final data = HighlightModel.fromJson(res);
+          if (data.data?.highlights != null && data.data!.highlights!.isNotEmpty) {
+            final videoUrl = data.data!.highlights!.first.videoUrl;
+            if (videoUrl != null) {
+              initializeVideo(videoUrl, isHighlight: true);
+              return;
+            }
+          }
+        }
+      }
+
       final response = await _matchRepo.watchMatch(matchId);
       matchData.value = model.WatchMatchResponse.fromJson(response);
       
@@ -212,12 +249,23 @@ class VideoControllerX extends GetxController {
     }
   }
 
-  void initializeVideo(String url) {
+  void initializeVideo(String url, {bool isHighlight = false}) {
     videoController = VideoPlayerController.networkUrl(Uri.parse(url))
       ..initialize().then((_) {
         isInitialized.value = true;
         videoController?.play();
         isPlaying.value = true;
+
+        // If it's a highlight, stop after 10 seconds (Auto-play preview)
+        if (isHighlight) {
+          Future.delayed(const Duration(seconds: 5), () {
+            if (videoController != null && videoController!.value.isPlaying) {
+              videoController?.pause();
+              isPlaying.value = false;
+              showControls.value = true; // Show controls so user can resume if they want
+            }
+          });
+        }
       });
 
     // Auto hide controls after 3 sec

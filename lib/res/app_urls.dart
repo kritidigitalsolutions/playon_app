@@ -66,4 +66,7 @@ class AppUrls {
 
   // TV Endpoints
   static const String generateTvCode = '$baseUrl/tv/generate-code';
+
+  // Highlight Endpoints
+  static String matchHighlights(String matchId) => '$baseUrl/scores/$matchId/highlights';
 }

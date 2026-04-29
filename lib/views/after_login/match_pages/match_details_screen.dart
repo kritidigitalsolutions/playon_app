@@ -7,6 +7,7 @@ import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/utils/custom_button.dart';
 
+import 'package:play_on_app/views/custom_background.dart/ad_banner_widget.dart';
 import 'package:play_on_app/view_model/after_controller/match_controller/match_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 
@@ -260,51 +261,11 @@ class MatchDetailScreen extends StatelessWidget {
                   ),
                 ),
 
-            // MacBook Air Ad (Glassmorphism style)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                    child: Container(
-                      height: 180,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.white.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: AppColors.white.withOpacity(0.15),
-                        ),
-                        image: const DecorationImage(
-                          image: AssetImage(
-                            'assets/images/iPhone.png',
-                          ), // Add your image
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                "Starting at",
-                                style: text14(color: AppColors.white70),
-                              ),
-                              Text(
-                                "₹699",
-                                style: text24(fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+            // Dynamic Ad Banners
+            const SliverToBoxAdapter(
+              child: AdBannerWidget(
+                height: 180,
+                padding: EdgeInsets.symmetric(horizontal: 16),
               ),
             ),
 

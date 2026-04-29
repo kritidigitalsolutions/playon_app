@@ -15,6 +15,7 @@ import 'package:play_on_app/model/response_model/match_model.dart' as model;
 
 import '../../../view_model/after_controller/home_contollers/home_controller.dart';
 import '../../../view_model/after_controller/plan_controller.dart';
+import '../../custom_background.dart/ad_banner_widget.dart';
 import '../../custom_background.dart/custom_widget.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -221,64 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 8),
                       // Dynamic Ad Banners
                       if (ctr.searchQuery.value.isEmpty) ...[
-                        Obx(() {
-                          if (ctr.isBannerLoading.value && ctr.bannerList.isEmpty) {
-                            return const SizedBox(
-                              height: 160,
-                              child: Center(child: CircularProgressIndicator()),
-                            );
-                          }
-                          if (ctr.bannerList.isEmpty) {
-                            return const SizedBox.shrink();
-                          }
-                          return CarouselSlider.builder(
-                            itemCount: ctr.bannerList.length,
-                            options: CarouselOptions(
-                              height: 160,
-                              viewportFraction: 1.0,
-                              autoPlay: ctr.bannerList.length > 1,
-                              autoPlayInterval: const Duration(seconds: 5),
-                              enlargeCenterPage: false,
-                            ),
-                            itemBuilder: (context, index, realIndex) {
-                              final banner = ctr.bannerList[index];
-                              final imageUrl = banner.image ?? "";
-
-                              // Handle relative URLs if necessary
-                              final fullImageUrl = imageUrl.startsWith('http')
-                                  ? imageUrl
-                                  : "http://192.168.1.3:8000$imageUrl";
-
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
-                                child: InkWell(
-                                  onTap: () {
-                                    if (banner.link != null && banner.link!.isNotEmpty) {
-                                      launchUrl(Uri.parse(banner.link!));
-                                    }
-                                  },
-                                  child: Container(
-                                    width: double.infinity,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(16),
-                                      color: Colors.grey[900],
-                                      image: imageUrl.isNotEmpty ? DecorationImage(
-                                        image: NetworkImage(fullImageUrl),
-                                        fit: BoxFit.cover,
-                                        onError: (exception, stackTrace) {
-                                          print("Error loading banner image: $exception");
-                                        },
-                                      ) : null,
-                                    ),
-                                    child: imageUrl.isEmpty
-                                        ? const Center(child: Icon(Icons.image, color: Colors.white24))
-                                        : null,
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        }),
+                        const AdBannerWidget(),
                         const SizedBox(height: 16),
                       ],
 
@@ -366,10 +310,34 @@ class _HomeScreenState extends State<HomeScreen> {
                             ],
                           );
                         }),
+                        // Highlights Slider
+                        Obx(() {
+                          String dashboardSport = (ctr.selectedTabIndex.value != 0
+                              ? ctr.sportsList[ctr.selectedTabIndex.value]
+                              : "");
+
+                          var recentlyFinished = ctr.allMatches
+                              .where((m) =>
+                                  m.status?.toLowerCase() == 'finished' ||
+                                  m.status?.toLowerCase() == 'completed')
+                              .toList();
+
+                          if (dashboardSport.isNotEmpty) {
+                            recentlyFinished = recentlyFinished
+                                .where((m) =>
+                                    m.sport?.toLowerCase() ==
+                                    dashboardSport.toLowerCase())
+                                .toList();
+                          }
+
+                          // Take top 5 recent matches for highlights slider
+                          final topHighlights = recentlyFinished.take(5).toList();
+                          return _buildHighlightsSlider(topHighlights);
+                        }),
                         const SizedBox(height: 16),
                       ],
 
-                      // Category Chips - Reduced padding
+                      // Category Chips
                       _buildSectionHeader("Search by Category", ""),
                       const SizedBox(height: 8),
                       Padding(
@@ -377,7 +345,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Wrap(
                           spacing: 8,
                           runSpacing: 8,
-                          children: ctr.sportsList.skip(1).map<Widget>((tab) {
+                          children: (ctr.selectedTabIndex.value == 0 
+                              ? ctr.sportsList.skip(1).toList() 
+                              : [ctr.sportsList[ctr.selectedTabIndex.value]]).map<Widget>((tab) {
                             return _buildCategoryChip(
                               tab,
                                   () {
@@ -385,7 +355,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ctr.searchQuery.value = "";
                                 ctr.selectSubCategory(tab);
                               },
-                              isSelected: ctr.selectedCategory.value == tab,
+                              isSelected: ctr.selectedCategory.value == tab || 
+                                         (ctr.selectedTabIndex.value != 0 && ctr.sportsList[ctr.selectedTabIndex.value] == tab),
                             );
                           }).toList(),
                         ),
@@ -393,110 +364,110 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       const SizedBox(height: 16),
 
-                      // Results Section (Recap/Filtered)
+                      // Results Section (Highlights/Filtered)
                       Builder(builder: (context) {
-                        String currentSportFilter = ctr.selectedCategory.value.isNotEmpty
-                            ? ctr.selectedCategory.value
-                            : (ctr.selectedTabIndex.value != 0
-                            ? ctr.sportsList[ctr.selectedTabIndex.value]
-                            : "");
+                        // Current Sport determines which sections to show
+                        String topSport = ctr.selectedTabIndex.value != 0 
+                            ? ctr.sportsList[ctr.selectedTabIndex.value] 
+                            : "";
 
-                        // Show "Search Results" or Sport name header
-                        String headerTitle = ctr.searchQuery.value.isNotEmpty
-                            ? "Search Results"
-                            : (currentSportFilter.isNotEmpty ? currentSportFilter : "Recap");
+                        // If a specific search is active, show grid
+                        if (ctr.searchQuery.value.isNotEmpty) {
+                          String currentSportFilter = ctr.selectedCategory.value.isNotEmpty
+                              ? ctr.selectedCategory.value
+                              : topSport;
 
-                        // Filtering matches for the results section
-                        var matchesToFilter = ctr.searchQuery.value.isNotEmpty
-                            ? ctr.filteredMatches
-                            : ctr.allMatches;
+                          var matchesToFilter = ctr.filteredMatches;
+                          var finalMatches = matchesToFilter
+                              .where((m) =>
+                                  (m.status?.toLowerCase() == 'finished' ||
+                                      m.status?.toLowerCase() == 'completed') &&
+                                  (currentSportFilter.isEmpty ||
+                                      m.sport?.toLowerCase() ==
+                                          currentSportFilter.toLowerCase()))
+                              .toList();
 
-                        var finalMatches = matchesToFilter
-                            .where((m) =>
-                                (ctr.searchQuery.value.isNotEmpty ||
-                                    m.status?.toLowerCase() == 'finished' ||
-                                    m.status?.toLowerCase() == 'completed') &&
-                                (currentSportFilter.isEmpty ||
-                                    m.sport?.toLowerCase() ==
-                                        currentSportFilter.toLowerCase()))
-                            .toList();
-
-                        // If on Home and no specific category selected, show sport-wise sections
-                        if (ctr.selectedTabIndex.value == 0 &&
-                            ctr.selectedCategory.value.isEmpty &&
-                            ctr.searchQuery.value.isEmpty) {
                           return Column(
-                            children: ctr.sportsList.skip(1).map((sport) {
-                              var sportMatches = ctr.allMatches
-                                  .where((m) =>
-                              (m.status?.toLowerCase() == 'finished' ||
-                                  m.status?.toLowerCase() == 'completed') &&
-                                  m.sport?.toLowerCase() == sport.toLowerCase())
-                                  .toList();
-
-                              if (sportMatches.isEmpty) return const SizedBox.shrink();
-
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildSectionHeader(sport, "See all",
-                                      onActionTap: () {
-                                        Get.toNamed(
-                                          AppRoutes.seeAllMatches,
-                                          arguments: {
-                                            'title': "$sport Matches",
-                                            'matches': sportMatches,
-                                          },
-                                        );
-                                      }),
-                                  const SizedBox(height: 8),
-                                  _buildRecapMatchList(matches: sportMatches),
-                                  const SizedBox(height: 16),
-                                ],
-                              );
-                            }).toList(),
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(left: 12, bottom: 8),
+                                child: Text(
+                                  currentSportFilter.isNotEmpty ? "$currentSportFilter Search Results" : "Search Results",
+                                  style: text24(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              if (finalMatches.isEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 40),
+                                  child: Center(
+                                      child: Text("No matches found",
+                                          style: text14(color: AppColors.white70))),
+                                )
+                              else
+                                GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing: 12,
+                                    mainAxisSpacing: 16,
+                                    childAspectRatio: 0.85,
+                                  ),
+                                  itemCount: finalMatches.length,
+                                  itemBuilder: (context, index) {
+                                    return _buildHighlightsGridItem(finalMatches[index]);
+                                  },
+                                ),
+                            ],
                           );
                         }
 
-                        // Otherwise show a grid of results
+                        // Default view (List with "See all")
+                        List<String> sportsToDisplay = [];
+                        if (topSport.isNotEmpty) {
+                          // If top tab is not 'All', only show that sport
+                          sportsToDisplay = [topSport];
+                        } else if (ctr.selectedCategory.value.isNotEmpty) {
+                          // If 'All' tab but a sub-category is selected
+                          sportsToDisplay = [ctr.selectedCategory.value];
+                        } else {
+                          // Show all sports
+                          sportsToDisplay = ctr.sportsList.skip(1).toList();
+                        }
+
                         return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(left: 12, bottom: 8),
-                              child: Text(
-                                headerTitle,
-                                style: text24(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            if (finalMatches.isEmpty)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 40),
-                                child: Center(
-                                    child: Text(
-                                        ctr.searchQuery.value.isNotEmpty
-                                            ? "No matches found"
-                                            : "No completed matches found",
-                                        style: text14(color: AppColors.white70))),
-                              )
-                            else
-                              GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
-                                gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  crossAxisSpacing: 12,
-                                  mainAxisSpacing: 16,
-                                  childAspectRatio: 0.85,
-                                ),
-                                itemCount: finalMatches.length,
-                                itemBuilder: (context, index) {
-                                  return _buildRecapGridItem(finalMatches[index]);
-                                },
-                              ),
-                          ],
+                          children: sportsToDisplay.map((sport) {
+                            var sportMatches = ctr.allMatches
+                                .where((m) =>
+                                    (m.status?.toLowerCase() == 'finished' ||
+                                        m.status?.toLowerCase() == 'completed') &&
+                                    m.sport?.toLowerCase() == sport.toLowerCase())
+                                .toList();
+
+                            if (sportMatches.isEmpty && ctr.selectedCategory.value.isEmpty && topSport.isEmpty) {
+                              return const SizedBox.shrink();
+                            }
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildSectionHeader(sport, "See all", onActionTap: () {
+                                  Get.toNamed(
+                                    AppRoutes.seeAllMatches,
+                                    arguments: {
+                                      'title': "$sport Matches",
+                                      'matches': sportMatches,
+                                    },
+                                  );
+                                }),
+                                const SizedBox(height: 8),
+                                _buildRecapMatchList(matches: sportMatches),
+                                const SizedBox(height: 16),
+                              ],
+                            );
+                          }).toList(),
                         );
                       }),
 
@@ -584,6 +555,101 @@ class _HomeScreenState extends State<HomeScreen> {
         "|",
         style: text13(color: AppColors.white60),
       ),
+    );
+  }
+
+  Widget _buildHighlightsSlider(List<model.Match> matches) {
+    if (matches.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(
+          "Latest Highlights",
+          "",
+        ),
+        const SizedBox(height: 12),
+        CarouselSlider.builder(
+          itemCount: matches.length,
+          itemBuilder: (context, index, realIndex) {
+            final match = matches[index];
+            return GestureDetector(
+              onTap: () {
+                ctr.handleProtectedAction(() {
+                  Get.toNamed(AppRoutes.highlightsPlayer, arguments: match);
+                });
+              },
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  image: DecorationImage(
+                    image: match.thumbnail != null && match.thumbnail!.isNotEmpty
+                        ? NetworkImage(match.thumbnail!)
+                        : const AssetImage('assets/auth/cri.png') as ImageProvider,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.8),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.8),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 40),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 16,
+                      left: 16,
+                      right: 16,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            match.title ?? "${match.teamA} vs ${match.teamB}",
+                            style: text18(fontWeight: FontWeight.bold, color: Colors.white),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            match.tournament ?? "Match Highlights",
+                            style: text12(color: Colors.white70),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+          options: CarouselOptions(
+            height: 180,
+            viewportFraction: 0.9,
+            enlargeCenterPage: true,
+            autoPlay: true,
+            autoPlayInterval: const Duration(seconds: 5),
+            enableInfiniteScroll: matches.length > 1,
+          ),
+        ),
+      ],
     );
   }
 
@@ -1009,7 +1075,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
-                      match.title ?? "${match.teamA} vs ${match.teamB}",
+                      match.title ?? "Match Highlights",
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: text13(fontWeight: FontWeight.w600),
@@ -1030,7 +1096,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildRecapGridItem(model.Match match) {
+  Widget _buildHighlightsGridItem(model.Match match) {
     bool isCompleted = match.status?.toLowerCase() == 'finished' ||
         match.status?.toLowerCase() == 'completed';
 
