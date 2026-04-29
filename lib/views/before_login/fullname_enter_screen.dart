@@ -16,6 +16,7 @@ class FullNameScreen extends StatelessWidget {
   final AuthController ctr = Get.find<AuthController>();
 
   bool get isValid => ctr.nameController.text.trim().length >= 3;
+  bool isLoading = false;
 
   void _onContinue() {
     if (isValid) {
@@ -115,7 +116,11 @@ class FullNameScreen extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 50),
-                      AppButton(title: "Next", onTap: _onContinue),
+                      AppButton(
+                        title: "Next",
+                        isLoading: isLoading,
+                        onTap: _onContinue,
+                      ),
                       const SizedBox(height: 40),
                     ],
                   ),

@@ -116,23 +116,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _pickImage(ImageSource.gallery);
                   },
                 ),
-                if (_profileImagePath != null) ...[
-                  const SizedBox(height: 12),
-                  _imagePickerOption(
-                    icon: Icons.delete_outline,
-                    title: "Remove Picture",
-                    iconColor: Colors.red,
-                    onTap: () async {
-                      Navigator.pop(context);
-                      setState(() {
-                        _profileImagePath = null;
-                      });
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.remove('profile_image_path');
-                      showCustomSnackbar(title: "Removed", message: "Profile picture removed", type: SnackType.info);
-                    },
-                  ),
-                ],
+                // Obx(() {
+                //   final userData = _authController.userData.value;
+                //   final hasImage = (userData?.profileImage != null && userData!.profileImage!.isNotEmpty) ||
+                //                  (userData?.profilePic != null && userData!.profilePic!.isNotEmpty);
+                //
+                //   if (hasImage) {
+                //     return Column(
+                //       children: [
+                //         const SizedBox(height: 12),
+                //         _imagePickerOption(
+                //           icon: Icons.delete_outline,
+                //           title: "Remove Picture",
+                //           iconColor: Colors.red,
+                //           onTap: () async {
+                //             Navigator.pop(context);
+                //
+                //             // ✅ Update API to remove profile picture
+                //             await _authController.updateProfile(profileImagePath: "");
+                //
+                //             setState(() {
+                //               _profileImagePath = null;
+                //             });
+                //             final prefs = await SharedPreferences.getInstance();
+                //             await prefs.remove('profile_image_path');
+                //           },
+                //         ),
+                //       ],
+                //     );
+                //   }
+                //   return const SizedBox.shrink();
+                // }),
                 const SizedBox(height: 10),
               ],
             ),
@@ -256,9 +270,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: CircleAvatar(
                     radius: 28,
                     backgroundColor: AppColors.white,
-                    backgroundImage: _authController.userData.value?.profileImage != null
+                    backgroundImage: (_authController.userData.value?.profileImage != null && _authController.userData.value!.profileImage!.isNotEmpty)
                         ? NetworkImage(_authController.userData.value!.profileImage!)
-                        : _authController.userData.value?.profilePic != null
+                        : (_authController.userData.value?.profilePic != null && _authController.userData.value!.profilePic!.isNotEmpty)
                             ? NetworkImage(_authController.userData.value!.profilePic!)
                             : const AssetImage("assets/user.png") as ImageProvider,
                   ),

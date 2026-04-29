@@ -14,7 +14,7 @@ class PlanRepository {
     }
   }
 
-  Future<dynamic> createOrder(String planId, {String? itemId, String? seriesId, String? matchId, String? teamId}) async {
+  Future<dynamic> createOrder(String planId, {String? itemId, String? seriesId, String? matchId, String? teamId, String? promoCode}) async {
     try {
       final token = HiveService.getToken();
       if (token != null) {
@@ -32,6 +32,9 @@ class PlanRepository {
       }
       if (teamId != null) {
         data['teamId'] = teamId;
+      }
+      if (promoCode != null && promoCode.isNotEmpty) {
+        data['promoCode'] = promoCode;
       }
       final response = await _apiService.postApi(
         AppUrls.createOrder,
@@ -118,6 +121,15 @@ class PlanRepository {
         _apiService.setToken(token);
       }
       final response = await _apiService.deleteApi(AppUrls.deleteSubscription(id),{});
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<dynamic> getPromoCodes() async {
+    try {
+      final response = await _apiService.getApi(AppUrls.promoCodes);
       return response;
     } catch (e) {
       rethrow;

@@ -66,7 +66,7 @@ class Match {
       this.updatedAt});
 
   Match.fromJson(Map<String, dynamic> json) {
-    sId = json['_id'];
+    sId = json['_id'] ?? json['id'];
     title = json['title'];
     sport = json['sport'];
     teamA = json['teamA'];

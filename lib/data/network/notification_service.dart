@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
@@ -5,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:play_on_app/repo/notification_repository.dart';
 import 'package:play_on_app/utils/hive_service/hive_service.dart';
 import 'package:play_on_app/view_model/after_controller/notification_controller.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
@@ -46,6 +48,15 @@ class NotificationService {
         print("👉 Payload: ${response.payload}");
       },
     );
+
+    if (Platform.isAndroid) {
+      final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+          _localNotifications.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+
+      await androidImplementation?.requestNotificationsPermission();
+      await androidImplementation?.requestExactAlarmsPermission();
+    }
 
     print("✅ Local Notification Initialized");
 
@@ -164,6 +175,60 @@ class NotificationService {
     } catch (e) {
       print("Error syncing token: $e");
     }
+  }
+
+  // 🔥 SCHEDULE NOTIFICATION
+  static Future<void> scheduleNotification({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime scheduledDate,
+  }) async {
+    if (scheduledDate.isBefore(DateTime.now())) {
+      print("⚠️ Notification date is in the past: $scheduledDate. Scheduling for immediate show.");
+      _showImmediateNotification(id, title, body);
+      return;
+    }
+
+    const androidDetails = AndroidNotificationDetails(
+      'high_importance_channel',
+      'High Importance Notifications',
+      importance: Importance.max,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+    );
+
+    const iosDetails = DarwinNotificationDetails();
+
+    await _localNotifications.zonedSchedule(
+      id,
+      title,
+      body,
+      _convertTime(scheduledDate),
+      const NotificationDetails(android: androidDetails, iOS: iosDetails),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
+  }
+
+  static Future<void> _showImmediateNotification(int id, String title, String body) async {
+    const androidDetails = AndroidNotificationDetails(
+      'high_importance_channel',
+      'High Importance Notifications',
+      importance: Importance.max,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+    );
+    await _localNotifications.show(id, title, body, const NotificationDetails(android: androidDetails));
+  }
+
+  static tz.TZDateTime _convertTime(DateTime dateTime) {
+    return tz.TZDateTime.from(dateTime, tz.local);
+  }
+
+  static Future<void> cancelNotification(int id) async {
+    await _localNotifications.cancel(id);
   }
 
   // 🔥 SHOW NOTIFICATION INTERNAL

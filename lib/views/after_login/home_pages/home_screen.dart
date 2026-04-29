@@ -326,14 +326,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         }),
                         const SizedBox(height: 16),
                         // Upcoming Matches Section
-                        Padding(
-                          padding: const EdgeInsets.only(left: 12.0),
-                          child: Text(
-                            "Upcoming Matches",
-                            style: text20(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
                         Builder(builder: (context) {
                           String dashboardSport = (ctr.selectedTabIndex.value != 0
                               ? ctr.sportsList[ctr.selectedTabIndex.value]
@@ -349,7 +341,29 @@ class _HomeScreenState extends State<HomeScreen> {
                                 dashboardSport.toLowerCase())
                                 .toList();
                           }
-                          return _buildUpcomingMatch(upcomingMatches);
+
+                          if (upcomingMatches.isEmpty) return const SizedBox.shrink();
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildSectionHeader(
+                                "Upcoming Matches",
+                                "See all",
+                                onActionTap: () {
+                                  Get.toNamed(
+                                    AppRoutes.seeAllMatches,
+                                    arguments: {
+                                      'title': "Upcoming Matches",
+                                      'matches': upcomingMatches,
+                                    },
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 8),
+                              _buildUpcomingMatch(upcomingMatches),
+                            ],
+                          );
                         }),
                         const SizedBox(height: 16),
                       ],
@@ -426,10 +440,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   _buildSectionHeader(sport, "See all",
                                       onActionTap: () {
-                                        int index = ctr.sportsList.indexOf(sport);
-                                        if (index != -1) {
-                                          ctr.changeTab(index);
-                                        }
+                                        Get.toNamed(
+                                          AppRoutes.seeAllMatches,
+                                          arguments: {
+                                            'title': "$sport Matches",
+                                            'matches': sportMatches,
+                                          },
+                                        );
                                       }),
                                   const SizedBox(height: 8),
                                   _buildRecapMatchList(matches: sportMatches),

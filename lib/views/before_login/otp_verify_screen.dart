@@ -1,4 +1,4 @@
-// ==================== OTP VERIFICATION SCREEN ====================
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -101,7 +101,8 @@ class OtpVerifyScreen extends StatelessWidget {
 
                     Obx(() => AppButton(
                       radius: 8,
-                      title: ctr.isLoading.value ? "Verifying..." : "Verify OTP",
+                      title: "Verify OTP",
+                      isLoading: ctr.isVerifyingOtp.value,
                       onTap: () {
                         ctr.verifyOtp();
                       },
@@ -109,19 +110,21 @@ class OtpVerifyScreen extends StatelessWidget {
 
                     const SizedBox(height: 24),
 
-                    Obx(() => Center(
-                      child: GestureDetector(
-                        onTap: ctr.resendSeconds.value == 0 ? () => ctr.sendOtp() : null,
-                        child: Text(
-                          ctr.resendSeconds.value == 0
-                              ? "Resend OTP"
-                              : "Resend OTP in ${ctr.resendSeconds.value}s",
-                          style: text16(
-                            fontWeight: FontWeight.w600,
-                            color: ctr.resendSeconds.value == 0
-                                ? AppColors.primary
-                                : Colors.grey,
-                          ),
+                    Obx(() => GestureDetector(
+                      onTap: (ctr.resendSeconds.value == 0 && !ctr.isSendingOtp.value)
+                          ? () => ctr.sendOtp()
+                          : null,
+                      child: Text(
+                        ctr.isSendingOtp.value
+                            ? "Sending..."
+                            : ctr.resendSeconds.value == 0
+                            ? "Resend OTP"
+                            : "Resend OTP in ${ctr.resendSeconds.value}s",
+                        style: text16(
+                          fontWeight: FontWeight.w600,
+                          color: (ctr.resendSeconds.value == 0 && !ctr.isSendingOtp.value)
+                              ? AppColors.primary
+                              : Colors.grey,
                         ),
                       ),
                     )),

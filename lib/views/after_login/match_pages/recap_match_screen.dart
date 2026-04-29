@@ -27,11 +27,14 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
   final WatchlistController watchlistController = Get.put(WatchlistController());
 
   final RxBool isInWatchlist = false.obs;
+  final RxBool isWatchlistLoading = false.obs;
 
   @override
   void initState() {
     super.initState();
     _checkWatchlistStatus();
+    // Listen for match changes to ensure watchlist status is accurate
+    ever(videoControllerX.match, (_) => _checkWatchlistStatus());
   }
 
   Future<void> _checkWatchlistStatus() async {
@@ -326,24 +329,39 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
             ),
             const SizedBox(height: 12),
             Obx(() => CustomElevatedIconButton(
-              height: 30,
-              textStyle: text12(fontWeight: FontWeight.w600),
-              text: isInWatchlist.value ? "Added" : "Watch later",
-              icon: isInWatchlist.value ? Icons.check : Icons.add,
+              height: 36,
+              isLoading: isWatchlistLoading.value,
+
+              text: isInWatchlist.value ? "Saved" : "Watchlist",
+
+              icon: isInWatchlist.value
+                  ? Icons.bookmark_rounded
+                  : Icons.bookmark_border_rounded,
+
               onPressed: () async {
                 final match = videoControllerX.match.value;
+
                 if (match != null && match.sId != null) {
-                  final success = await watchlistController.toggleWatchlist(match.sId!, "match");
+                  isWatchlistLoading.value = true;
+
+                  final success = await watchlistController
+                      .toggleWatchlist(match.sId!, "match");
+
                   if (success) {
                     isInWatchlist.value = !isInWatchlist.value;
+
                     Get.snackbar(
-                      "Watchlist", 
-                      isInWatchlist.value ? "Added to watchlist" : "Removed from watchlist",
+                      "Watchlist",
+                      isInWatchlist.value
+                          ? "Added to watchlist"
+                          : "Removed from watchlist",
                       snackPosition: SnackPosition.BOTTOM,
-                      backgroundColor: AppColors.primary.withOpacity(0.8),
+                      backgroundColor: AppColors.primary.withOpacity(0.9),
                       colorText: Colors.white,
                     );
                   }
+
+                  isWatchlistLoading.value = false;
                 }
               },
             )),

@@ -41,4 +41,5 @@ class AppRoutes {
   static const String matchPlay = "/matchPLay";
   static const String recapMatch = "/recapMatch";
   static const String watchlist = "/watchlist";
+  static const String seeAllMatches = "/seeAllMatches";
 }

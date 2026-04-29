@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:play_on_app/data/network/notification_service.dart';
 import 'package:play_on_app/res/app_colors.dart';
@@ -19,10 +20,25 @@ import 'package:play_on_app/views/after_login/home_pages/schedules_screen.dart';
 import 'package:play_on_app/views/after_login/home_pages/watch_list_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await GetStorage.init();
+  
+  // Initialize Timezone using MethodChannel instead of broken flutter_timezone plugin
+  String timeZoneName;
+  try {
+    const channel = MethodChannel('com.playon.app/timezone');
+    timeZoneName = await channel.invokeMethod<String>('getLocalTimezone') ?? 'UTC';
+  } catch (e) {
+    timeZoneName = 'UTC';
+  }
+
+  tz.initializeTimeZones();
+  tz.setLocalLocation(tz.getLocation(timeZoneName));
 
   await Hive.initFlutter();
   Hive.registerAdapter(UserDetailsAdapter());
@@ -90,6 +106,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  DateTime? lastPressed;
+
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<HomeController>();
@@ -101,15 +119,42 @@ class _MyHomePageState extends State<MyHomePage> {
       MatchScheduleScreen(),
     ];
 
-    return Scaffold(
-      body: Obx(
-        () => IndexedStack(
-          index: controller.currentIndex.value,
-          children: screens,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        
+        if (controller.currentIndex.value != 0) {
+          controller.changeIndex(0);
+          return;
+        }
+
+        final now = DateTime.now();
+        const maxDuration = Duration(seconds: 2);
+        
+        if (lastPressed == null || now.difference(lastPressed!) > maxDuration) {
+          lastPressed = now;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Double click to exit app'),
+              duration: maxDuration,
+            ),
+          );
+          return;
+        }
+        
+        SystemNavigator.pop();
+      },
+      child: Scaffold(
+        body: Obx(
+          () => IndexedStack(
+            index: controller.currentIndex.value,
+            children: screens,
+          ),
         ),
-      ),
-      bottomNavigationBar: Obx(
-        () => SafeArea(child: _customBottomBar(controller.currentIndex.value)),
+        bottomNavigationBar: Obx(
+          () => SafeArea(child: _customBottomBar(controller.currentIndex.value)),
+        ),
       ),
     );
   }

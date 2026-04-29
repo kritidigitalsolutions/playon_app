@@ -81,7 +81,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
               Text("No followed series", style: text16(color: Colors.white38)),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () => Get.toNamed(AppRoutes.selectSeries),
+                onPressed: () => Get.toNamed(AppRoutes.selectTour),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

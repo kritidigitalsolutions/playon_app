@@ -29,18 +29,27 @@ class AppButton extends StatelessWidget {
       onTap: isLoading ? null : onTap,
       child: Container(
         height: height,
-        padding: EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: color ?? AppColors.button,
+          color: isLoading
+              ? (color ?? AppColors.button).withOpacity(0.7)
+              : color ?? AppColors.button,
           borderRadius: BorderRadius.circular(radius),
         ),
         child: isLoading
-            ? const CircularProgressIndicator(color: Colors.white)
+            ? const SizedBox(
+          height: 20,
+          width: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            color: Colors.white,
+          ),
+        )
             : Text(
-                title,
-                style: textStyle ?? text15(fontWeight: FontWeight.w600),
-              ),
+          title,
+          style: textStyle ?? text15(fontWeight: FontWeight.w600),
+        ),
       ),
     );
   }
@@ -170,8 +179,9 @@ class CustomElevatedButton extends StatelessWidget {
 
 class CustomElevatedIconButton extends StatelessWidget {
   final String text;
-  final IconData icon;
-  final VoidCallback onPressed;
+  final IconData? icon;
+  final VoidCallback? onPressed;
+  final bool isLoading;
   final Color? backgroundColor;
   final Color? textColor;
   final double borderRadius;
@@ -183,8 +193,9 @@ class CustomElevatedIconButton extends StatelessWidget {
   const CustomElevatedIconButton({
     super.key,
     required this.text,
-    required this.icon,
+    this.icon,
     required this.onPressed,
+    this.isLoading = false,
     this.backgroundColor,
     this.textColor,
     this.borderRadius = 30,
@@ -198,24 +209,46 @@ class CustomElevatedIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: height,
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, size: iconSize, color: textColor ?? AppColors.white),
-        label: Text(
-          text,
-          style:
-              textStyle ??
-              text15(color: AppColors.white, fontWeight: FontWeight.w600),
-        ),
+      child: ElevatedButton(
+        onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor ?? AppColors.button,
+          backgroundColor: isLoading
+              ? (backgroundColor ?? AppColors.button).withOpacity(0.7)
+              : backgroundColor ?? AppColors.button,
           padding: padding,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),
           ),
           elevation: 2,
         ),
+        child: isLoading
+            ? const SizedBox(
+          height: 18,
+          width: 18,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: Colors.white,
+          ),
+        )
+            : Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: iconSize, color: textColor ?? AppColors.white),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              text,
+              style: textStyle ??
+                  text15(
+                    color: textColor ?? AppColors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
+

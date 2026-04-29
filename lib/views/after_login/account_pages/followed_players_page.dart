@@ -44,12 +44,26 @@ class FollowedPlayersScreen extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.person_add_alt_1_outlined, size: 64, color: Colors.white24),
+                          GestureDetector(
+                            onTap: () {
+                              Get.toNamed(AppRoutes.findPlayer);
+                            },
+                            child: const Icon(
+                              Icons.person_add_alt_1_outlined,
+                              size: 64,
+                              color: Colors.white,
+                            ),
+                          ),
                           const SizedBox(height: 16),
-                          Text("You are not following any players yet",
-                              style: text16(color: Colors.white38)),
+                          Text(
+                            "You are not following any players yet",
+                            style: text16(color: Colors.white38),
+                          ),
                           const SizedBox(height: 8),
-                          Text("Keep your eyes on the game", style: text12(color: Colors.white24)),
+                          Text(
+                            "Keep your eyes on the game",
+                            style: text12(color: Colors.white24),
+                          ),
                         ],
                       ),
                     );
@@ -59,7 +73,11 @@ class FollowedPlayersScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(16),
                     itemCount: _playerController.followedPlayers.length,
                     itemBuilder: (context, index) {
-                      return _buildPlayerCard(context, _playerController.followedPlayers[index], _playerController);
+                      return _buildPlayerCard(
+                        context,
+                        _playerController.followedPlayers[index],
+                        _playerController,
+                      );
                     },
                   );
                 }),

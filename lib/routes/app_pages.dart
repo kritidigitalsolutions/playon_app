@@ -30,6 +30,7 @@ import 'package:play_on_app/views/after_login/account_pages/plan_pages/purchased
 import 'package:play_on_app/views/after_login/home_pages/watch_list_screen.dart';
 import '../views/after_login/account_pages/followed_players_page.dart';
 import '../views/after_login/account_pages/player_detail_screen.dart';
+import 'package:play_on_app/views/after_login/home_pages/see_all_matches_screen.dart';
 import 'package:play_on_app/bindings/plan_binding.dart';
 import 'app_routes.dart';
 
@@ -144,5 +145,15 @@ class AppPages {
     GetPage(name: AppRoutes.matchPlay, page: () => MatchPlayScreen()),
     GetPage(name: AppRoutes.recapMatch, page: () => RecapMatchScreen()),
     GetPage(name: AppRoutes.watchlist, page: () => CreateWatchlistScreen()),
+    GetPage(
+      name: AppRoutes.seeAllMatches,
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>;
+        return SeeAllMatchesScreen(
+          title: args['title'],
+          matches: args['matches'],
+        );
+      },
+    ),
   ];
 }

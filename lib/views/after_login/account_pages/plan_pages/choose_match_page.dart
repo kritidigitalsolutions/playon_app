@@ -39,7 +39,8 @@ class _ChooseMatchPageState extends State<ChooseMatchPage> {
   void _onMatchSelected(Match match) {
     if (selectedPlan != null) {
       planController.buyPlan(selectedPlan!.id!,
-          matchId: match.sId
+          matchId: match.sId,
+          promoCode: planController.isPromoApplied.value ? planController.appliedPromoCode.value : null
       );
     }
   }
@@ -305,7 +306,9 @@ class _ChooseMatchPageState extends State<ChooseMatchPage> {
                   if (isPurchased) {
                     Get.toNamed(AppRoutes.matchDetails, arguments: match);
                   } else if (selectedPlan != null) {
-                    planController.buyPlan(selectedPlan!.id!, matchId: match.sId);
+                    planController.buyPlan(selectedPlan!.id!,
+                        matchId: match.sId,
+                        promoCode: planController.isPromoApplied.value ? planController.appliedPromoCode.value : null);
                   } else {
                     Get.toNamed(AppRoutes.matchDetails, arguments: match);
                   }
@@ -377,7 +380,9 @@ class _ChooseMatchPageState extends State<ChooseMatchPage> {
                         if (isPurchased) {
                           Get.toNamed(AppRoutes.matchDetails, arguments: match);
                         } else if (selectedPlan != null) {
-                          planController.buyPlan(selectedPlan!.id!, matchId: match.sId);
+                          planController.buyPlan(selectedPlan!.id!,
+                              matchId: match.sId,
+                              promoCode: planController.isPromoApplied.value ? planController.appliedPromoCode.value : null);
                         } else {
                           Get.toNamed(AppRoutes.matchDetails, arguments: match);
                         }

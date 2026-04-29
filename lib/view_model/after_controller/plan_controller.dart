@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
 import 'package:get/get.dart';
 import 'package:play_on_app/model/response_model/subscription_model.dart';
@@ -18,6 +19,12 @@ class PlanController extends GetxController {
   final subscriptionHistory = ApiResponse<SubscriptionHistoryResponse>.loading().obs;
   final hasAccess = false.obs;
   final isAdFree = false.obs;
+
+  final promoController = TextEditingController();
+  final isPromoApplied = false.obs;
+  final appliedPromoCode = "".obs;
+  final availablePromos = <dynamic>[].obs;
+  final isLoadingPromos = false.obs;
 
   bool isPlanActive(String? planId, {String? slug}) {
     if (planId == null) return false;
@@ -98,6 +105,7 @@ class PlanController extends GetxController {
     fetchPlans();
     fetchMySubscription();
     fetchSubscriptionHistory();
+    fetchPromos();
   }
 
   @override
@@ -176,7 +184,7 @@ class PlanController extends GetxController {
     }
   }
 
-  Future<void> buyPlan(String planId, {String? itemId, String? seriesId, String? matchId, String? teamId}) async {
+  Future<void> buyPlan(String planId, {String? itemId, String? seriesId, String? matchId, String? teamId, String? promoCode}) async {
     isPaymentProcessing.value = true;
     _currentPlanId = planId;
     _currentMatchId = matchId;
@@ -184,7 +192,7 @@ class PlanController extends GetxController {
     _currentTeamId = teamId;
 
     try {
-      final response = await _api.createOrder(planId, itemId: itemId, seriesId: seriesId, matchId: matchId, teamId: teamId);
+      final response = await _api.createOrder(planId, itemId: itemId, seriesId: seriesId, matchId: matchId, teamId: teamId, promoCode: promoCode);
       
       if (response['success'] == true) {
         final orderData = response['order'];
@@ -249,5 +257,54 @@ class PlanController extends GetxController {
 
   void _handleExternalWallet(ExternalWalletResponse response) {
     isPaymentProcessing.value = false;
+  }
+
+  void removePromoCode() {
+    isPromoApplied.value = false;
+    appliedPromoCode.value = "";
+    promoController.clear();
+  }
+
+  void fetchPromos() {
+    isLoadingPromos.value = true;
+    _api.getPromoCodes().then((value) {
+      if (value['success'] == true) {
+        availablePromos.value = value['promos'] ?? [];
+      }
+      isLoadingPromos.value = false;
+    }).catchError((error) {
+      isLoadingPromos.value = false;
+    });
+  }
+
+  void applyPromoCode() {
+    final code = promoController.text.trim();
+    if (code.isEmpty) {
+      showCustomSnackbar(title: 'Error', message: 'Please enter a promo code', type: SnackType.error);
+      return;
+    }
+
+    // Check against available promos from API
+    final promo = availablePromos.firstWhere(
+      (p) => p['code'].toString().toUpperCase() == code.toUpperCase(),
+      orElse: () => null,
+    );
+
+    if (promo != null) {
+      // Validate expiry
+      if (promo['validTill'] != null) {
+        final expiry = DateTime.parse(promo['validTill']);
+        if (expiry.isBefore(DateTime.now())) {
+          showCustomSnackbar(title: 'Error', message: 'This promo code has expired', type: SnackType.error);
+          return;
+        }
+      }
+      
+      isPromoApplied.value = true;
+      appliedPromoCode.value = code.toUpperCase();
+      showCustomSnackbar(title: 'Success', message: 'Promo code "${code.toUpperCase()}" applied!', type: SnackType.success);
+    } else {
+      showCustomSnackbar(title: 'Error', message: 'Invalid promo code', type: SnackType.error);
+    }
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -20,6 +21,10 @@ class NotificationScreen extends StatefulWidget {
 
 class _NotificationScreenState extends State<NotificationScreen> {
   final NotificationController controller = Get.put(NotificationController());
+  NotificationData? recentlyDeleted;
+  int? recentlyDeletedIndex;
+  Timer? deleteTimer;
+
 
   void _showNotificationDetail(NotificationData notif) {
     if (notif.isRead == false) {
@@ -131,14 +136,27 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       style: text20(fontWeight: FontWeight.bold),
                     ),
                     const Spacer(),
-                    TextButton.icon(
-                      onPressed: () => controller.markAllAsRead(),
-                      icon: const Icon(Icons.done_all, size: 20),
-                      label: const Text("Mark all read"),
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.white70,
-                      ),
-                    ),
+                    Obx(() {
+                      final notifications =
+                          controller.notificationList.value.data?.notifications ?? [];
+
+                      final hasUnread = notifications.any((n) => n.isRead == false);
+
+                      return TextButton.icon(
+                        onPressed: hasUnread ? () => controller.markAllAsRead() : null,
+                        icon: Icon(
+                          Icons.done_all,
+                          size: 20,
+                          color: hasUnread ? AppColors.success : AppColors.white, // 👈 color change
+                        ),
+                        label: Text(
+                          "Mark all read",
+                          style: text13(
+                            color: hasUnread ? AppColors.success : AppColors.white,
+                          ),
+                        ),
+                      );
+                    }),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -189,8 +207,92 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                   ),
                                   child: const Icon(Icons.delete, color: Colors.white),
                                 ),
-                                onDismissed: (_) =>
-                                    controller.deleteNotification(notif.id!),
+                                onDismissed: (_) {
+                                  final list = controller.notificationList.value.data?.notifications;
+
+                                  if (list == null) return;
+
+                                  recentlyDeleted = notif;
+                                  recentlyDeletedIndex = index;
+
+                                  list.removeAt(index);
+                                  controller.notificationList.refresh();
+
+                                  // Show UNDO snackbar
+                                  Get.snackbar(
+                                    "",
+                                    "",
+                                    snackPosition: SnackPosition.BOTTOM,
+                                    backgroundColor: Colors.transparent,
+                                    margin: const EdgeInsets.all(12),
+                                    padding: EdgeInsets.zero,
+                                    duration: const Duration(seconds: 5),
+
+                                    messageText: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.secPrimary.withOpacity(0.95),
+                                        borderRadius: BorderRadius.circular(14),
+                                        border: Border.all(
+                                          color: AppColors.white.withOpacity(0.2),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.delete_outline, color: Colors.redAccent, size: 22),
+
+                                          const SizedBox(width: 12),
+
+                                          Expanded(
+                                            child: Text(
+                                              "Notification removed",
+                                              style: text14(
+                                                color: AppColors.white,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+
+                                          GestureDetector(
+                                            onTap: () {
+                                              deleteTimer?.cancel();
+
+                                              if (recentlyDeleted != null && recentlyDeletedIndex != null) {
+                                                list.insert(recentlyDeletedIndex!, recentlyDeleted!);
+                                                controller.notificationList.refresh();
+                                              }
+
+                                              Get.closeCurrentSnackbar(); // 👈 close after undo
+                                            },
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.primary.withOpacity(0.2),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                "UNDO",
+                                                style: text12(
+                                                  color: AppColors.primary,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+
+                                  // Delay API call
+                                  deleteTimer = Timer(const Duration(seconds: 5), () {
+                                    if (recentlyDeleted != null) {
+                                      controller.deleteNotification(recentlyDeleted!.id!);
+                                      recentlyDeleted = null;
+                                      recentlyDeletedIndex = null;
+                                    }
+                                  });
+                                },
                                 child: GestureDetector(
                                   onTap: () => _showNotificationDetail(notif),
                                   child: Container(

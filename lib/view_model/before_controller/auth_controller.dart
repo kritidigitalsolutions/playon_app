@@ -1,7 +1,5 @@
 import 'dart:async';
 import 'package:dio/dio.dart' as dio;
-import 'dart:async';
-import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:play_on_app/model/response_model/auth_response_model.dart';
@@ -18,6 +16,8 @@ class AuthController extends GetxController {
   final formKey = GlobalKey<FormState>();
 
   var isLoading = false.obs;
+  var isVerifyingOtp = false.obs;
+  var isSendingOtp = false.obs;
   var mobileController = TextEditingController();
   var otpController = TextEditingController();
   var nameController = TextEditingController();
@@ -82,7 +82,7 @@ class AuthController extends GetxController {
       showCustomSnackbar(title: "Error", message: "Enter mobile number", type: SnackType.error);
       return;
     }
-    isLoading.value = true;
+    isSendingOtp.value = true;
     try {
       final response = await _repository.sendOtp({"mobile": mobileController.text});
       final data = OtpResponseModel.fromJson(response);
@@ -102,7 +102,7 @@ class AuthController extends GetxController {
     } catch (e) {
       showCustomSnackbar(title: "Error", message: e.toString(), type: SnackType.error);
     } finally {
-      isLoading.value = false;
+      isSendingOtp.value = false;
     }
   }
 
@@ -111,7 +111,7 @@ class AuthController extends GetxController {
       showCustomSnackbar(title: "Error", message: "Enter OTP", type: SnackType.error);
       return;
     }
-    isLoading.value = true;
+    isVerifyingOtp.value = true;
     try {
       final response = await _repository.verifyOtp({
         "mobile": mobileController.text,
@@ -126,7 +126,7 @@ class AuthController extends GetxController {
           name: data.user?.fullName,
         );
         await HiveService.saveUser(userDetail);
-        
+
         if (Get.isRegistered<HomeController>()) {
           Get.find<HomeController>().isLogin.value = true;
         }
@@ -140,7 +140,7 @@ class AuthController extends GetxController {
     } catch (e) {
       showCustomSnackbar(title: "Error", message: e.toString(), type: SnackType.error);
     } finally {
-      isLoading.value = false;
+      isVerifyingOtp.value = false;
     }
   }
 
@@ -191,16 +191,39 @@ class AuthController extends GetxController {
       if (fullName != null) dataMap["fullName"] = fullName;
       if (email != null) dataMap["email"] = email;
       
+      dynamic requestData;
+
       if (profileImagePath != null) {
-        dataMap["profileImage"] = await dio.MultipartFile.fromFile(
-          profileImagePath,
-          filename: profileImagePath.split('/').last,
-        );
+        if (profileImagePath.isEmpty) {
+          // Removal case
+          dataMap["profileImage"] = ""; 
+          dataMap["profilePic"] = ""; 
+          
+          // Force clear local data immediately for better UI response
+          if (userData.value != null) {
+            userData.value!.profileImage = "";
+            userData.value!.profilePic = "";
+            userData.refresh();
+          }
+          
+          // Use a plain map (JSON) for removal to allow empty strings/nulls to be processed correctly
+          requestData = dataMap;
+        } else {
+          // Upload case
+          dataMap["profileImage"] = await dio.MultipartFile.fromFile(
+            profileImagePath,
+            filename: profileImagePath.split('/').last,
+          );
+          // Use FormData for multi-part file upload
+          requestData = dio.FormData.fromMap(dataMap);
+        }
+      } else {
+        // Just text update, use plain map (JSON)
+        requestData = dataMap;
       }
 
-      final formData = dio.FormData.fromMap(dataMap);
-      
-      final response = await _repository.updateProfile(formData, token);
+      // If the repository expects only FormData, we'd need to convert, but patchApi handles dynamic
+      final response = await _repository.updateProfile(requestData, token);
       
       if (response['success'] == true) {
         userData.value = UserData.fromJson(response['user']);

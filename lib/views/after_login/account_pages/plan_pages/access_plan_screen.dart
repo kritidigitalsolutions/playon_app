@@ -129,43 +129,163 @@ class AccessPlansScreen extends StatelessWidget {
           );
         case Status.completed:
           final plans = controller.planList.value.data?.plans ?? [];
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: plans.length,
-            itemBuilder: (context, index) {
-              final plan = plans[index];
-              final isActive = controller.isPlanActive(plan.id, slug: plan.slug);
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: _buildPlanCard(
-                  title: plan.title ?? "",
-                  price: "${plan.currency == 'INR' ? '₹' : plan.currency}${plan.price} / ${plan.billingType}",
-                  features: plan.features ?? [],
-                  buttonText: isActive ? "Purchased" : (plan.buttonText ?? "Unlock Now"),
-                  isPrimary: index == 0,
-                  onTap: isActive
-                      ? () {}
-                      : () {
-                          if (plan.slug == "one-match-pass" || plan.buttonText == "Choose The Match") {
-                            Get.toNamed(AppRoutes.chooseMatch, arguments: plan);
-                          } else if (plan.buttonText == "Choose The Team") {
-                            Get.toNamed(AppRoutes.selectTeam, arguments: plan);
-                          } else if (plan.buttonText == "Choose The Series") {
-                            Get.toNamed(AppRoutes.selectSeries, arguments: plan);
-                          } else {
-                            if (plan.id != null) {
-                              controller.buyPlan(plan.id!);
-                            }
-                          }
-                        },
+          return Column(
+            children: [
+              _buildPromoCodeField(),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: plans.length,
+                  itemBuilder: (context, index) {
+                    final plan = plans[index];
+                    final isActive = controller.isPlanActive(plan.id, slug: plan.slug);
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      child: _buildPlanCard(
+                        title: plan.title ?? "",
+                        price: "${plan.currency == 'INR' ? '₹' : plan.currency}${plan.price} / ${plan.billingType}",
+                        features: plan.features ?? [],
+                        buttonText: isActive ? "Purchased" : (plan.buttonText ?? "Unlock Now"),
+                        isPrimary: index == 0,
+                        onTap: isActive
+                            ? () {}
+                            : () {
+                                if (plan.slug == "one-match-pass" || plan.buttonText == "Choose The Match") {
+                                  Get.toNamed(AppRoutes.chooseMatch, arguments: plan);
+                                } else if (plan.buttonText == "Choose The Team") {
+                                  Get.toNamed(AppRoutes.selectTeam, arguments: plan);
+                                } else if (plan.buttonText == "Choose The Series") {
+                                  Get.toNamed(AppRoutes.selectSeries, arguments: plan);
+                                } else {
+                                  if (plan.id != null) {
+                                    controller.buyPlan(plan.id!, promoCode: controller.isPromoApplied.value ? controller.appliedPromoCode.value : null);
+                                  }
+                                }
+                              },
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
+              ),
+            ],
           );
         default:
           return const SizedBox();
       }
     });
+  }
+
+  Widget _buildPromoCodeField() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Have a Promo Code?", style: text14(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller.promoController,
+                  style: text14(),
+                  textCapitalization: TextCapitalization.characters,
+                  decoration: InputDecoration(
+                    hintText: "Enter coupon code ",
+                    hintStyle: text14(color: AppColors.white70),
+                    filled: true,
+                    fillColor: AppColors.white.withOpacity(0.05),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.white.withOpacity(0.1)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.white.withOpacity(0.1)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Obx(() => controller.isPromoApplied.value
+                  ? IconButton(
+                      onPressed: controller.removePromoCode,
+                      icon: const Icon(Icons.cancel, color: AppColors.error),
+                    )
+                  : ElevatedButton(
+                      onPressed: controller.applyPromoCode,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                      child: Text("Apply", style: text14(fontWeight: FontWeight.bold)),
+                    )),
+            ],
+          ),
+          Obx(() => controller.isPromoApplied.value
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    "Promo code '${controller.appliedPromoCode.value}' applied!",
+                    style: text12(color: AppColors.success),
+                  ),
+                )
+              : const SizedBox()),
+          
+          // Available Promos List
+          // Obx(() {
+          //   if (controller.availablePromos.isEmpty) return const SizedBox();
+          //   return Column(
+          //     crossAxisAlignment: CrossAxisAlignment.start,
+          //     children: [
+          //       const SizedBox(height: 12),
+          //       Text("Available Offers:", style: text12(color: AppColors.white70, fontWeight: FontWeight.bold)),
+          //       const SizedBox(height: 8),
+          //       SizedBox(
+          //         height: 40,
+          //         child: ListView.builder(
+          //           scrollDirection: Axis.horizontal,
+          //           itemCount: controller.availablePromos.length,
+          //           itemBuilder: (context, index) {
+          //             final promo = controller.availablePromos[index];
+          //             final code = promo['code'] ?? "";
+          //             return GestureDetector(
+          //               onTap: () {
+          //                 controller.promoController.text = code;
+          //                 controller.applyPromoCode();
+          //               },
+          //               child: Container(
+          //                 margin: const EdgeInsets.only(right: 8),
+          //                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          //                 decoration: BoxDecoration(
+          //                   color: AppColors.primary.withValues(alpha: 0.1),
+          //                   borderRadius: BorderRadius.circular(20),
+          //                   border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+          //                 ),
+          //                 child: Row(
+          //                   children: [
+          //                     const Icon(Icons.local_offer_outlined, size: 14, color: AppColors.primary),
+          //                     const SizedBox(width: 6),
+          //                     Text(code, style: text12(color: AppColors.primary, fontWeight: FontWeight.bold)),
+          //                   ],
+          //                 ),
+          //               ),
+          //             );
+          //           },
+          //         ),
+          //       ),
+          //     ],
+          //   );
+          // }),
+        ],
+      ),
+    );
   }
 
   Widget _buildMySubscriptionTab() {

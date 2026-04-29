@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:play_on_app/repo/match_repository.dart';
 import 'package:video_player/video_player.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
 import 'package:play_on_app/view_model/after_controller/plan_controller.dart';
+import 'package:play_on_app/data/network/notification_service.dart';
 
 class MatchDetailsController extends GetxController {
   final match = Rxn<model.Match>();
@@ -26,11 +28,25 @@ class MatchDetailsController extends GetxController {
       match.value = Get.arguments;
       _initializeMatchStatus();
       
+      // Check if reminder is already set in local storage
+      _checkReminderStatus();
+
       // Re-check access whenever plan status changes
       ever(planController.hasAccess, (_) => checkAccess());
       ever(planController.mySubscription, (_) => checkAccess());
       checkAccess();
     }
+  }
+
+  void _checkReminderStatus() {
+    if (match.value == null) return;
+    final reminders = GetStorage().read<List>('reminders') ?? [];
+    isReminderOn.value = reminders.contains(match.value!.sId);
+  }
+
+  bool isReminded(String matchId) {
+    final reminders = GetStorage().read<List>('reminders') ?? [];
+    return reminders.contains(matchId);
   }
 
   void checkAccess() {
@@ -73,8 +89,61 @@ class MatchDetailsController extends GetxController {
     });
   }
 
-  void toggleReminder() {
-    isReminderOn.value = !isReminderOn.value;
+  void toggleReminder() async {
+    if (match.value == null) return;
+
+    final storage = GetStorage();
+    List reminders = storage.read<List>('reminders') ?? [];
+
+    if (isReminderOn.value) {
+      // Remove reminder
+      reminders.remove(match.value!.sId);
+      await storage.write('reminders', reminders);
+      isReminderOn.value = false;
+      
+      // Cancel notification
+      NotificationService.cancelNotification(match.value!.sId.hashCode);
+      
+      Get.snackbar("Reminder Removed", "You will not be notified for this match.");
+    } else {
+      // Set reminder
+      if (match.value!.matchDate == null) {
+        Get.snackbar("Error", "Match date not available");
+        return;
+      }
+
+      final startTime = DateTime.parse(match.value!.matchDate!);
+      if (startTime.isBefore(DateTime.now())) {
+        Get.snackbar("Error", "Match has already started");
+        return;
+      }
+
+      // Notification time (e.g., 5 minutes before)
+      final notificationTime = startTime.subtract(const Duration(minutes: 5));
+      
+      if (notificationTime.isBefore(DateTime.now())) {
+        // If less than 5 mins remains, notify at start time or immediately
+        NotificationService.scheduleNotification(
+          id: match.value!.sId.hashCode,
+          title: "Match Starting Soon!",
+          body: "${match.value!.teamA} vs ${match.value!.teamB} is about to start.",
+          scheduledDate: startTime,
+        );
+      } else {
+        NotificationService.scheduleNotification(
+          id: match.value!.sId.hashCode,
+          title: "Match Reminder",
+          body: "${match.value!.teamA} vs ${match.value!.teamB} starts in 5 minutes.",
+          scheduledDate: notificationTime,
+        );
+      }
+
+      reminders.add(match.value!.sId);
+      await storage.write('reminders', reminders);
+      isReminderOn.value = true;
+      
+      Get.snackbar("Reminder Set", "We will notify you before the match starts.");
+    }
   }
 
   void toggleLock() {
@@ -144,8 +213,8 @@ class VideoControllerX extends GetxController {
   }
 
   void initializeVideo(String url) {
-    videoController = VideoPlayerController.network(url)
-      ?..initialize().then((_) {
+    videoController = VideoPlayerController.networkUrl(Uri.parse(url))
+      ..initialize().then((_) {
         isInitialized.value = true;
         videoController?.play();
         isPlaying.value = true;

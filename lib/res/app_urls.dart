@@ -56,6 +56,7 @@ class AppUrls {
   // Payment Endpoints
   static const String createOrder = '$baseUrl/payment/create-order';
   static const String verifyPayment = '$baseUrl/payment/verify';
+  static const String promoCodes = '$baseUrl/promos';
 
   // Watchlist Endpoints
   static const String watchlist = '$baseUrl/watchlist';

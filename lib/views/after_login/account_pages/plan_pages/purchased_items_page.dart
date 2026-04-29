@@ -7,6 +7,8 @@ import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/view_model/after_controller/plan_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 
+import '../../../../routes/app_routes.dart';
+
 class PurchasedItemsPage extends StatelessWidget {
   const PurchasedItemsPage({super.key});
 
@@ -35,19 +37,57 @@ class PurchasedItemsPage extends StatelessWidget {
               Expanded(
                 child: Obx(() {
                   final history = controller.subscriptionHistory.value.data?.subscriptions ?? [];
-                  final activePasses = history.where((sub) => sub.status == 'active' && sub.planId?.slug != 'full-access' && sub.planId?.slug != 'unlimited-sports-pass').toList();
+
+                  final activePasses = history.where((sub) =>
+                  sub.status == 'active' &&
+                      sub.planId?.slug != 'full-access' &&
+                      sub.planId?.slug != 'unlimited-sports-pass'
+                  ).toList();
 
                   if (activePasses.isEmpty) {
                     return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.lock_outline, size: 64, color: AppColors.white.withValues(alpha: 0.3)),
-                          const SizedBox(height: 16),
-                          Text("No specific passes active", style: text16(color: AppColors.white70)),
-                          const SizedBox(height: 8),
-                          Text("Your match/team/series passes will show here", style: text12(color: AppColors.white38)),
-                        ],
+                      child: GestureDetector(
+                        onTap: () {
+                          Get.toNamed(AppRoutes.accessPlan);
+                        },
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.lock_outline,
+                              size: 64,
+                              color: AppColors.white.withValues(alpha: 0.3),
+                            ),
+                            const SizedBox(height: 16),
+
+                            Text(
+                              "No specific passes active",
+                              style: text16(color: AppColors.white70),
+                            ),
+
+                            const SizedBox(height: 8),
+
+                            Text(
+                              "Tap to explore plans",
+                              style: text12(color: AppColors.white38),
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // 🔥 CTA Button (Better UX)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                              child: Text(
+                                "View Plans",
+                                style: text14(color: AppColors.white),
+                              ),
+                            )
+                          ],
+                        ),
                       ),
                     );
                   }

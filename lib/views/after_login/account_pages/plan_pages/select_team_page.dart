@@ -202,7 +202,9 @@ class _SelectTeamPageState extends State<SelectTeamPage> {
             Get.snackbar("Access Granted", "You have access to all matches for ${team['name']}",
                 backgroundColor: Colors.green.withOpacity(0.7), colorText: Colors.white);
           } else if (selectedPlan?.id != null) {
-            planController.buyPlan(selectedPlan!.id!, teamId: team['_id']);
+            planController.buyPlan(selectedPlan!.id!,
+                teamId: team['_id'],
+                promoCode: planController.isPromoApplied.value ? planController.appliedPromoCode.value : null);
           }
         },
         child: ClipRRect(

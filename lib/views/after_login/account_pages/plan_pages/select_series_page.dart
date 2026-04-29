@@ -182,7 +182,9 @@ class _SelectSeriesPageState extends State<SelectSeriesPage> {
                               if (isPurchased) {
                                 Get.toNamed(AppRoutes.followedPage);
                               } else if (selectedPlan?.id != null && series.sId != null) {
-                                planController.buyPlan(selectedPlan!.id!, seriesId: series.sId);
+                                planController.buyPlan(selectedPlan!.id!,
+                                    seriesId: series.sId,
+                                    promoCode: planController.isPromoApplied.value ? planController.appliedPromoCode.value : null);
                               }
                             },
                             style: ElevatedButton.styleFrom(
