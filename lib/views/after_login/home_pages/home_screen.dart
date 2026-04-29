@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/res/app_image.dart';
@@ -499,13 +500,125 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       }),
 
-                      const SizedBox(height: 80),
+                      const SizedBox(height: 20),
+                      _buildFooter(),
                     ],
                   ),
                 );
               }),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFooter() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      child: Column(
+        children: [
+          // Company Logo
+          Image.asset(
+            AppImage.logo,
+            height: 100,
+          ),
+
+          const SizedBox(height: 16),
+
+          // Social Media Icons
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _socialIcon(FontAwesomeIcons.facebookF, "https://www.facebook.com/share/1EUtkYpvCG/"),
+              const SizedBox(width: 16),
+
+              _socialIcon(FontAwesomeIcons.instagram, "https://www.instagram.com/play_on2026/"),
+              const SizedBox(width: 16),
+
+              _socialIcon(FontAwesomeIcons.xTwitter, "https://x.com/playon2026"),
+              const SizedBox(width: 16),
+
+              _socialIcon(FontAwesomeIcons.youtube, "https://www.youtube.com/@playon2026"),
+              const SizedBox(width: 16),
+
+              _socialIcon(FontAwesomeIcons.linkedinIn, "https://linkedin.com"),
+              const SizedBox(width: 16),
+
+              _socialIcon(FontAwesomeIcons.envelope, "mailto:playontvindia@gmail.com"),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          Text(
+            "© 2026 PlayOn. All rights reserved.",
+            style: text12(color: AppColors.white60),
+          ),
+          const SizedBox(height: 10),
+
+          // Policy Links
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _policyText("Privacy Policy", AppRoutes.privacyPolicy),
+              _divider(),
+
+              _policyText("Refund Policy", AppRoutes.refundPolicy),
+              _divider(),
+
+              _policyText("Terms of Use", AppRoutes.termsConditions),
+              _divider(),
+
+              _policyText("About Us", AppRoutes.aboutUs),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+  Widget _divider() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Text(
+        "|",
+        style: text13(color: AppColors.white60),
+      ),
+    );
+  }
+
+  Widget _policyText(String text, String route) {
+    return GestureDetector(
+      onTap: () {
+        Get.toNamed(route);
+      },
+      child: Text(
+        text,
+        style: text13(
+          color: AppColors.primary,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+  Widget _socialIcon(IconData icon, String url) {
+    return GestureDetector(
+      onTap: () async {
+        final uri = Uri.parse(url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: AppColors.white.withValues(alpha: 0.1),
+          shape: BoxShape.circle,
+        ),
+        child: FaIcon(
+          icon,
+          color: AppColors.white,
+          size: 18,
         ),
       ),
     );

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:ui';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:play_on_app/model/response_model/notification_model.dart';
@@ -61,6 +62,47 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 ),
               ),
               const SizedBox(height: 20),
+              if (notif.image != null && notif.image!.isNotEmpty)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: CachedNetworkImage(
+                    imageUrl: notif.image!,
+                    height: 180,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      height: 180,
+                      color: AppColors.white.withValues(alpha: 0.05),
+                      child: const Center(child: CircularProgressIndicator()),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      height: 180,
+                      color: AppColors.white.withValues(alpha: 0.05),
+                      child: const Icon(Icons.error),
+                    ),
+                  ),
+                )
+              else if (notif.metadata?.image != null &&
+                  notif.metadata!.image!.isNotEmpty)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: CachedNetworkImage(
+                    imageUrl: notif.metadata!.image!,
+                    height: 180,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      height: 180,
+                      color: AppColors.white.withValues(alpha: 0.05),
+                      child: const Center(child: CircularProgressIndicator()),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      height: 180,
+                      color: AppColors.white.withValues(alpha: 0.05),
+                      child: const Icon(Icons.error),
+                    ),
+                  ),
+                ),
               Text(notif.title ?? "", style: text20(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Text(
@@ -225,16 +267,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                     snackPosition: SnackPosition.BOTTOM,
                                     backgroundColor: Colors.transparent,
                                     margin: const EdgeInsets.all(12),
-                                    padding: EdgeInsets.zero,
+                                      padding: EdgeInsets.zero,
                                     duration: const Duration(seconds: 5),
 
                                     messageText: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                       decoration: BoxDecoration(
-                                        color: AppColors.secPrimary.withOpacity(0.95),
+                                        color: AppColors.secPrimary.withValues(alpha: 0.95),
                                         borderRadius: BorderRadius.circular(14),
                                         border: Border.all(
-                                          color: AppColors.white.withOpacity(0.2),
+                                          color: AppColors.white.withValues(alpha: 0.2),
                                         ),
                                       ),
                                       child: Row(
@@ -267,7 +309,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                             child: Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                               decoration: BoxDecoration(
-                                                color: AppColors.primary.withOpacity(0.2),
+                                                color: AppColors.primary.withValues(alpha: 0.2),
                                                 borderRadius: BorderRadius.circular(8),
                                               ),
                                               child: Text(
@@ -322,16 +364,70 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                               horizontal: 16,
                                               vertical: 12,
                                             ),
-                                            leading: !isRead
-                                                ? Container(
-                                                    width: 10,
-                                                    height: 10,
-                                                    decoration: const BoxDecoration(
-                                                      color: Colors.blueAccent,
-                                                      shape: BoxShape.circle,
+                                            leading: SizedBox(
+                                              width: 50,
+                                              height: 50,
+                                              child: Stack(
+                                                children: [
+                                                  if (notif.image != null &&
+                                                      notif.image!.isNotEmpty)
+                                                    ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.circular(8),
+                                                      child: CachedNetworkImage(
+                                                        imageUrl: notif.image!,
+                                                        width: 50,
+                                                        height: 50,
+                                                        fit: BoxFit.cover,
+                                                        placeholder: (context, url) => Container(
+                                                          color: AppColors.white.withValues(alpha: 0.05),
+                                                        ),
+                                                        errorWidget: (context,
+                                                                url,
+                                                                error) =>
+                                                            _defaultIcon(isRead),
+                                                      ),
+                                                    )
+                                                  else if (notif.metadata?.image !=
+                                                          null &&
+                                                      notif.metadata!.image!
+                                                          .isNotEmpty)
+                                                    ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.circular(8),
+                                                      child: CachedNetworkImage(
+                                                        imageUrl: notif.metadata!.image!,
+                                                        width: 50,
+                                                        height: 50,
+                                                        fit: BoxFit.cover,
+                                                        placeholder: (context, url) => Container(
+                                                          color: AppColors.white.withValues(alpha: 0.05),
+                                                        ),
+                                                        errorWidget: (context,
+                                                                url,
+                                                                error) =>
+                                                            _defaultIcon(isRead),
+                                                      ),
+                                                    )
+                                                  else
+                                                    _defaultIcon(isRead),
+                                                  if (!isRead)
+                                                    Positioned(
+                                                      top: 0,
+                                                      right: 0,
+                                                      child: Container(
+                                                        width: 10,
+                                                        height: 10,
+                                                        decoration:
+                                                            const BoxDecoration(
+                                                          color: Colors.blueAccent,
+                                                          shape: BoxShape.circle,
+                                                        ),
+                                                      ),
                                                     ),
-                                                  )
-                                                : null,
+                                                ],
+                                              ),
+                                            ),
                                             title: Text(
                                               notif.title ?? "",
                                               style: text15(
@@ -369,6 +465,24 @@ class _NotificationScreenState extends State<NotificationScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _defaultIcon(bool isRead) {
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        color: isRead
+            ? AppColors.white.withValues(alpha: 0.1)
+            : AppColors.primary.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(
+        Icons.notifications_outlined,
+        color: isRead ? AppColors.white70 : AppColors.primary,
+        size: 26,
       ),
     );
   }

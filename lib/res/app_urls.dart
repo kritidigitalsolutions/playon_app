@@ -1,6 +1,6 @@
 class AppUrls {
-  // static const String baseUrl = 'http://192.168.1.3:8000/api';
-  static const String baseUrl = 'https://play-on-weld.vercel.app/api';
+  static const String baseUrl = 'http://192.168.1.3:8000/api';
+  // static const String baseUrl = 'https://play-on-weld.vercel.app/api';
 
   // Auth Endpoints
   static const String sendOtp = '$baseUrl/auth/send-otp';
@@ -24,6 +24,7 @@ class AppUrls {
 
   // Channel Endpoints
   static const String liveChannels = '$baseUrl/channels/live';
+  static const String channelCategories = '$baseUrl/channel-categories';
 
   // Legal Endpoints
   static const String privacyPolicy = '$baseUrl/legal/privacy-policy';

@@ -10,6 +10,7 @@ import 'package:play_on_app/model/response_model/match_model.dart';
 import 'package:play_on_app/repo/match_repository.dart';
 import 'package:play_on_app/utils/hive_service/hive_service.dart';
 import 'package:play_on_app/model/response_model/banner_model.dart';
+import 'package:play_on_app/model/response_model/channel_category_model.dart';
 
 class HomeController extends GetxController {
   final MatchRepository _matchRepository = MatchRepository();
@@ -35,6 +36,9 @@ class HomeController extends GetxController {
   var bannerList = <Banners>[].obs;
   var isBannerLoading = false.obs;
 
+  var channelCategories = <ChannelCategory>[].obs;
+  var isCategoryLoading = false.obs;
+
   var searchQuery = "".obs;
 
   final RxInt selectedTabIndex = 0.obs;
@@ -47,6 +51,7 @@ class HomeController extends GetxController {
     super.onInit();
     isLogin.value = HiveService.isLogin();
     fetchSports();
+    fetchChannelCategories();
     fetchMatches();
     fetchChannels();
     fetchBanners();
@@ -87,6 +92,21 @@ class HomeController extends GetxController {
       }
     } catch (e) {
       print("Error fetching sports: $e");
+    }
+  }
+
+  Future<void> fetchChannelCategories() async {
+    isCategoryLoading.value = true;
+    try {
+      final res = await _channelRepository.getChannelCategories();
+      if (res['success'] == true) {
+        final data = ChannelCategoryModel.fromJson(res);
+        channelCategories.assignAll(data.categories ?? []);
+      }
+    } catch (e) {
+      print("Error fetching channel categories: $e");
+    } finally {
+      isCategoryLoading.value = false;
     }
   }
 

@@ -1,17 +1,11 @@
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:play_on_app/res/app_colors.dart';
-import 'package:video_player/video_player.dart';
-import 'package:get/get.dart';
-
-import 'package:chewie/chewie.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:play_on_app/model/response_model/channel_model.dart' as model;
 import 'package:play_on_app/res/app_colors.dart';
 import 'package:video_player/video_player.dart';
 import 'package:get/get.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 class ChannelPlayScreen extends StatefulWidget {
   const ChannelPlayScreen({super.key});
@@ -33,6 +27,9 @@ class _VideoPlayerScreenState extends State<ChannelPlayScreen> {
   }
 
   Future<void> _initializePlayer() async {
+    // Enable wakelock to prevent screen dimming/sleep
+    WakelockPlus.enable();
+
     final url = channel?.streamUrl ??
         "https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4";
 
@@ -86,6 +83,8 @@ class _VideoPlayerScreenState extends State<ChannelPlayScreen> {
   void dispose() {
     _videoPlayerController.dispose();
     _chewieController?.dispose();
+    // Disable wakelock when leaving
+    WakelockPlus.disable();
     // Reset orientation when leaving
     SystemChrome.setPreferredOrientations(DeviceOrientation.values);
     super.dispose();

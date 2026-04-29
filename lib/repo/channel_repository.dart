@@ -12,4 +12,13 @@ class ChannelRepository {
       rethrow;
     }
   }
+
+  Future<dynamic> getChannelCategories() async {
+    try {
+      final response = await _apiServices.getApi(AppUrls.channelCategories);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

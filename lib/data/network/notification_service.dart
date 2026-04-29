@@ -8,6 +8,9 @@ import 'package:play_on_app/utils/hive_service/hive_service.dart';
 import 'package:play_on_app/view_model/after_controller/notification_controller.dart';
 import 'package:timezone/timezone.dart' as tz;
 
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+
 class NotificationService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   static final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
@@ -17,6 +20,10 @@ class NotificationService {
   @pragma('vm:entry-point')
   static Future<void> backgroundHandler(RemoteMessage message) async {
     await Firebase.initializeApp();
+    print("📩 BACKGROUND MESSAGE RECEIVED: ${message.messageId}");
+    print("📦 Data: ${message.data}");
+    print("🔔 Notification Title: ${message.notification?.title}");
+    print("🔔 Notification Body: ${message.notification?.body}");
 
     // 🔥 IMPORTANT: initialize local notification again
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -29,9 +36,12 @@ class NotificationService {
     // If message contains a notification, Android handles it automatically in background
     // We only show local notification if it's a data-only message
     if (message.notification == null) {
+      print("ℹ️ Data-only message, showing local notification");
       if (_shouldShowNotification(message)) {
         _showNotificationInternal(message);
       }
+    } else {
+      print("ℹ️ Notification message, system should handle it (or we can override if needed)");
     }
   }
 
@@ -233,28 +243,84 @@ class NotificationService {
 
   // 🔥 SHOW NOTIFICATION INTERNAL
   static Future<void> _showNotificationInternal(RemoteMessage message) async {
-    print("🔔 SHOWING LOCAL NOTIFICATION");
+    print("🔔 PREPARING LOCAL NOTIFICATION");
+    print("📦 Payload Data: ${message.data}");
 
     RemoteNotification? notification = message.notification;
 
     String title = notification?.title ?? message.data['title'] ?? "PlayOn";
-    String body = notification?.body ?? message.data['message'] ?? message.data['body'] ?? "";
+    String body =
+        notification?.body ?? message.data['message'] ?? message.data['body'] ?? "";
+    
+    // Try to get image from various possible keys
+    String? imageUrl = message.data['image'] ?? 
+                      message.data['imageUrl'] ?? 
+                      message.data['img_url'] ??
+                      notification?.android?.imageUrl ??
+                      notification?.apple?.imageUrl;
 
-    if (title.isEmpty && body.isEmpty) return; // Don't show empty notifications
+    print("🏷️ Title: $title");
+    print("📝 Body: $body");
+    print("🖼️ Image URL: $imageUrl");
 
-    const androidDetails = AndroidNotificationDetails(
+    if (title.isEmpty && body.isEmpty) {
+      print("⚠️ Title and Body are empty, skipping notification.");
+      return;
+    }
+
+    BigPictureStyleInformation? bigPictureStyleInformation;
+    String? localImagePath;
+
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      try {
+        print("⏬ Downloading image for notification...");
+        final String fileName = 'notification_img_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        localImagePath = await _downloadAndSaveFile(imageUrl, fileName);
+        print("✅ Image downloaded to: $localImagePath");
+        
+        bigPictureStyleInformation = BigPictureStyleInformation(
+          FilePathAndroidBitmap(localImagePath),
+          largeIcon: FilePathAndroidBitmap(localImagePath),
+          contentTitle: title,
+          summaryText: body,
+        );
+      } catch (e) {
+        print("❌ Error downloading notification image: $e");
+      }
+    }
+
+    AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       'high_importance_channel',
       'High Importance Notifications',
       importance: Importance.max,
       priority: Priority.high,
       icon: '@mipmap/ic_launcher',
+      styleInformation: bigPictureStyleInformation,
+      largeIcon: localImagePath != null ? FilePathAndroidBitmap(localImagePath) : null,
     );
 
     await _localNotifications.show(
       message.hashCode,
       title,
       body,
-      const NotificationDetails(android: androidDetails),
+      NotificationDetails(
+        android: androidDetails,
+        iOS: DarwinNotificationDetails(
+          attachments: localImagePath != null
+              ? [DarwinNotificationAttachment(localImagePath)]
+              : null,
+        ),
+      ),
     );
+    print("🚀 LOCAL NOTIFICATION DISPATCHED");
+  }
+
+  static Future<String> _downloadAndSaveFile(String url, String fileName) async {
+    final Directory directory = await getApplicationDocumentsDirectory();
+    final String filePath = '${directory.path}/$fileName';
+    final http.Response response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
+    final File file = File(filePath);
+    await file.writeAsBytes(response.bodyBytes);
+    return filePath;
   }
 }

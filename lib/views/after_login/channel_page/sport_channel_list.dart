@@ -122,18 +122,29 @@ class _SportChannelListState extends State<SportChannelList> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
-                  children: List.generate(
-                    ctr.sportsList.length,
-                    (index) => GestureDetector(
+                  children: [
+                    GestureDetector(
                       onTap: () {
-                        selectedChannelTabIndex.value = index;
+                        selectedChannelTabIndex.value = 0;
                       },
                       child: _buildCategoryTab(
-                        ctr.sportsList[index] == "Home" ? "All" : ctr.sportsList[index],
-                        selectedChannelTabIndex.value == index,
+                        "All",
+                        selectedChannelTabIndex.value == 0,
                       ),
                     ),
-                  ),
+                    ...List.generate(
+                      ctr.channelCategories.length,
+                      (index) => GestureDetector(
+                        onTap: () {
+                          selectedChannelTabIndex.value = index + 1;
+                        },
+                        child: _buildCategoryTab(
+                          ctr.channelCategories[index].name ?? "",
+                          selectedChannelTabIndex.value == index + 1,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -143,7 +154,7 @@ class _SportChannelListState extends State<SportChannelList> {
             // Channels List
             Expanded(
               child: Obx(() {
-                if (ctr.isChannelLoading.value) {
+                if (ctr.isChannelLoading.value || ctr.isCategoryLoading.value) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
@@ -152,7 +163,7 @@ class _SportChannelListState extends State<SportChannelList> {
                     : ctr.filteredChannels
                         .where((c) =>
                             c.category?.toLowerCase() ==
-                            ctr.sportsList[selectedChannelTabIndex.value].toLowerCase())
+                            ctr.channelCategories[selectedChannelTabIndex.value - 1].name?.toLowerCase())
                         .toList();
 
                 if (displayChannels.isEmpty) {
