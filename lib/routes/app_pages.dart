@@ -32,6 +32,8 @@ import 'package:play_on_app/views/after_login/home_pages/watch_list_screen.dart'
 import '../views/after_login/account_pages/followed_players_page.dart';
 import '../views/after_login/account_pages/player_detail_screen.dart';
 import 'package:play_on_app/views/after_login/home_pages/see_all_matches_screen.dart';
+import 'package:play_on_app/views/after_login/home_pages/podcast_list_screen.dart';
+import 'package:play_on_app/views/after_login/home_pages/podcast_play_screen.dart';
 import 'package:play_on_app/bindings/plan_binding.dart';
 import 'app_routes.dart';
 
@@ -156,6 +158,14 @@ class AppPages {
           matches: args['matches'],
         );
       },
+    ),
+    GetPage(
+      name: AppRoutes.podcastList,
+      page: () => const PodcastListScreen(),
+    ),
+    GetPage(
+      name: AppRoutes.podcastPlay,
+      page: () => const PodcastPlayScreen(),
     ),
   ];
 }

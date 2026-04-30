@@ -245,7 +245,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
               banner: fullMatchData?.banner,
               sport: fullMatchData?.sport ?? series.sport,
             );
-            Get.toNamed(AppRoutes.matchDetails, arguments: matchObj);
+            Get.toNamed(AppRoutes.matchPlay, arguments: matchObj);
           },
           child: Container(
             margin: const EdgeInsets.only(bottom: 8),

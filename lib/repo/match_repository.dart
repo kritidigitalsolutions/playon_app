@@ -130,6 +130,24 @@ class MatchRepository {
     }
   }
 
+  Future<dynamic> getPlayers() async {
+    try {
+      final response = await _apiServices.getApi(AppUrls.players);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<dynamic> getPodcasts() async {
+    try {
+      final response = await _apiServices.getApi(AppUrls.podcasts);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<dynamic> getMatchHighlights(String matchId) async {
     try {
       final response = await _apiServices.getApi(AppUrls.matchHighlights(matchId));

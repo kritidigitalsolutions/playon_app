@@ -38,6 +38,7 @@ class Match {
   String? score;
   String? description;
   bool? isFeatured;
+  bool? isTrending;
   String? liveStartedAt;
   String? liveEndedAt;
   String? createdAt;
@@ -60,6 +61,7 @@ class Match {
       this.score,
       this.description,
       this.isFeatured,
+      this.isTrending,
       this.liveStartedAt,
       this.liveEndedAt,
       this.createdAt,
@@ -82,6 +84,7 @@ class Match {
     score = json['score'];
     description = json['description'];
     isFeatured = json['isFeatured'];
+    isTrending = json['isTrending'];
     liveStartedAt = json['liveStartedAt'];
     liveEndedAt = json['liveEndedAt'];
     createdAt = json['createdAt'];

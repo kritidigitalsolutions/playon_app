@@ -11,10 +11,16 @@ import 'package:play_on_app/repo/match_repository.dart';
 import 'package:play_on_app/utils/hive_service/hive_service.dart';
 import 'package:play_on_app/model/response_model/banner_model.dart';
 import 'package:play_on_app/model/response_model/channel_category_model.dart';
+import 'package:play_on_app/model/response_model/series_model.dart';
+import 'package:play_on_app/model/response_model/player_model.dart';
+import 'package:play_on_app/model/response_model/podcast_model.dart';
+import 'package:play_on_app/model/response_model/social_media_model.dart';
+import 'package:play_on_app/repo/legal_repository.dart';
 
 class HomeController extends GetxController {
   final MatchRepository _matchRepository = MatchRepository();
   final ChannelRepository _channelRepository = ChannelRepository();
+  final LegalRepository _legalRepository = LegalRepository();
   
   final RxInt currentIndex = 0.obs;
   void changeIndex(int index) {
@@ -36,8 +42,20 @@ class HomeController extends GetxController {
   var bannerList = <Banners>[].obs;
   var isBannerLoading = false.obs;
 
+  var seriesList = <Series>[].obs;
+  var isSeriesLoading = false.obs;
+
+  var starPlayers = <Player>[].obs;
+  var isPlayersLoading = false.obs;
+
+  var podcastList = <Podcast>[].obs;
+  var isPodcastLoading = false.obs;
+
   var channelCategories = <ChannelCategory>[].obs;
   var isCategoryLoading = false.obs;
+
+  var socialMediaList = <SocialMedia>[].obs;
+  var isSocialLoading = false.obs;
 
   var searchQuery = "".obs;
 
@@ -55,6 +73,10 @@ class HomeController extends GetxController {
     fetchMatches();
     fetchChannels();
     fetchBanners();
+    fetchSeries();
+    fetchStarPlayers();
+    fetchPodcasts();
+    fetchSocialMedia();
     
     // Setup search listeners
     searchQuery.listen((query) {
@@ -75,6 +97,105 @@ class HomeController extends GetxController {
       print("Error fetching banners: $e");
     } finally {
       isBannerLoading.value = false;
+    }
+  }
+
+  Future<void> fetchSeries() async {
+    isSeriesLoading.value = true;
+    try {
+      final res = await _matchRepository.getSeries();
+      if (res['success'] == true) {
+        final data = SeriesModel.fromJson(res);
+        var fetchedSeries = data.series ?? [];
+        
+        // Filter by isHomeScreen: true
+        fetchedSeries = fetchedSeries.where((s) => s.isHomeScreen == true).toList();
+
+        // Fetch full match details for each series
+        for (var series in fetchedSeries) {
+          if (series.matches != null && series.matches!.isNotEmpty) {
+            try {
+              final matchFutures = series.matches!
+                  .where((m) => m.sId != null)
+                  .map((m) => _matchRepository.getMatchDetails(m.sId!))
+                  .toList();
+              
+              final matchResults = await Future.wait(matchFutures);
+              List<Match> fullMatches = [];
+              for (var matchRes in matchResults) {
+                if (matchRes != null && matchRes['success'] == true && matchRes['match'] != null) {
+                  fullMatches.add(Match.fromJson(matchRes['match']));
+                }
+              }
+              series.fullMatches = fullMatches;
+            } catch (e) {
+              print("Error fetching matches for series ${series.title}: $e");
+            }
+          }
+        }
+
+        seriesList.assignAll(fetchedSeries);
+      }
+    } catch (e) {
+      print("Error fetching series: $e");
+    } finally {
+      isSeriesLoading.value = false;
+    }
+  }
+
+  Future<void> fetchStarPlayers() async {
+    isPlayersLoading.value = true;
+    try {
+      final res = await _matchRepository.getPlayers();
+      if (res['success'] == true) {
+        final data = PlayerModel.fromJson(res);
+        var fetchedPlayers = data.players ?? [];
+        
+        // Add Demo Players if empty
+        if (fetchedPlayers.isEmpty) {
+          fetchedPlayers = [
+            Player(id: "p1", name: "Virat Kohli", team: "India", sport: "Cricket", featured: true, position: "Batsman"),
+            Player(id: "p2", name: "Lionel Messi", team: "Argentina", sport: "Forward", featured: true, position: "Forward"),
+            Player(id: "p3", name: "Cristiano Ronaldo", team: "Portugal", sport: "Forward", featured: true, position: "Forward"),
+            Player(id: "p4", name: "Rohit Sharma", team: "India", sport: "Cricket", featured: true, position: "Batsman"),
+          ];
+        }
+        starPlayers.assignAll(fetchedPlayers);
+      }
+    } catch (e) {
+      print("Error fetching players: $e");
+    } finally {
+      isPlayersLoading.value = false;
+    }
+  }
+
+  Future<void> fetchPodcasts() async {
+    isPodcastLoading.value = true;
+    try {
+      final res = await _matchRepository.getPodcasts();
+      if (res['success'] == true) {
+        final data = PodcastModel.fromJson(res);
+        podcastList.assignAll(data.podcasts ?? []);
+      }
+    } catch (e) {
+      print("Error fetching podcasts: $e");
+    } finally {
+      isPodcastLoading.value = false;
+    }
+  }
+
+  Future<void> fetchSocialMedia() async {
+    isSocialLoading.value = true;
+    try {
+      final res = await _legalRepository.getSocialMedia();
+      if (res['success'] == true) {
+        final data = SocialMediaResponse.fromJson(res);
+        socialMediaList.assignAll(data.social ?? []);
+      }
+    } catch (e) {
+      print("Error fetching social media: $e");
+    } finally {
+      isSocialLoading.value = false;
     }
   }
 
@@ -208,7 +329,9 @@ class HomeController extends GetxController {
       final allRes = await _matchRepository.getAllMatches();
       if (allRes['success'] == true) {
         final data = MatchModel.fromJson(allRes);
-        allMatches.assignAll(data.matches ?? []);
+        var fetchedMatches = data.matches ?? [];
+
+        allMatches.assignAll(fetchedMatches);
       }
       
       filterData(searchQuery.value);

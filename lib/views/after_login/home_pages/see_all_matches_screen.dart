@@ -62,7 +62,7 @@ class SeeAllMatchesScreen extends StatelessWidget {
               match.status?.toLowerCase() == 'completed') {
             Get.toNamed(AppRoutes.recapMatch, arguments: match);
           } else {
-            Get.toNamed(AppRoutes.matchDetails, arguments: match);
+            Get.toNamed(AppRoutes.matchPlay, arguments: match);
           }
         });
       },

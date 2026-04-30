@@ -57,4 +57,22 @@ class AuthRepository {
       rethrow;
     }
   }
+
+  Future<dynamic> googleLogin(Map<String, dynamic> data) async {
+    try {
+      final response = await _apiService.postApi(AppUrls.googleLogin, data);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<dynamic> getSocialMedia() async {
+    try {
+      final response = await _apiService.getApi(AppUrls.socialMedia);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

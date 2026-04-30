@@ -12,6 +12,10 @@ import 'package:play_on_app/utils/custom_button.dart';
 import 'package:play_on_app/view_model/after_controller/notification_controller.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
+import 'package:play_on_app/model/response_model/series_model.dart' as series_model;
+import 'package:play_on_app/model/response_model/player_model.dart' as player_model;
+import 'package:play_on_app/model/response_model/podcast_model.dart' as podcast_model;
+import 'package:play_on_app/view_model/after_controller/player_controller.dart';
 
 import '../../../view_model/after_controller/home_contollers/home_controller.dart';
 import '../../../view_model/after_controller/plan_controller.dart';
@@ -270,6 +274,15 @@ class _HomeScreenState extends State<HomeScreen> {
                           );
                         }),
                         const SizedBox(height: 16),
+                        // Trending Matches Section
+                        Obx(() {
+                          final trendingMatches = ctr.allMatches.where((m) => m.isTrending == true).toList();
+                          return _buildTrendingMatches(trendingMatches);
+                        }),
+                        const SizedBox(height: 16),
+                        // Series Sections
+                        Obx(() => _buildSeriesSection(ctr.seriesList.toList())),
+                        const SizedBox(height: 16),
                         // Upcoming Matches Section
                         Builder(builder: (context) {
                           String dashboardSport = (ctr.selectedTabIndex.value != 0
@@ -335,141 +348,147 @@ class _HomeScreenState extends State<HomeScreen> {
                           return _buildHighlightsSlider(topHighlights);
                         }),
                         const SizedBox(height: 16),
+                        // Star Player Edition
+                        Obx(() => _buildStarPlayerSection(ctr.starPlayers.where((p) => p.featured == true).toList())),
+                        const SizedBox(height: 24),
+                        // Podcasts Section
+                        Obx(() => _buildPodcastSection(ctr.podcastList)),
+                        const SizedBox(height: 16),
                       ],
 
                       // Category Chips
-                      _buildSectionHeader("Search by Category", ""),
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: (ctr.selectedTabIndex.value == 0 
-                              ? ctr.sportsList.skip(1).toList() 
-                              : [ctr.sportsList[ctr.selectedTabIndex.value]]).map<Widget>((tab) {
-                            return _buildCategoryChip(
-                              tab,
-                                  () {
-                                searchController.clear();
-                                ctr.searchQuery.value = "";
-                                ctr.selectSubCategory(tab);
-                              },
-                              isSelected: ctr.selectedCategory.value == tab || 
-                                         (ctr.selectedTabIndex.value != 0 && ctr.sportsList[ctr.selectedTabIndex.value] == tab),
-                            );
-                          }).toList(),
-                        ),
-                      ),
+                      // _buildSectionHeader("Search by Category", ""),
+                      // const SizedBox(height: 8),
+                      // Padding(
+                      //   padding: const EdgeInsets.symmetric(horizontal: 12),
+                      //   child: Wrap(
+                      //     spacing: 8,
+                      //     runSpacing: 8,
+                      //     children: (ctr.selectedTabIndex.value == 0
+                      //         ? ctr.sportsList.skip(1).toList()
+                      //         : [ctr.sportsList[ctr.selectedTabIndex.value]]).map<Widget>((tab) {
+                      //       return _buildCategoryChip(
+                      //         tab,
+                      //             () {
+                      //           searchController.clear();
+                      //           ctr.searchQuery.value = "";
+                      //           ctr.selectSubCategory(tab);
+                      //         },
+                      //         isSelected: ctr.selectedCategory.value == tab ||
+                      //                    (ctr.selectedTabIndex.value != 0 && ctr.sportsList[ctr.selectedTabIndex.value] == tab),
+                      //       );
+                      //     }).toList(),
+                      //   ),
+                      // ),
 
-                      const SizedBox(height: 16),
-
-                      // Results Section (Highlights/Filtered)
-                      Builder(builder: (context) {
-                        // Current Sport determines which sections to show
-                        String topSport = ctr.selectedTabIndex.value != 0 
-                            ? ctr.sportsList[ctr.selectedTabIndex.value] 
-                            : "";
-
-                        // If a specific search is active, show grid
-                        if (ctr.searchQuery.value.isNotEmpty) {
-                          String currentSportFilter = ctr.selectedCategory.value.isNotEmpty
-                              ? ctr.selectedCategory.value
-                              : topSport;
-
-                          var matchesToFilter = ctr.filteredMatches;
-                          var finalMatches = matchesToFilter
-                              .where((m) =>
-                                  (m.status?.toLowerCase() == 'finished' ||
-                                      m.status?.toLowerCase() == 'completed') &&
-                                  (currentSportFilter.isEmpty ||
-                                      m.sport?.toLowerCase() ==
-                                          currentSportFilter.toLowerCase()))
-                              .toList();
-
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(left: 12, bottom: 8),
-                                child: Text(
-                                  currentSportFilter.isNotEmpty ? "$currentSportFilter Search Results" : "Search Results",
-                                  style: text24(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              if (finalMatches.isEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 40),
-                                  child: Center(
-                                      child: Text("No matches found",
-                                          style: text14(color: AppColors.white70))),
-                                )
-                              else
-                                GridView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    crossAxisSpacing: 12,
-                                    mainAxisSpacing: 16,
-                                    childAspectRatio: 0.85,
-                                  ),
-                                  itemCount: finalMatches.length,
-                                  itemBuilder: (context, index) {
-                                    return _buildHighlightsGridItem(finalMatches[index]);
-                                  },
-                                ),
-                            ],
-                          );
-                        }
-
-                        // Default view (List with "See all")
-                        List<String> sportsToDisplay = [];
-                        if (topSport.isNotEmpty) {
-                          // If top tab is not 'All', only show that sport
-                          sportsToDisplay = [topSport];
-                        } else if (ctr.selectedCategory.value.isNotEmpty) {
-                          // If 'All' tab but a sub-category is selected
-                          sportsToDisplay = [ctr.selectedCategory.value];
-                        } else {
-                          // Show all sports
-                          sportsToDisplay = ctr.sportsList.skip(1).toList();
-                        }
-
-                        return Column(
-                          children: sportsToDisplay.map((sport) {
-                            var sportMatches = ctr.allMatches
-                                .where((m) =>
-                                    (m.status?.toLowerCase() == 'finished' ||
-                                        m.status?.toLowerCase() == 'completed') &&
-                                    m.sport?.toLowerCase() == sport.toLowerCase())
-                                .toList();
-
-                            if (sportMatches.isEmpty && ctr.selectedCategory.value.isEmpty && topSport.isEmpty) {
-                              return const SizedBox.shrink();
-                            }
-
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildSectionHeader(sport, "See all", onActionTap: () {
-                                  Get.toNamed(
-                                    AppRoutes.seeAllMatches,
-                                    arguments: {
-                                      'title': "$sport Matches",
-                                      'matches': sportMatches,
-                                    },
-                                  );
-                                }),
-                                const SizedBox(height: 8),
-                                _buildRecapMatchList(matches: sportMatches),
-                                const SizedBox(height: 16),
-                              ],
-                            );
-                          }).toList(),
-                        );
-                      }),
+                      // const SizedBox(height: 16),
+                      //
+                      // // Results Section (Highlights/Filtered)
+                      // Builder(builder: (context) {
+                      //   // Current Sport determines which sections to show
+                      //   String topSport = ctr.selectedTabIndex.value != 0
+                      //       ? ctr.sportsList[ctr.selectedTabIndex.value]
+                      //       : "";
+                      //
+                      //   // If a specific search is active, show grid
+                      //   if (ctr.searchQuery.value.isNotEmpty) {
+                      //     String currentSportFilter = ctr.selectedCategory.value.isNotEmpty
+                      //         ? ctr.selectedCategory.value
+                      //         : topSport;
+                      //
+                      //     var matchesToFilter = ctr.filteredMatches;
+                      //     var finalMatches = matchesToFilter
+                      //         .where((m) =>
+                      //             (m.status?.toLowerCase() == 'finished' ||
+                      //                 m.status?.toLowerCase() == 'completed') &&
+                      //             (currentSportFilter.isEmpty ||
+                      //                 m.sport?.toLowerCase() ==
+                      //                     currentSportFilter.toLowerCase()))
+                      //         .toList();
+                      //
+                      //     return Column(
+                      //       crossAxisAlignment: CrossAxisAlignment.start,
+                      //       children: [
+                      //         Padding(
+                      //           padding: const EdgeInsets.only(left: 12, bottom: 8),
+                      //           child: Text(
+                      //             currentSportFilter.isNotEmpty ? "$currentSportFilter Search Results" : "Search Results",
+                      //             style: text24(fontWeight: FontWeight.bold),
+                      //           ),
+                      //         ),
+                      //         if (finalMatches.isEmpty)
+                      //           Padding(
+                      //             padding: const EdgeInsets.symmetric(vertical: 40),
+                      //             child: Center(
+                      //                 child: Text("No matches found",
+                      //                     style: text14(color: AppColors.white70))),
+                      //           )
+                      //         else
+                      //           GridView.builder(
+                      //             shrinkWrap: true,
+                      //             physics: const NeverScrollableScrollPhysics(),
+                      //             padding: const EdgeInsets.symmetric(horizontal: 12),
+                      //             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      //               crossAxisCount: 2,
+                      //               crossAxisSpacing: 12,
+                      //               mainAxisSpacing: 16,
+                      //               childAspectRatio: 0.85,
+                      //             ),
+                      //             itemCount: finalMatches.length,
+                      //             itemBuilder: (context, index) {
+                      //               return _buildHighlightsGridItem(finalMatches[index]);
+                      //             },
+                      //           ),
+                      //       ],
+                      //     );
+                      //   }
+                      //
+                      //   // Default view (List with "See all")
+                      //   List<String> sportsToDisplay = [];
+                      //   if (topSport.isNotEmpty) {
+                      //     // If top tab is not 'All', only show that sport
+                      //     sportsToDisplay = [topSport];
+                      //   } else if (ctr.selectedCategory.value.isNotEmpty) {
+                      //     // If 'All' tab but a sub-category is selected
+                      //     sportsToDisplay = [ctr.selectedCategory.value];
+                      //   } else {
+                      //     // Show all sports
+                      //     sportsToDisplay = ctr.sportsList.skip(1).toList();
+                      //   }
+                      //
+                      //   return Column(
+                      //     children: sportsToDisplay.map((sport) {
+                      //       var sportMatches = ctr.allMatches
+                      //           .where((m) =>
+                      //               (m.status?.toLowerCase() == 'finished' ||
+                      //                   m.status?.toLowerCase() == 'completed') &&
+                      //               m.sport?.toLowerCase() == sport.toLowerCase())
+                      //           .toList();
+                      //
+                      //       if (sportMatches.isEmpty && ctr.selectedCategory.value.isEmpty && topSport.isEmpty) {
+                      //         return const SizedBox.shrink();
+                      //       }
+                      //
+                      //       return Column(
+                      //         crossAxisAlignment: CrossAxisAlignment.start,
+                      //         children: [
+                      //           _buildSectionHeader(sport, "See all", onActionTap: () {
+                      //             Get.toNamed(
+                      //               AppRoutes.seeAllMatches,
+                      //               arguments: {
+                      //                 'title': "$sport Matches",
+                      //                 'matches': sportMatches,
+                      //               },
+                      //             );
+                      //           }),
+                      //           const SizedBox(height: 8),
+                      //           _buildRecapMatchList(matches: sportMatches),
+                      //           const SizedBox(height: 16),
+                      //         ],
+                      //       );
+                      //     }).toList(),
+                      //   );
+                      // }),
 
                       const SizedBox(height: 20),
                       _buildFooter(),
@@ -498,27 +517,26 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 16),
 
           // Social Media Icons
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _socialIcon(FontAwesomeIcons.facebookF, "https://www.facebook.com/share/1EUtkYpvCG/"),
-              const SizedBox(width: 16),
-
-              _socialIcon(FontAwesomeIcons.instagram, "https://www.instagram.com/play_on2026/"),
-              const SizedBox(width: 16),
-
-              _socialIcon(FontAwesomeIcons.xTwitter, "https://x.com/playon2026"),
-              const SizedBox(width: 16),
-
-              _socialIcon(FontAwesomeIcons.youtube, "https://www.youtube.com/@playon2026"),
-              const SizedBox(width: 16),
-
-              _socialIcon(FontAwesomeIcons.linkedinIn, "https://linkedin.com"),
-              const SizedBox(width: 16),
-
-              _socialIcon(FontAwesomeIcons.envelope, "mailto:playontvindia@gmail.com"),
-            ],
-          ),
+          Obx(() {
+            if (ctr.isSocialLoading.value) {
+              return const SizedBox(
+                height: 40,
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              );
+            }
+            if (ctr.socialMediaList.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: ctr.socialMediaList.map((social) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: _socialIcon(_getSocialIcon(social.platform ?? ""), social.url ?? ""),
+                );
+              }).toList(),
+            );
+          }),
 
           const SizedBox(height: 20),
 
@@ -690,16 +708,37 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  IconData _getSocialIcon(String platform) {
+    switch (platform.toLowerCase()) {
+      case 'facebook':
+        return FontAwesomeIcons.facebookF;
+      case 'instagram':
+        return FontAwesomeIcons.instagram;
+      case 'twitter':
+      case 'x':
+        return FontAwesomeIcons.xTwitter;
+      case 'youtube':
+        return FontAwesomeIcons.youtube;
+      case 'linkedin':
+        return FontAwesomeIcons.linkedinIn;
+      case 'email':
+      case 'mail':
+        return FontAwesomeIcons.envelope;
+      default:
+        return FontAwesomeIcons.globe;
+    }
+  }
+
   Widget _buildLiveMatchCard(model.Match match) {
     return Obx(() {
       final canWatch = Get.find<PlanController>().canWatchMatch(match);
       return GestureDetector(
         onTap: () {
           if (canWatch) {
-            Get.toNamed(AppRoutes.matchDetails, arguments: match);
+            Get.toNamed(AppRoutes.matchPlay, arguments: match);
           } else {
             ctr.handleProtectedAction(() {
-              Get.toNamed(AppRoutes.matchDetails, arguments: match);
+              Get.toNamed(AppRoutes.matchPlay, arguments: match);
             });
           }
         },
@@ -786,10 +825,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   icon: canWatch ? Icons.play_arrow : Icons.lock_outline,
                   onPressed: () {
                     if (canWatch) {
-                      Get.toNamed(AppRoutes.matchDetails, arguments: match);
+                      Get.toNamed(AppRoutes.matchPlay, arguments: match);
                     } else {
                       ctr.handleProtectedAction(() {
-                        Get.toNamed(AppRoutes.matchDetails, arguments: match);
+                        Get.toNamed(AppRoutes.matchPlay, arguments: match);
                       });
                     }
                   },
@@ -800,6 +839,481 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     });
+  }
+
+  Widget _buildTrendingMatches(List<model.Match> matches) {
+    if (matches.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader("Trending Matches", ""),
+        const SizedBox(height: 14),
+
+        SizedBox(
+          height: 190,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            itemCount: matches.length,
+            itemBuilder: (context, index) {
+              final match = matches[index];
+
+              return GestureDetector(
+                onTap: () {
+                  Get.toNamed(AppRoutes.matchPlay, arguments: match);
+                },
+                child: Container(
+                  width: 280,
+                  margin: const EdgeInsets.only(right: 14),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.4),
+                        blurRadius: 10,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+
+                  child: Stack(
+                    children: [
+                      /// 🔹 Background Image
+                      Hero(
+                        tag: 'trending_${match.sId}',
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: Image.network(
+                            match.thumbnail ?? "",
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Image.asset(
+                              'assets/auth/cri.png',
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      /// 🔹 Gradient Overlay
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(18),
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                            colors: [
+                              Colors.black.withOpacity(0.8),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      /// 🔥 Trending Badge
+                      Positioned(
+                        top: 10,
+                        left: 10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.orangeAccent,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.local_fire_department, size: 14, color: Colors.white),
+                              const SizedBox(width: 4),
+                              Text(
+                                "TRENDING",
+                                style: text10(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      /// 🔻 Bottom Content
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              /// Sport Tag
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.8),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  match.sport?.toUpperCase() ?? "SPORT",
+                                  style: text10(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 6),
+
+                              /// Match Title
+                              Text(
+                                match.title ?? "${match.teamA} vs ${match.teamB}",
+                                style: text14(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSeriesSection(List<series_model.Series> series) {
+    if (series.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: series.map((item) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionHeader(item.title ?? "Series", "View All", onActionTap: () {
+              Get.toNamed(AppRoutes.seeAllMatches, arguments: {
+                'title': item.title ?? "Series",
+                'matches': item.fullMatches ?? [],
+              });
+            }),
+            const SizedBox(height: 12),
+            if (item.fullMatches != null && item.fullMatches!.isNotEmpty)
+              SizedBox(
+                height: 180,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  itemCount: item.fullMatches!.length,
+                  itemBuilder: (context, index) {
+                    final match = item.fullMatches![index];
+                    return GestureDetector(
+                      onTap: () {
+                         Get.toNamed(AppRoutes.matchPlay, arguments: match);
+                      },
+                      child: Container(
+                        width: 240,
+                        margin: const EdgeInsets.only(right: 14),
+                        decoration: BoxDecoration(
+                          color: AppColors.white.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.white.withOpacity(0.1), width: 1),
+                          image: DecorationImage(
+                            image: match.thumbnail != null && match.thumbnail!.isNotEmpty
+                                ? NetworkImage(match.thumbnail!)
+                                : const AssetImage('assets/auth/cri.png') as ImageProvider,
+                            fit: BoxFit.cover,
+                            colorFilter: ColorFilter.mode(
+                              Colors.black.withOpacity(0.4),
+                              BlendMode.darken,
+                            ),
+                          ),
+                        ),
+                        child: Stack(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      match.status?.toUpperCase() ?? "UPCOMING",
+                                      style: text10(fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    match.title ?? "${match.teamA} vs ${match.teamB}",
+                                    style: text14(fontWeight: FontWeight.bold, color: Colors.white),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.location_on, size: 12, color: AppColors.white70),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          match.venue ?? "Stadium",
+                                          style: text11(color: AppColors.white70),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (match.status?.toLowerCase() == 'live')
+                              Positioned(
+                                top: 12,
+                                right: 12,
+                                child: Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.error,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  "No matches currently available",
+                  style: text12(color: AppColors.white60),
+                ),
+              ),
+            const SizedBox(height: 24),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildStarPlayerSection(List<player_model.Player> players) {
+    if (players.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader("Star Player Edition", ""),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 140,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            itemCount: players.length,
+            itemBuilder: (context, index) {
+              final player = players[index];
+              return GestureDetector(
+                onTap: () {
+                   Get.toNamed(AppRoutes.playerDetail, arguments: player);
+                },
+                child: Container(
+                  width: 100,
+                  margin: const EdgeInsets.only(right: 20),
+                  child: Column(
+                    children: [
+                      Container(
+                        height: 85,
+                        width: 85,
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [AppColors.primary, AppColors.error, Colors.orange],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.black,
+                            image: DecorationImage(
+                              image: player.image != null && player.image!.isNotEmpty
+                                  ? NetworkImage(player.image!)
+                                  : const AssetImage('assets/auth/person.png') as ImageProvider,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        player.name ?? "Player",
+                        style: text12(fontWeight: FontWeight.bold, color: Colors.white),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        player.team ?? player.sport ?? "Pro Athlete",
+                        style: text10(color: AppColors.textSecondary),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPodcastSection(List<podcast_model.Podcast> podcasts) {
+    if (podcasts.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader("Latest Podcasts", "Explore", onActionTap: () {
+          Get.toNamed(AppRoutes.podcastList);
+        }),
+        const SizedBox(height: 14),
+        SizedBox(
+          height: 190,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            itemCount: podcasts.length,
+            itemBuilder: (context, index) {
+              final podcast = podcasts[index];
+              return GestureDetector(
+                onTap: () {
+                  Get.toNamed(AppRoutes.podcastPlay, arguments: podcast);
+                },
+                child: Container(
+                  width: 150,
+                  margin: const EdgeInsets.only(right: 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      /// 🔥 Podcast Cover
+                      Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: podcast.thumbnail != null && podcast.thumbnail!.isNotEmpty
+                                ? Image.network(
+                                    podcast.thumbnail!,
+                                    height: 130,
+                                    width: 150,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => Image.asset(
+                                      'assets/auth/cri.png',
+                                      height: 130,
+                                      width: 150,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : Image.asset(
+                                    'assets/auth/cri.png',
+                                    height: 130,
+                                    width: 150,
+                                    fit: BoxFit.cover,
+                                  ),
+                          ),
+
+                          /// Gradient Overlay
+                          Container(
+                            height: 130,
+                            width: 150,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              gradient: LinearGradient(
+                                begin: Alignment.bottomCenter,
+                                end: Alignment.topCenter,
+                                colors: [
+                                  Colors.black.withOpacity(0.6),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          /// ▶ Play Button
+                          Positioned(
+                            bottom: 8,
+                            right: 8,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: const BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.play_arrow,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      /// 🎧 Title
+                      Text(
+                        podcast.title ?? "Sports Talk",
+                        style: text14(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+
+                      /// ⏱ Duration + Channel
+                      Row(
+                        children: [
+                          const Icon(Icons.headset, size: 12, color: AppColors.white70),
+                          const SizedBox(width: 4),
+                          Text(
+                            podcast.duration?.isNotEmpty == true ? podcast.duration! : "Podcast",
+                            style: text11(color: AppColors.white70),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildTab(String text, int index, bool isSelected) {
@@ -871,7 +1385,7 @@ class _HomeScreenState extends State<HomeScreen> {
             return GestureDetector(
               onTap: () {
                 ctr.handleProtectedAction(() {
-                  Get.toNamed(AppRoutes.matchDetails, arguments: match);
+                  Get.toNamed(AppRoutes.matchPlay, arguments: match);
                 });
               },
               child: Container(
@@ -957,7 +1471,7 @@ class _HomeScreenState extends State<HomeScreen> {
           return GestureDetector(
             onTap: () {
               ctr.handleProtectedAction(() {
-                Get.toNamed(AppRoutes.matchDetails, arguments: match);
+                Get.toNamed(AppRoutes.matchPlay, arguments: match);
               });
             },
             child: Container(
@@ -1106,7 +1620,7 @@ class _HomeScreenState extends State<HomeScreen> {
           if (isCompleted) {
             Get.toNamed(AppRoutes.recapMatch, arguments: match);
           } else {
-            Get.toNamed(AppRoutes.matchDetails, arguments: match);
+            Get.toNamed(AppRoutes.matchPlay, arguments: match);
           }
         });
       },

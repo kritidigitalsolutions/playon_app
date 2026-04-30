@@ -39,4 +39,13 @@ class LegalRepository {
       rethrow;
     }
   }
+
+  Future<dynamic> getSocialMedia() async {
+    try {
+      final response = await _apiService.getApi(AppUrls.socialMedia);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

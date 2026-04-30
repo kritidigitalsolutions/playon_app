@@ -115,7 +115,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final List<Widget> screens = [
       HomeScreen(),
       const SportChannelList(),
-      CreateWatchlistScreen(),
+      // CreateWatchlistScreen(),
       MatchScheduleScreen(),
     ];
 
@@ -123,27 +123,99 @@ class _MyHomePageState extends State<MyHomePage> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        
+
+        /// If not on Home → go to Home
         if (controller.currentIndex.value != 0) {
           controller.changeIndex(0);
           return;
         }
 
-        final now = DateTime.now();
-        const maxDuration = Duration(seconds: 2);
-        
-        if (lastPressed == null || now.difference(lastPressed!) > maxDuration) {
-          lastPressed = now;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Double click to exit app'),
-              duration: maxDuration,
+        /// 🔥 Show Exit Popup
+        Get.dialog(
+          Dialog(
+            backgroundColor: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.secPrimary,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.white.withOpacity(0.1)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.exit_to_app, size: 40, color: AppColors.button),
+                  const SizedBox(height: 12),
+
+                  Text(
+                    "Exit App?",
+                    style: text16(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Text(
+                    "Are you sure you want to exit?",
+                    textAlign: TextAlign.center,
+                    style: text12(color: Colors.white70),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  Row(
+                    children: [
+                      /// ❌ Cancel
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            Get.back(); // close dialog only
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                              color: AppColors.white.withOpacity(0.3),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: Text(
+                            "Cancel",
+                            style: text12(color: Colors.white),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 12),
+
+                      /// ✅ Exit
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            SystemNavigator.pop(); // exit app here only
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.button,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: Text(
+                            "Exit",
+                            style: text12(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          );
-          return;
-        }
-        
-        SystemNavigator.pop();
+          ),
+          barrierDismissible: false, // 🔥 prevents accidental close
+        );
       },
       child: Scaffold(
         body: Obx(
@@ -198,8 +270,8 @@ class _MyHomePageState extends State<MyHomePage> {
               children: [
                 _navItem(Icons.home, 'Home', 0, currentIndex),
                 _navItem(Icons.live_tv, 'Live TV', 1, currentIndex),
-                _navItem(Icons.bookmark_border, 'Watchlist', 2, currentIndex),
-                _navItem(Icons.calendar_today, 'Schedules', 3, currentIndex),
+                // _navItem(Icons.bookmark_border, 'Watchlist', 2, currentIndex),
+                _navItem(Icons.calendar_today, 'Schedules', 2, currentIndex),
               ],
             ),
           ),

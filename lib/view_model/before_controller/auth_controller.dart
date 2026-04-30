@@ -1,9 +1,13 @@
 import 'dart:async';
 import 'package:dio/dio.dart' as dio;
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:play_on_app/model/response_model/auth_response_model.dart';
+import 'package:play_on_app/model/response_model/social_media_model.dart';
 import 'package:play_on_app/repo/auth_repository.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/custom_snakebar.dart';
 import 'package:play_on_app/utils/hive_service/hive_service.dart';
@@ -46,8 +50,32 @@ class AuthController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    getSocialMediaLinks();
     if (HiveService.getToken() != null) {
       getUserProfile();
+    }
+  }
+
+  RxList<SocialMedia> socialMediaLinks = <SocialMedia>[].obs;
+
+  Future<void> getSocialMediaLinks() async {
+    try {
+      final response = await _repository.getSocialMedia();
+      final data = SocialMediaResponse.fromJson(response);
+      if (data.success == true && data.social != null) {
+        socialMediaLinks.assignAll(data.social!);
+      }
+    } catch (e) {
+      print("Error fetching social media: $e");
+    }
+  }
+
+  Future<void> launchSocialUrl(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      print("Could not launch $url");
     }
   }
 
@@ -103,6 +131,79 @@ class AuthController extends GetxController {
       showCustomSnackbar(title: "Error", message: e.toString(), type: SnackType.error);
     } finally {
       isSendingOtp.value = false;
+    }
+  }
+
+  Future<void> loginWithGoogle() async {
+    isLoading.value = true;
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
+      if (googleUser == null) {
+        isLoading.value = false;
+        return; // User cancelled login
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+      await googleUser.authentication;
+
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential =
+      await FirebaseAuth.instance.signInWithCredential(credential);
+
+      final User? user = userCredential.user;
+
+      if (user != null) {
+        final String? idToken = await user.getIdToken();
+
+        final response = await _repository.googleLogin({
+          "idToken": idToken,
+        });
+
+        final data = VerifyOtpResponseModel.fromJson(response);
+
+        if (data.success == true) {
+          final userDetail = UserDetails(
+            token: data.token,
+            phone: user.phoneNumber ?? "",
+            isNewUser: data.isNewUser,
+            name: data.user?.fullName ?? user.displayName,
+          );
+
+          await HiveService.saveUser(userDetail);
+
+          if (Get.isRegistered<HomeController>()) {
+            Get.find<HomeController>().isLogin.value = true;
+          }
+
+          if (data.isNewUser == true) {
+            Get.offAllNamed(AppRoutes.fullnameEnter);
+          } else {
+            Get.offAllNamed(AppRoutes.myHomePage);
+          }
+        } else {
+          showCustomSnackbar(
+            title: "Login Failed",
+            message: data.message ?? "Server error",
+            type: SnackType.error,
+          );
+        }
+      }
+    } catch (e) {
+      print("Google Login Error: $e");
+      showCustomSnackbar(
+        title: "Error",
+        message: "Google login failed. Please try again.",
+        type: SnackType.error,
+      );
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -252,6 +353,13 @@ class AuthController extends GetxController {
   }
 
   void logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      await googleSignIn.signOut();
+    } catch (e) {
+      print("Error during social logout: $e");
+    }
     await HiveService.logout();
     if (Get.isRegistered<HomeController>()) {
       Get.find<HomeController>().isLogin.value = false;

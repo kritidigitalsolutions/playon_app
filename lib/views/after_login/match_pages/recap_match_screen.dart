@@ -24,7 +24,7 @@ class RecapMatchScreen extends StatefulWidget {
 class _RecapMatchScreenState extends State<RecapMatchScreen> {
   final videoControllerX = Get.put(VideoControllerX());
   final MatchDetailsController controller = Get.put(MatchDetailsController());
-  final WatchlistController watchlistController = Get.put(WatchlistController());
+  final WatchlistController watchlistController = Get.find<WatchlistController>();
 
   final RxBool isInWatchlist = false.obs;
   final RxBool isWatchlistLoading = false.obs;
@@ -348,16 +348,19 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                       .toggleWatchlist(match.sId!, "match");
 
                   if (success) {
-                    isInWatchlist.value = !isInWatchlist.value;
+                    // 🔥 Watchlist refresh karo
+                    await watchlistController.fetchWatchlist();
+
+                    // 🔥 LOCAL LIST se check karo (fast & correct)
+                    final exists = watchlistController.watchlistItems
+                        .any((e) => e.sId == match.sId);
+
+                    isInWatchlist.value = exists;
 
                     Get.snackbar(
                       "Watchlist",
-                      isInWatchlist.value
-                          ? "Added to watchlist"
-                          : "Removed from watchlist",
+                      exists ? "Added to watchlist" : "Removed from watchlist",
                       snackPosition: SnackPosition.BOTTOM,
-                      backgroundColor: AppColors.primary.withOpacity(0.9),
-                      colorText: Colors.white,
                     );
                   }
 

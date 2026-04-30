@@ -152,92 +152,111 @@ class CreateWatchlistScreen extends StatelessWidget {
   Widget _buildCard(model.Match match) {
     final isLive = match.status?.toLowerCase() == "live";
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.white.withOpacity(0.1)),
-      ),
-      child: Column(
-        children: [
-          /// 🎥 IMAGE + LIVE
-          Stack(
+    return Stack(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.white.withOpacity(0.1)),
+          ),
+          child: Column(
             children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
-                child: Image.network(
-                  match.thumbnail ?? "",
-                  height: 70,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) =>
-                      Image.asset("assets/auth/cri.png", height: 60, fit: BoxFit.cover),
-                ),
-              ),
-
-              if (isLive)
-                Positioned(
-                  top: 4,
-                  left: 4,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                    child: const Text(
-                      "LIVE",
-                      style: TextStyle(fontSize: 8, color: Colors.white),
+              /// 🎥 IMAGE + LIVE
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+                    child: Image.network(
+                      match.thumbnail ?? "",
+                      height: 70,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
                     ),
                   ),
+
+                  if (isLive)
+                    Positioned(
+                      top: 4,
+                      left: 4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: const Text("LIVE", style: TextStyle(fontSize: 8)),
+                      ),
+                    ),
+                ],
+              ),
+
+              const SizedBox(height: 4),
+
+              Text(
+                "${match.teamA} vs ${match.teamB}",
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: text10(fontWeight: FontWeight.w600),
+              ),
+
+              Text(
+                formatDate(match.matchDate, match.liveStartedAt),
+                style: text11(color: AppColors.white70),
+              ),
+
+              const Spacer(),
+
+              Padding(
+                padding: const EdgeInsets.all(4),
+                child: AppButton(
+                  height: 20,
+                  radius: 6,
+                  title: isLive ? "Watch" : "Details",
+                  onTap: () {
+                    if (isLive) {
+                      Get.toNamed(AppRoutes.matchPlay, arguments: match);
+                    } else {
+                      Get.toNamed(AppRoutes.matchPlay, arguments: match);
+                    }
+                  },
+                  textStyle: text11(),
                 ),
+              ),
             ],
           ),
+        ),
 
-          const SizedBox(height: 4),
+        /// ❌ REMOVE BUTTON
+        Positioned(
+          top: 4,
+          right: 4,
+          child: GestureDetector(
+            onTap: () async {
+              await watchlistController.toggleWatchlist(match.sId!, "match");
 
-          /// ⚔️ TEAMS
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Text(
-              "${match.teamA ?? "A"} vs ${match.teamB ?? "B"}",
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: text10(fontWeight: FontWeight.w600),
+              Get.snackbar(
+                "Removed",
+                "Removed from watchlist",
+                snackPosition: SnackPosition.BOTTOM,
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.close,
+                size: 14,
+                color: Colors.white,
+              ),
             ),
           ),
-
-          const SizedBox(height: 2),
-
-          /// 📅 DATE
-          Text(
-            formatDate(match.matchDate, match.liveStartedAt),
-            textAlign: TextAlign.center,
-            style: text11(color: AppColors.white70),
-          ),
-
-          const Spacer(),
-
-          /// 🎯 BUTTON
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-            child: AppButton(
-              height: 20,
-              radius: 6,
-              title: isLive ? "Watch" : "Details",
-              onTap: () {
-                if (isLive) {
-                  Get.toNamed(AppRoutes.matchPlay, arguments: match);
-                } else {
-                  Get.toNamed(AppRoutes.matchDetails, arguments: match);
-                }
-              },
-              textStyle: text11(),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

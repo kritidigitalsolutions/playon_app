@@ -32,29 +32,37 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
     return Scaffold(
       body: BackgroundWithOneLight(
         child: SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Video Player Section
-                _buildVideoPlayer(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Video Player Section - Fixed at the top
+              _buildVideoPlayer(),
 
-                // Match Info Section
-                _buildMatchInfo(),
+              // Scrollable content section
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Match Info Section
+                      _buildMatchInfo(),
 
-                // Tab Section
-                _buildTabBar(),
+                      // Tab Section
+                      _buildTabBar(),
 
-                // Ad Banner
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: AdBannerWidget(),
+                      // Ad Banner
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: AdBannerWidget(),
+                      ),
+
+                      // Content based on selected tab
+                      _buildTabContent(),
+                    ],
+                  ),
                 ),
-
-                // Content based on selected tab
-                _buildTabContent(),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -358,9 +366,11 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
             children: [
               _buildTab('Highlights', 0),
               const SizedBox(width: 6),
-              _buildTab('Scoreboard', 1),
+              _buildTab('Lineup', 1),
               const SizedBox(width: 6),
-              _buildTab('Match Moments', 2),
+              _buildTab('Scoreboard', 2),
+              const SizedBox(width: 6),
+              _buildTab('Match Moments', 3),
             ],
           ),
         ),
@@ -399,12 +409,132 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
       case 0:
         return _buildHighlights();
       case 1:
-        return _buildScoreboard();
+        return _buildLineup();
       case 2:
+        return _buildScoreboard();
+      case 3:
         return _buildMatchMoments();
       default:
         return _buildHighlights();
     }
+  }
+
+  Widget _buildLineup() {
+    final match = videoControllerX.match.value;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Match Lineup',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _buildTeamLineup(
+                  match?.teamA ?? 'Team A',
+                  [
+                    {'name': 'Vivid Patel (C)', 'role': 'Batsman'},
+                    {'name': 'Josh Butler (WK)', 'role': 'WK-Batsman'},
+                    {'name': 'Kane Shawon', 'role': 'Batsman'},
+                    {'name': 'Kapils Pandey', 'role': 'All-rounder'},
+                    {'name': 'Shivam Shubho', 'role': 'All-rounder'},
+                    {'name': 'Mark Wood', 'role': 'Bowler'},
+                    {'name': 'Jofra Archer', 'role': 'Bowler'},
+                    {'name': 'Adil Rashid', 'role': 'Bowler'},
+                    {'name': 'Chris Woakes', 'role': 'Bowler'},
+                    {'name': 'Ben Stokes', 'role': 'All-rounder'},
+                    {'name': 'Sam Curran', 'role': 'All-rounder'},
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTeamLineup(
+                  match?.teamB ?? 'Team B',
+                  [
+                    {'name': 'Quinton de Kock (WK)', 'role': 'WK-Batsman'},
+                    {'name': 'Temba Bavuma (C)', 'role': 'Batsman'},
+                    {'name': 'Aiden Markram', 'role': 'Batsman'},
+                    {'name': 'David Miller', 'role': 'Batsman'},
+                    {'name': 'Heinrich Klaasen', 'role': 'WK-Batsman'},
+                    {'name': 'Kagiso Rabada', 'role': 'Bowler'},
+                    {'name': 'Anrich Nortje', 'role': 'Bowler'},
+                    {'name': 'Lungi Ngidi', 'role': 'Bowler'},
+                    {'name': 'Tabraiz Shamsi', 'role': 'Bowler'},
+                    {'name': 'Keshav Maharaj', 'role': 'Bowler'},
+                    {'name': 'Marco Jansen', 'role': 'All-rounder'},
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTeamLineup(String teamName, List<Map<String, String>> players) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.5)),
+          ),
+          child: Text(
+            teamName,
+            style: text14(fontWeight: FontWeight.bold, color: AppColors.primary),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ...players.map((player) => Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          player['name'] ?? '',
+                          style: text13(color: Colors.white, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 14.0),
+                    child: Text(
+                      player['role'] ?? '',
+                      style: text11(color: AppColors.white60),
+                    ),
+                  ),
+                ],
+              ),
+            )),
+      ],
+    );
   }
 
   Widget _buildHighlights() {

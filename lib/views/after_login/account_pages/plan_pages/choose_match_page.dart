@@ -34,7 +34,7 @@ class _ChooseMatchPageState extends State<ChooseMatchPage> {
   }
 
   // ... (inside buildHorizontalMatchList or buildLiveMatchCard)
-  // Instead of Get.toNamed(AppRoutes.matchDetails, ...)
+  // Instead of Get.toNamed(AppRoutes.matchPlay, ...)
   // It should probably be:
   void _onMatchSelected(Match match) {
     if (selectedPlan != null) {
@@ -304,13 +304,13 @@ class _ChooseMatchPageState extends State<ChooseMatchPage> {
                 title: isPurchased ? "Watch Now" : (selectedPlan != null ? "Select Match" : "Watch Now"),
                 onTap: () {
                   if (isPurchased) {
-                    Get.toNamed(AppRoutes.matchDetails, arguments: match);
+                    Get.toNamed(AppRoutes.matchPlay, arguments: match);
                   } else if (selectedPlan != null) {
                     planController.buyPlan(selectedPlan!.id!,
                         matchId: match.sId,
                         promoCode: planController.isPromoApplied.value ? planController.appliedPromoCode.value : null);
                   } else {
-                    Get.toNamed(AppRoutes.matchDetails, arguments: match);
+                    Get.toNamed(AppRoutes.matchPlay, arguments: match);
                   }
                 },
               ),
@@ -378,13 +378,13 @@ class _ChooseMatchPageState extends State<ChooseMatchPage> {
                       title: isPurchased ? "Watch Now" : (selectedPlan != null ? "Select Match" : "Watch Now"),
                       onTap: () {
                         if (isPurchased) {
-                          Get.toNamed(AppRoutes.matchDetails, arguments: match);
+                          Get.toNamed(AppRoutes.matchPlay, arguments: match);
                         } else if (selectedPlan != null) {
                           planController.buyPlan(selectedPlan!.id!,
                               matchId: match.sId,
                               promoCode: planController.isPromoApplied.value ? planController.appliedPromoCode.value : null);
                         } else {
-                          Get.toNamed(AppRoutes.matchDetails, arguments: match);
+                          Get.toNamed(AppRoutes.matchPlay, arguments: match);
                         }
                       },
                       radius: 8,

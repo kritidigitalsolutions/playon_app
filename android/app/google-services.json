@@ -12,7 +12,20 @@
           "package_name": "com.playon.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "257271466858-4pkv5ha0om4vdmrkuiuoqj6bcn8rnf7v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.playon.app",
+            "certificate_hash": "6b83e241533b69774813a69438f7b64e835cfd30"
+          }
+        },
+        {
+          "client_id": "257271466858-7c4qa7ttf0entmjckpcghvvso0f81pb0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyC-sqlL40uvTiYmc2vSu2Sp5CM2kTEiHqw"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "257271466858-7c4qa7ttf0entmjckpcghvvso0f81pb0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

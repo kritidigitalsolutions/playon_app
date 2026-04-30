@@ -1,3 +1,5 @@
+import 'package:play_on_app/model/response_model/match_model.dart';
+
 class SeriesModel {
   bool? success;
   int? count;
@@ -37,7 +39,9 @@ class Series {
   String? createdAt;
   String? updatedAt;
   int? iV;
+  bool? isHomeScreen;
   List<SeriesMatch>? matches;
+  List<Match>? fullMatches;
   int? totalMatches;
   String? matchScheduledDate;
   String? matchStatus;
@@ -62,7 +66,9 @@ class Series {
       this.createdAt,
       this.updatedAt,
       this.iV,
+      this.isHomeScreen,
       this.matches,
+      this.fullMatches,
       this.totalMatches,
       this.matchScheduledDate,
       this.matchStatus});
@@ -87,6 +93,7 @@ class Series {
     createdAt = json['createdAt'];
     updatedAt = json['updatedAt'];
     iV = json['__v'];
+    isHomeScreen = json['isHomeScreen'];
     if (json['matches'] != null) {
       matches = <SeriesMatch>[];
       json['matches'].forEach((v) {

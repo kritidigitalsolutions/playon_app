@@ -62,16 +62,13 @@ dependencies:
 #  table_calendar: ^3.2.0
   flutter_staggered_animations: ^1.1.1
   razorpay_flutter: ^1.4.4
+  google_sign_in: ^6.1.0
+  firebase_auth: ^5.7.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
   hive_generator: ^1.1.3

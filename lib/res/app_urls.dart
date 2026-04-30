@@ -5,6 +5,8 @@ class AppUrls {
   // Auth Endpoints
   static const String sendOtp = '$baseUrl/auth/send-otp';
   static const String verifyOtp = '$baseUrl/auth/verify-otp';
+  static const String socialLogin = '$baseUrl/auth/social-login';
+  static const String googleLogin = '$baseUrl/auth/google/login';
 
   // User Endpoints
   static const String completeProfile = '$baseUrl/user/complete-profile';
@@ -21,6 +23,7 @@ class AppUrls {
   static String toggleFollowSeries(String id) => '$baseUrl/series/$id/follow';
   static const String followedSeries = '$baseUrl/series/followed';
   static String watchMatch(String id) => '$baseUrl/matches/$id/watch';
+  static const String podcasts = '$baseUrl/podcasts';
 
   // Channel Endpoints
   static const String liveChannels = '$baseUrl/channels/live';
@@ -31,6 +34,7 @@ class AppUrls {
   static const String aboutUs = '$baseUrl/legal/about-us';
   static const String refundPolicy = '$baseUrl/legal/refund-policy';
   static const String termsConditions = '$baseUrl/legal/terms-conditions';
+  static const String socialMedia = '$baseUrl/social-media';
 
   // Plan Endpoints
   static const String plans = '$baseUrl/plans';
