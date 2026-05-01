@@ -13,7 +13,7 @@ import 'package:play_on_app/view_model/after_controller/notification_controller.
 import 'package:url_launcher/url_launcher.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
 import 'package:play_on_app/model/response_model/series_model.dart' as series_model;
-import 'package:play_on_app/model/response_model/player_model.dart' as player_model;
+import 'package:play_on_app/model/response_model/star_player_model.dart' as star_player_model;
 import 'package:play_on_app/model/response_model/podcast_model.dart' as podcast_model;
 import 'package:play_on_app/view_model/after_controller/player_controller.dart';
 
@@ -238,23 +238,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       // Live Matches Carousel
                       if (ctr.searchQuery.value.isEmpty) ...[
                         Builder(builder: (context) {
-                          // Dashboard (Live/Upcoming) only filters by sport if it's a top-level sport tab.
-                          // Category chips (selectedCategory) should NOT filter the dashboard sections.
-                          String dashboardSport = (ctr.selectedTabIndex.value != 0
-                              ? ctr.sportsList[ctr.selectedTabIndex.value]
-                              : "");
-
                           var displayLiveMatches = ctr.filteredLiveMatches.toList();
-                          if (dashboardSport.isNotEmpty) {
-                            displayLiveMatches = displayLiveMatches
-                                .where((m) =>
-                            m.sport?.toLowerCase() ==
-                                dashboardSport.toLowerCase())
-                                .toList();
-                          }
 
-                          if (displayLiveMatches.isEmpty)
+                          if (displayLiveMatches.isEmpty) {
                             return const SizedBox.shrink();
+                          }
 
                           return CarouselSlider.builder(
                             itemCount: displayLiveMatches.length,
@@ -281,29 +269,42 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(height: 16),
                         // Trending Matches Section
                         Obx(() {
-                          final trendingMatches = ctr.allMatches.where((m) => m.isTrending == true).toList();
+                          String dashboardSport = (ctr.selectedTabIndex.value != 0
+                              ? ctr.sportsList[ctr.selectedTabIndex.value]
+                              : "");
+                          var trendingMatches = ctr.allMatches.where((m) => m.isTrending == true).toList();
+                          
+                          if (dashboardSport.isNotEmpty) {
+                            trendingMatches = trendingMatches
+                                .where((m) => m.sport?.toLowerCase() == dashboardSport.toLowerCase())
+                                .toList();
+                          }
+                          
                           return _buildTrendingMatches(trendingMatches);
                         }),
                         const SizedBox(height: 16),
                         // Series Sections
-                        Obx(() => _buildSeriesSection(ctr.seriesList.toList())),
-                        const SizedBox(height: 16),
-                        // Upcoming Matches Section
-                        Builder(builder: (context) {
+                        Obx(() {
                           String dashboardSport = (ctr.selectedTabIndex.value != 0
                               ? ctr.sportsList[ctr.selectedTabIndex.value]
                               : "");
+                          var seriesList = ctr.seriesList.toList();
+                          
+                          if (dashboardSport.isNotEmpty) {
+                            seriesList = seriesList
+                                .where((s) => s.sport?.toLowerCase() == dashboardSport.toLowerCase())
+                                .toList();
+                          }
+                          
+                          return _buildSeriesSection(seriesList);
+                        }),
+                        const SizedBox(height: 16),
+                        // Upcoming Matches Section
+                        Builder(builder: (context) {
                           var upcomingMatches = ctr.filteredMatches
                               .where((m) =>
                           m.status?.toLowerCase() == 'upcoming')
                               .toList();
-                          if (dashboardSport.isNotEmpty) {
-                            upcomingMatches = upcomingMatches
-                                .where((m) =>
-                            m.sport?.toLowerCase() ==
-                                dashboardSport.toLowerCase())
-                                .toList();
-                          }
 
                           if (upcomingMatches.isEmpty) return const SizedBox.shrink();
 
@@ -350,14 +351,43 @@ class _HomeScreenState extends State<HomeScreen> {
 
                           // Take top 5 recent matches for highlights slider
                           final topHighlights = recentlyFinished.take(5).toList();
+                          if (topHighlights.isEmpty) return const SizedBox.shrink();
                           return _buildHighlightsSlider(topHighlights);
                         }),
                         const SizedBox(height: 16),
                         // Star Player Edition
-                        Obx(() => _buildStarPlayerSection(ctr.starPlayers.where((p) => p.featured == true).toList())),
+                        Obx(() {
+                          String dashboardSport = (ctr.selectedTabIndex.value != 0
+                              ? ctr.sportsList[ctr.selectedTabIndex.value]
+                              : "");
+                          var players = ctr.starPlayers.toList();
+
+                          if (dashboardSport.isNotEmpty) {
+                            players = players
+                                .where((p) =>
+                                    p.sportId?.name?.toLowerCase() ==
+                                    dashboardSport.toLowerCase())
+                                .toList();
+                          }
+                          return _buildStarPlayerSection(players);
+                        }),
                         const SizedBox(height: 24),
                         // Podcasts Section
-                        Obx(() => _buildPodcastSection(ctr.podcastList)),
+                        Obx(() {
+                          String dashboardSport = (ctr.selectedTabIndex.value != 0
+                              ? ctr.sportsList[ctr.selectedTabIndex.value]
+                              : "");
+                          var podcasts = ctr.podcastList.toList();
+
+                          if (dashboardSport.isNotEmpty) {
+                            podcasts = podcasts
+                                .where((p) =>
+                                    p.category?.toLowerCase() ==
+                                    dashboardSport.toLowerCase())
+                                .toList();
+                          }
+                          return _buildPodcastSection(podcasts);
+                        }),
                         const SizedBox(height: 16),
                       ],
 
@@ -599,7 +629,7 @@ class _HomeScreenState extends State<HomeScreen> {
             return GestureDetector(
               onTap: () {
                 ctr.handleProtectedAction(() {
-                  Get.toNamed(AppRoutes.highlightsPlayer, arguments: match);
+                  Get.toNamed(AppRoutes.matchPlay, arguments: match);
                 });
               },
               child: Container(
@@ -693,9 +723,24 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _socialIcon(IconData icon, String url) {
     return GestureDetector(
       onTap: () async {
-        final uri = Uri.parse(url);
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        String launchUrlStr = url;
+        // Check if it's an email address without mailto: scheme
+        if (url.contains('@') && !url.startsWith('mailto:') && !url.startsWith('http')) {
+          launchUrlStr = 'mailto:$url';
+        }
+
+        final uri = Uri.parse(launchUrlStr);
+        try {
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          } else {
+            // Fallback for mailto if canLaunchUrl fails (common on some Android versions)
+            if (launchUrlStr.startsWith('mailto:')) {
+              await launchUrl(uri);
+            }
+          }
+        } catch (e) {
+          debugPrint("Error launching URL: $e");
         }
       },
       child: Container(
@@ -796,7 +841,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const Spacer(),
-                    if (!canWatch)
+                    if (match.isPremium != false && !canWatch)
                       const Icon(Icons.lock, color: AppColors.white70, size: 18),
                     const SizedBox(width: 8),
                     Text(
@@ -826,7 +871,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 CustomElevatedIconButton(
                   height: 40,
                   backgroundColor: canWatch ? AppColors.success : AppColors.primary,
-                  text: canWatch ? "Watch Now" : "Unlock to Watch",
+                  text: "Watch Now",
                   icon: canWatch ? Icons.play_arrow : Icons.lock_outline,
                   onPressed: () {
                     if (canWatch) {
@@ -864,131 +909,146 @@ class _HomeScreenState extends State<HomeScreen> {
             itemBuilder: (context, index) {
               final match = matches[index];
 
-              return GestureDetector(
-                onTap: () {
-                  Get.toNamed(AppRoutes.matchPlay, arguments: match);
-                },
-                child: Container(
-                  width: 280,
-                  margin: const EdgeInsets.only(right: 14),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.4),
-                        blurRadius: 10,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-
-                  child: Stack(
-                    children: [
-                      /// 🔹 Background Image
-                      Hero(
-                        tag: 'trending_${match.sId}',
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(18),
-                          child: Image.network(
-                            match.thumbnail ?? "",
-                            width: double.infinity,
-                            height: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Image.asset(
-                              'assets/auth/cri.png',
+              return Obx(() {
+                final canWatch = Get.find<PlanController>().canWatchMatch(match);
+                return GestureDetector(
+                  onTap: () {
+                    if (canWatch) {
+                      Get.toNamed(AppRoutes.matchPlay, arguments: match);
+                    } else {
+                      ctr.handleProtectedAction(() {
+                        Get.toNamed(AppRoutes.matchPlay, arguments: match);
+                      });
+                    }
+                  },
+                  child: Container(
+                    width: 280,
+                    margin: const EdgeInsets.only(right: 14),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.4),
+                          blurRadius: 10,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Stack(
+                      children: [
+                        /// 🔹 Background Image
+                        Hero(
+                          tag: 'trending_${match.sId}',
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(18),
+                            child: Image.network(
+                              match.thumbnail ?? "",
+                              width: double.infinity,
+                              height: double.infinity,
                               fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Image.asset(
+                                'assets/auth/cri.png',
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                         ),
-                      ),
 
-                      /// 🔹 Gradient Overlay
-                      Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(18),
-                          gradient: LinearGradient(
-                            begin: Alignment.bottomCenter,
-                            end: Alignment.topCenter,
-                            colors: [
-                              Colors.black.withOpacity(0.8),
-                              Colors.transparent,
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      /// 🔥 Trending Badge
-                      Positioned(
-                        top: 10,
-                        left: 10,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        /// 🔹 Gradient Overlay
+                        Container(
                           decoration: BoxDecoration(
-                            color: Colors.orangeAccent,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.local_fire_department, size: 14, color: Colors.white),
-                              const SizedBox(width: 4),
-                              Text(
-                                "TRENDING",
-                                style: text10(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
+                            borderRadius: BorderRadius.circular(18),
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [
+                                Colors.black.withOpacity(0.8),
+                                Colors.transparent,
+                              ],
+                            ),
                           ),
                         ),
-                      ),
 
-                      /// 🔻 Bottom Content
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              /// Sport Tag
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.8),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  match.sport?.toUpperCase() ?? "SPORT",
+                        /// 🔥 Trending Badge
+                        Positioned(
+                          top: 10,
+                          left: 10,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.orangeAccent,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.local_fire_department, size: 14, color: Colors.white),
+                                const SizedBox(width: 4),
+                                Text(
+                                  "TRENDING",
                                   style: text10(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                              ),
-
-                              const SizedBox(height: 6),
-
-                              /// Match Title
-                              Text(
-                                match.title ?? "${match.teamA} vs ${match.teamB}",
-                                style: text14(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+
+                        /// 🔻 Bottom Content
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    /// Sport Tag
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primary.withOpacity(0.8),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        match.sport?.toUpperCase() ?? "SPORT",
+                                        style: text10(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    if (match.isPremium != false && !canWatch)
+                                      const Icon(Icons.lock, color: Colors.white, size: 16),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 6),
+
+                                /// Match Title
+                                Text(
+                                  match.title ?? "${match.teamA} vs ${match.teamB}",
+                                  style: text14(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              );
+                );
+              });
             },
           ),
         ),
@@ -1020,89 +1080,104 @@ class _HomeScreenState extends State<HomeScreen> {
                   itemCount: item.fullMatches!.length,
                   itemBuilder: (context, index) {
                     final match = item.fullMatches![index];
-                    return GestureDetector(
-                      onTap: () {
-                         Get.toNamed(AppRoutes.matchPlay, arguments: match);
-                      },
-                      child: Container(
-                        width: 240,
-                        margin: const EdgeInsets.only(right: 14),
-                        decoration: BoxDecoration(
-                          color: AppColors.white.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.white.withOpacity(0.1), width: 1),
-                          image: DecorationImage(
-                            image: match.thumbnail != null && match.thumbnail!.isNotEmpty
-                                ? NetworkImage(match.thumbnail!)
-                                : const AssetImage('assets/auth/cri.png') as ImageProvider,
-                            fit: BoxFit.cover,
-                            colorFilter: ColorFilter.mode(
-                              Colors.black.withOpacity(0.4),
-                              BlendMode.darken,
-                            ),
-                          ),
-                        ),
-                        child: Stack(
+            return Obx(() {
+              final canWatch = Get.find<PlanController>().canWatchMatch(match);
+              return GestureDetector(
+                onTap: () {
+                  if (canWatch) {
+                    Get.toNamed(AppRoutes.matchPlay, arguments: match);
+                  } else {
+                    ctr.handleProtectedAction(() {
+                      Get.toNamed(AppRoutes.matchPlay, arguments: match);
+                    });
+                  }
+                },
+                child: Container(
+                  width: 240,
+                  margin: const EdgeInsets.only(right: 14),
+                  decoration: BoxDecoration(
+                    color: AppColors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.white.withOpacity(0.1), width: 1),
+                    image: DecorationImage(
+                      image: match.thumbnail != null && match.thumbnail!.isNotEmpty
+                          ? NetworkImage(match.thumbnail!)
+                          : const AssetImage('assets/auth/cri.png') as ImageProvider,
+                      fit: BoxFit.cover,
+                      colorFilter: ColorFilter.mode(
+                        Colors.black.withOpacity(0.4),
+                        BlendMode.darken,
+                      ),
+                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primary,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      match.status?.toUpperCase() ?? "UPCOMING",
-                                      style: text10(fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    match.title ?? "${match.teamA} vs ${match.teamB}",
-                                    style: text14(fontWeight: FontWeight.bold, color: Colors.white),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                match.status?.toUpperCase() ?? "UPCOMING",
+                                style: text10(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              match.title ?? "${match.teamA} vs ${match.teamB}",
+                              style: text14(fontWeight: FontWeight.bold, color: Colors.white),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Icon(Icons.location_on, size: 12, color: AppColors.white70),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    match.venue ?? "Stadium",
+                                    style: text11(color: AppColors.white70),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.location_on, size: 12, color: AppColors.white70),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Text(
-                                          match.venue ?? "Stadium",
-                                          style: text11(color: AppColors.white70),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (match.status?.toLowerCase() == 'live')
-                              Positioned(
-                                top: 12,
-                                right: 12,
-                                child: Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.error,
-                                    shape: BoxShape.circle,
-                                  ),
                                 ),
-                              ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
-                    );
+                      if ((match.isPremium != false || item.isPremium != false) && !canWatch)
+                        Positioned(
+                          top: 12,
+                          right: 12,
+                          child: const Icon(Icons.lock, color: Colors.white, size: 16),
+                        )
+                      else if (match.status?.toLowerCase() == 'live')
+                        Positioned(
+                          top: 12,
+                          right: 12,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: AppColors.error,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            });
                   },
                 ),
               )
@@ -1121,74 +1196,172 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildStarPlayerSection(List<player_model.Player> players) {
+  Widget _buildStarPlayerSection(List<star_player_model.StarPlayer> players) {
     if (players.isEmpty) return const SizedBox.shrink();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader("Star Player Edition", ""),
         const SizedBox(height: 16),
+
         SizedBox(
-          height: 140,
+          height: 240,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 12),
             itemCount: players.length,
             itemBuilder: (context, index) {
               final player = players[index];
-              return GestureDetector(
-                onTap: () {
-                   Get.toNamed(AppRoutes.playerDetail, arguments: player);
-                },
-                child: Container(
-                  width: 100,
-                  margin: const EdgeInsets.only(right: 20),
-                  child: Column(
-                    children: [
-                      Container(
-                        height: 85,
-                        width: 85,
-                        padding: const EdgeInsets.all(3),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [AppColors.primary, AppColors.error, Colors.orange],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                        ),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.black,
-                            image: DecorationImage(
-                              image: player.image != null && player.image!.isNotEmpty
-                                  ? NetworkImage(player.image!)
-                                  : const AssetImage('assets/auth/person.png') as ImageProvider,
+
+              return Obx(() {
+                final canWatch = Get.find<PlanController>().canWatchHighlight(player);
+                return GestureDetector(
+                  onTap: () {
+                    if (canWatch) {
+                      Get.toNamed(AppRoutes.highlightsPlayer, arguments: player);
+                    } else {
+                      ctr.handleProtectedAction(() {
+                        Get.toNamed(AppRoutes.highlightsPlayer, arguments: player);
+                      });
+                    }
+                  },
+                  child: Container(
+                    width: 170,
+                    margin: const EdgeInsets.only(right: 16),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(22),
+                      child: Stack(
+                        children: [
+
+                          /// 🖼 IMAGE
+                          Positioned.fill(
+                            child: Image.network(
+                              player.thumbnail ?? "",
                               fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                color: Colors.grey[900],
+                                child: const Icon(Icons.person,
+                                    color: Colors.white24, size: 50),
+                              ),
                             ),
                           ),
-                        ),
+
+                          /// 🌈 STRONG GRADIENT (cinematic)
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.bottomCenter,
+                                  end: Alignment.topCenter,
+                                  colors: [
+                                    Colors.black.withOpacity(0.95),
+                                    Colors.black.withOpacity(0.6),
+                                    Colors.transparent,
+                                  ],
+                                  stops: const [0.0, 0.5, 1.0],
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          /// 🔥 PLAY BUTTON (glass style)
+                          Center(
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white30),
+                              ),
+                              child: Icon(
+                                canWatch ? Icons.play_arrow : Icons.lock_outline,
+                                color: Colors.white,
+                                size: 32,
+                              ),
+                            ),
+                          ),
+
+                          /// 🏷 TOP TAG (SPORT)
+                          Positioned(
+                            top: 10,
+                            left: 10,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.6),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                player.sportId?.name?.toUpperCase() ?? "SPORT",
+                                style: text10(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          /// 🔻 TEXT INFO
+                          Positioned(
+                            bottom: 12,
+                            left: 12,
+                            right: 12,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        player.playerName ?? "Star Athlete",
+                                        style: text14(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    if (player.isPremium != false && !canWatch)
+                                      const Icon(Icons.lock, color: Colors.white70, size: 14),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  player.title ?? "Match Highlights",
+                                  style: text11(
+                                    color: AppColors.white70,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          /// ✨ SHADOW OVERLAY (depth)
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(22),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.4),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 10),
-                      Text(
-                        player.name ?? "Player",
-                        style: text12(fontWeight: FontWeight.bold, color: Colors.white),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        player.team ?? player.sport ?? "Pro Athlete",
-                        style: text10(color: AppColors.textSecondary),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              );
+                );
+              });
             },
           ),
         ),
@@ -1213,107 +1386,122 @@ class _HomeScreenState extends State<HomeScreen> {
             itemCount: podcasts.length,
             itemBuilder: (context, index) {
               final podcast = podcasts[index];
-              return GestureDetector(
-                onTap: () {
-                  Get.toNamed(AppRoutes.podcastPlay, arguments: podcast);
-                },
-                child: Container(
-                  width: 150,
-                  margin: const EdgeInsets.only(right: 14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      /// 🔥 Podcast Cover
-                      Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: podcast.thumbnail != null && podcast.thumbnail!.isNotEmpty
-                                ? Image.network(
-                                    podcast.thumbnail!,
-                                    height: 130,
-                                    width: 150,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) => Image.asset(
+              return Obx(() {
+                final canWatch = Get.find<PlanController>().canWatchPodcast(podcast);
+                return GestureDetector(
+                  onTap: () {
+                    if (canWatch) {
+                      Get.toNamed(AppRoutes.podcastPlay, arguments: podcast);
+                    } else {
+                      ctr.handleProtectedAction(() {
+                        Get.toNamed(AppRoutes.podcastPlay, arguments: podcast);
+                      });
+                    }
+                  },
+                  child: Container(
+                    width: 150,
+                    margin: const EdgeInsets.only(right: 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        /// 🔥 Podcast Cover
+                        Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: podcast.thumbnail != null && podcast.thumbnail!.isNotEmpty
+                                  ? Image.network(
+                                      podcast.thumbnail!,
+                                      height: 130,
+                                      width: 150,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) => Image.asset(
+                                        'assets/auth/cri.png',
+                                        height: 130,
+                                        width: 150,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    )
+                                  : Image.asset(
                                       'assets/auth/cri.png',
                                       height: 130,
                                       width: 150,
                                       fit: BoxFit.cover,
                                     ),
-                                  )
-                                : Image.asset(
-                                    'assets/auth/cri.png',
-                                    height: 130,
-                                    width: 150,
-                                    fit: BoxFit.cover,
-                                  ),
-                          ),
+                            ),
 
-                          /// Gradient Overlay
-                          Container(
-                            height: 130,
-                            width: 150,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              gradient: LinearGradient(
-                                begin: Alignment.bottomCenter,
-                                end: Alignment.topCenter,
-                                colors: [
-                                  Colors.black.withOpacity(0.6),
-                                  Colors.transparent,
-                                ],
+                            /// Gradient Overlay
+                            Container(
+                              height: 130,
+                              width: 150,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                gradient: LinearGradient(
+                                  begin: Alignment.bottomCenter,
+                                  end: Alignment.topCenter,
+                                  colors: [
+                                    Colors.black.withOpacity(0.6),
+                                    Colors.transparent,
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
 
-                          /// ▶ Play Button
-                          Positioned(
-                            bottom: 8,
-                            right: 8,
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: const BoxDecoration(
-                                color: AppColors.primary,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.play_arrow,
-                                color: Colors.white,
-                                size: 18,
+                            /// ▶ Play Button
+                            Positioned(
+                              bottom: 8,
+                              right: 8,
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: const BoxDecoration(
+                                  color: AppColors.primary,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  canWatch ? Icons.play_arrow : Icons.lock_outline,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-
-                      /// 🎧 Title
-                      Text(
-                        podcast.title ?? "Sports Talk",
-                        style: text14(
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                            if (podcast.isPremium != false && !canWatch)
+                              Positioned(
+                                top: 8,
+                                left: 8,
+                                child: const Icon(Icons.lock, color: Colors.white70, size: 16),
+                              ),
+                          ],
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
+                        const SizedBox(height: 8),
 
-                      /// ⏱ Duration + Channel
-                      Row(
-                        children: [
-                          const Icon(Icons.headset, size: 12, color: AppColors.white70),
-                          const SizedBox(width: 4),
-                          Text(
-                            podcast.duration?.isNotEmpty == true ? podcast.duration! : "Podcast",
-                            style: text11(color: AppColors.white70),
+                        /// 🎧 Title
+                        Text(
+                          podcast.title ?? "Sports Talk",
+                          style: text14(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
                           ),
-                        ],
-                      ),
-                    ],
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+
+                        /// ⏱ Duration + Channel
+                        Row(
+                          children: [
+                            const Icon(Icons.headset, size: 12, color: AppColors.white70),
+                            const SizedBox(width: 4),
+                            Text(
+                              podcast.duration?.isNotEmpty == true ? podcast.duration! : "Podcast",
+                              style: text11(color: AppColors.white70),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              );
+                );
+              });
             },
           ),
         ),
@@ -1324,6 +1512,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildTab(String text, int index, bool isSelected) {
     return GestureDetector(
       onTap: () {
+        searchController.clear();
+        ctr.searchQuery.value = "";
         ctr.changeTab(index);
       },
       child: AnimatedContainer(
@@ -1413,7 +1603,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                           ),
-                          if (!canWatch)
+                          if (match.isPremium != false && !canWatch)
                             Positioned(
                               top: 8,
                               right: 8,

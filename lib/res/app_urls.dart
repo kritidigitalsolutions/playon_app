@@ -1,6 +1,6 @@
 class AppUrls {
-  static const String baseUrl = 'http://192.168.1.3:8000/api';
-  // static const String baseUrl = 'https://play-on-weld.vercel.app/api';
+  // static const String baseUrl = 'http://192.168.1.3:8000/api';
+  static const String baseUrl = 'https://play-on-weld.vercel.app/api';
 
   // Auth Endpoints
   static const String sendOtp = '$baseUrl/auth/send-otp';
@@ -46,6 +46,7 @@ class AppUrls {
 
   // Player Endpoints
   static const String players = '$baseUrl/players';
+  static const String starPlayers = '$baseUrl/star-players';
   static String toggleFollowPlayer(String id) => '$baseUrl/players/$id/toggle-follow';
   static const String followedPlayers = '$baseUrl/players/following/me';
 

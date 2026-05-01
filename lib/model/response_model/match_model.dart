@@ -39,6 +39,8 @@ class Match {
   String? description;
   bool? isFeatured;
   bool? isTrending;
+  bool? isPremium;
+  bool? isSeriesPremium; // Added to track parent series premium status
   String? liveStartedAt;
   String? liveEndedAt;
   String? createdAt;
@@ -62,6 +64,8 @@ class Match {
       this.description,
       this.isFeatured,
       this.isTrending,
+      this.isPremium,
+      this.isSeriesPremium,
       this.liveStartedAt,
       this.liveEndedAt,
       this.createdAt,
@@ -85,6 +89,8 @@ class Match {
     description = json['description'];
     isFeatured = json['isFeatured'];
     isTrending = json['isTrending'];
+    isPremium = json['isPremium'];
+    isSeriesPremium = json['isSeriesPremium'];
     liveStartedAt = json['liveStartedAt'];
     liveEndedAt = json['liveEndedAt'];
     createdAt = json['createdAt'];

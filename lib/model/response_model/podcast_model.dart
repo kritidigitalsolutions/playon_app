@@ -27,6 +27,7 @@ class Podcast {
   String? duration;
   String? category;
   bool? isFeatured;
+  bool? isPremium;
   String? status;
   String? createdBy;
   String? createdAt;
@@ -43,6 +44,7 @@ class Podcast {
       this.duration,
       this.category,
       this.isFeatured,
+      this.isPremium,
       this.status,
       this.createdBy,
       this.createdAt,
@@ -59,6 +61,7 @@ class Podcast {
     duration = json['duration'];
     category = json['category'];
     isFeatured = json['isFeatured'];
+    isPremium = json['isPremium'];
     status = json['status'];
     createdBy = json['createdBy'];
     createdAt = json['createdAt'];

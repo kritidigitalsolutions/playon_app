@@ -139,6 +139,15 @@ class MatchRepository {
     }
   }
 
+  Future<dynamic> getStarPlayers() async {
+    try {
+      final response = await _apiServices.getApi(AppUrls.starPlayers);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<dynamic> getPodcasts() async {
     try {
       final response = await _apiServices.getApi(AppUrls.podcasts);

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:play_on_app/model/response_model/highlight_model.dart';
+import 'package:play_on_app/model/response_model/star_player_model.dart' as star_model;
 import 'package:play_on_app/repo/match_repository.dart';
 import 'package:video_player/video_player.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
@@ -11,6 +12,7 @@ import 'package:play_on_app/data/network/notification_service.dart';
 
 class MatchDetailsController extends GetxController {
   final match = Rxn<model.Match>();
+  final starPlayer = Rxn<star_model.StarPlayer>();
   var isLive = false.obs;
   var remainingTime = "".obs;
   var isReminderOn = false.obs;
@@ -27,22 +29,23 @@ class MatchDetailsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    
+
+    // Re-check access whenever plan status or data changes
+    ever(planController.hasAccess, (_) => checkAccess());
+    ever(planController.mySubscription, (_) => checkAccess());
+    ever(match, (_) => checkAccess());
+    ever(starPlayer, (_) => checkAccess());
+
     if (Get.arguments is model.Match) {
       match.value = Get.arguments;
       _initializeMatchStatus();
-      
-      // Check if reminder is already set in local storage
       _checkReminderStatus();
-
-      // Re-check access whenever plan status changes
-      ever(planController.hasAccess, (_) => checkAccess());
-      ever(planController.mySubscription, (_) => checkAccess());
-      checkAccess();
-
-      // Fetch Highlights
       fetchHighlights();
+    } else if (Get.arguments is star_model.StarPlayer) {
+      starPlayer.value = Get.arguments;
     }
+
+    checkAccess();
   }
 
   Future<void> fetchHighlights() async {
@@ -73,10 +76,16 @@ class MatchDetailsController extends GetxController {
   }
 
   void checkAccess() {
-    if (match.value == null) return;
-    
-    // Check if user has overall access or has purchased this specific match/series/team
-    isLock.value = !planController.canWatchMatch(match.value);
+    if (match.value != null) {
+      // Lock only if (isPremium is true OR isSeriesPremium is true) AND (user has no active plan)
+      // Otherwise (if not premium OR if user has a plan), it stays unlocked.
+      isLock.value = (match.value?.isPremium == true || match.value?.isSeriesPremium == true) && 
+                     !planController.canWatchMatch(match.value);
+    } else if (starPlayer.value != null) {
+      // For star player highlights
+      isLock.value = (starPlayer.value?.isPremium == true) && 
+                     !planController.canWatchHighlight(starPlayer.value);
+    }
   }
 
   void _initializeMatchStatus() {
@@ -198,6 +207,7 @@ class VideoControllerX extends GetxController {
   VideoPlayerController? videoController;
 
   final match = Rxn<model.Match>();
+  final starPlayer = Rxn<star_model.StarPlayer>();
   var isInitialized = false.obs;
   var isPlaying = false.obs;
   var showControls = true.obs;
@@ -211,7 +221,29 @@ class VideoControllerX extends GetxController {
     if (Get.arguments is model.Match) {
       match.value = Get.arguments;
       fetchMatchDetails(match.value!.sId!);
+    } else if (Get.arguments is star_model.StarPlayer) {
+      starPlayer.value = Get.arguments;
     }
+
+    // Stop playback if access is revoked
+    _setupLockListener();
+  }
+
+  void _setupLockListener() {
+    // We use a delay to ensure MatchDetailsController is registered if needed,
+    // but usually they are put together in the same screen.
+    Future.delayed(Duration.zero, () {
+      if (Get.isRegistered<MatchDetailsController>()) {
+        final matchDetails = Get.find<MatchDetailsController>();
+        ever(matchDetails.isLock, (bool locked) {
+          if (locked && videoController != null && videoController!.value.isPlaying) {
+            videoController?.pause();
+            isPlaying.value = false;
+            showControls.value = true;
+          }
+        });
+      }
+    });
   }
 
   Future<void> fetchMatchDetails(String matchId, {bool isHighlight = false}) async {
@@ -236,7 +268,10 @@ class VideoControllerX extends GetxController {
       
       // Update match if API returns more detailed info
       if (matchData.value?.match != null) {
-        match.value = matchData.value!.match;
+        final newMatch = matchData.value!.match!;
+        // Preserve isSeriesPremium flag which might have been set by HomeController
+        newMatch.isSeriesPremium = match.value?.isSeriesPremium;
+        match.value = newMatch;
       }
       
       if (matchData.value?.stream?.streamUrl != null) {
@@ -250,6 +285,11 @@ class VideoControllerX extends GetxController {
   }
 
   void initializeVideo(String url, {bool isHighlight = false}) {
+    // Don't initialize if it's currently locked
+    if (Get.isRegistered<MatchDetailsController>() && Get.find<MatchDetailsController>().isLock.value) {
+      return;
+    }
+
     videoController = VideoPlayerController.networkUrl(Uri.parse(url))
       ..initialize().then((_) {
         isInitialized.value = true;

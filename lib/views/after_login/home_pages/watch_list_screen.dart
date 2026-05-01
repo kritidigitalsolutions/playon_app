@@ -5,6 +5,7 @@ import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/utils/custom_button.dart';
+import 'package:play_on_app/view_model/after_controller/plan_controller.dart';
 import 'package:play_on_app/view_model/after_controller/watchlist_controller.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
@@ -79,43 +80,62 @@ class CreateWatchlistScreen extends StatelessWidget {
                               itemBuilder: (context, index) {
                                 final match = suggested[index];
 
-                                return GestureDetector(
-                                  onTap: () {
-                                    Get.toNamed(AppRoutes.recapMatch, arguments: match);
-                                  },
-                                  child: Container(
-                                    width: 130,
-                                    margin: const EdgeInsets.only(right: 10),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10),
-                                      color: AppColors.white.withOpacity(0.05),
-                                    ),
-                                    child: Column(
-                                      children: [
-                                        ClipRRect(
-                                          borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
-                                          child: Image.network(
-                                            match.thumbnail ?? "",
-                                            height: 90,
-                                            width: double.infinity,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) =>
-                                                Image.asset("assets/auth/cri.png", height: 90),
+                                return Obx(() {
+                                  final canWatch = Get.find<PlanController>().canWatchMatch(match);
+                                  return GestureDetector(
+                                    onTap: () {
+                                      if (canWatch) {
+                                        Get.toNamed(AppRoutes.recapMatch, arguments: match);
+                                      } else {
+                                        homeController.handleProtectedAction(() {
+                                          Get.toNamed(AppRoutes.recapMatch, arguments: match);
+                                        });
+                                      }
+                                    },
+                                    child: Container(
+                                      width: 130,
+                                      margin: const EdgeInsets.only(right: 10),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        color: AppColors.white.withOpacity(0.05),
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          ClipRRect(
+                                            borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+                                            child: Stack(
+                                              children: [
+                                                Image.network(
+                                                  match.thumbnail ?? "",
+                                                  height: 90,
+                                                  width: double.infinity,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (_, __, ___) =>
+                                                      Image.asset("assets/auth/cri.png", height: 90),
+                                                ),
+                                                if (match.isPremium != false && !canWatch)
+                                                  Positioned(
+                                                    top: 4,
+                                                    right: 4,
+                                                    child: const Icon(Icons.lock, color: Colors.white, size: 14),
+                                                  ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6),
-                                          child: Text(
-                                            "${match.teamA} vs ${match.teamB}",
-                                            textAlign: TextAlign.center,
-                                            style: text10(),
+                                          const SizedBox(height: 6),
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                                            child: Text(
+                                              "${match.teamA} vs ${match.teamB}",
+                                              textAlign: TextAlign.center,
+                                              style: text10(),
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                );
+                                  );
+                                });
                               },
                             );
                           }),
@@ -152,111 +172,121 @@ class CreateWatchlistScreen extends StatelessWidget {
   Widget _buildCard(model.Match match) {
     final isLive = match.status?.toLowerCase() == "live";
 
-    return Stack(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.white.withOpacity(0.1)),
-          ),
-          child: Column(
-            children: [
-              /// 🎥 IMAGE + LIVE
-              Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
-                    child: Image.network(
-                      match.thumbnail ?? "",
-                      height: 70,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-
-                  if (isLive)
-                    Positioned(
-                      top: 4,
-                      left: 4,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                        child: const Text("LIVE", style: TextStyle(fontSize: 8)),
+    return Obx(() {
+      final canWatch = Get.find<PlanController>().canWatchMatch(match);
+      return Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.white.withOpacity(0.1)),
+            ),
+            child: Column(
+              children: [
+                /// 🎥 IMAGE + LIVE
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+                      child: Image.network(
+                        match.thumbnail ?? "",
+                        height: 70,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
                       ),
                     ),
-                ],
-              ),
-
-              const SizedBox(height: 4),
-
-              Text(
-                "${match.teamA} vs ${match.teamB}",
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: text10(fontWeight: FontWeight.w600),
-              ),
-
-              Text(
-                formatDate(match.matchDate, match.liveStartedAt),
-                style: text11(color: AppColors.white70),
-              ),
-
-              const Spacer(),
-
-              Padding(
-                padding: const EdgeInsets.all(4),
-                child: AppButton(
-                  height: 20,
-                  radius: 6,
-                  title: isLive ? "Watch" : "Details",
-                  onTap: () {
-                    if (isLive) {
-                      Get.toNamed(AppRoutes.matchPlay, arguments: match);
-                    } else {
-                      Get.toNamed(AppRoutes.matchPlay, arguments: match);
-                    }
-                  },
-                  textStyle: text11(),
+                    if (isLive)
+                      Positioned(
+                        top: 4,
+                        left: 4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                          child: const Text("LIVE", style: TextStyle(fontSize: 8)),
+                        ),
+                      ),
+                    if (match.isPremium != false && !canWatch)
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: const Icon(Icons.lock, color: Colors.white, size: 14),
+                      ),
+                  ],
                 ),
-              ),
-            ],
+
+                const SizedBox(height: 4),
+
+                Text(
+                  "${match.teamA} vs ${match.teamB}",
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: text10(fontWeight: FontWeight.w600),
+                ),
+
+                Text(
+                  formatDate(match.matchDate, match.liveStartedAt),
+                  style: text11(color: AppColors.white70),
+                ),
+
+                const Spacer(),
+
+                Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: AppButton(
+                    height: 20,
+                    radius: 6,
+                    title: canWatch ? (isLive ? "Watch" : "Details") : "Watch",
+                    onTap: () {
+                      if (canWatch) {
+                        Get.toNamed(AppRoutes.matchPlay, arguments: match);
+                      } else {
+                        homeController.handleProtectedAction(() {
+                          Get.toNamed(AppRoutes.matchPlay, arguments: match);
+                        });
+                      }
+                    },
+                    textStyle: text11(),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
 
-        /// ❌ REMOVE BUTTON
-        Positioned(
-          top: 4,
-          right: 4,
-          child: GestureDetector(
-            onTap: () async {
-              await watchlistController.toggleWatchlist(match.sId!, "match");
+          /// ❌ REMOVE BUTTON
+          Positioned(
+            top: 4,
+            right: 4,
+            child: GestureDetector(
+              onTap: () async {
+                await watchlistController.toggleWatchlist(match.sId!, "match");
 
-              Get.snackbar(
-                "Removed",
-                "Removed from watchlist",
-                snackPosition: SnackPosition.BOTTOM,
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.close,
-                size: 14,
-                color: Colors.white,
+                Get.snackbar(
+                  "Removed",
+                  "Removed from watchlist",
+                  snackPosition: SnackPosition.BOTTOM,
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close,
+                  size: 14,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
   }
 }

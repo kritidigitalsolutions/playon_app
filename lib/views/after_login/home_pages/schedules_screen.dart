@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
 import 'package:play_on_app/utils/custom_button.dart';
+import 'package:play_on_app/view_model/after_controller/plan_controller.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 import '../../../routes/app_routes.dart';
@@ -257,70 +258,73 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
         ? match.matchDate!.split('T')[1].substring(0, 5)
         : "TBA";
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withOpacity(0.15)),
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(child: _team(match.teamA, match.teamALogo)),
-
-                  Column(
-                    children: [
-                      isLive
-                          ? Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Text(
-                          "LIVE",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      )
-                          : const Text("VS",
-                          style: TextStyle(color: Colors.white70)),
-                      const SizedBox(height: 6),
-                      Text(time,
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 12)),
-                    ],
-                  ),
-
-                  Expanded(child: _team(match.teamB, match.teamBLogo)),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              AppButton(
-                title: "View Details",
-                onTap: () {
-                  ctr.handleProtectedAction(() {
-                    Get.toNamed(AppRoutes.matchPlay, arguments: match);
-                  });
-                },
-              ),
-            ],
+    return Obx(() {
+      final canWatch = Get.find<PlanController>().canWatchMatch(match);
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withOpacity(0.15)),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: _team(match.teamA, match.teamALogo)),
+                    Column(
+                      children: [
+                        isLive
+                            ? Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Text(
+                                  "LIVE",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              )
+                            : const Text("VS",
+                                style: TextStyle(color: Colors.white70)),
+                        const SizedBox(height: 6),
+                        Text(time,
+                            style: const TextStyle(
+                                color: Colors.white70, fontSize: 12)),
+                      ],
+                    ),
+                    Expanded(child: _team(match.teamB, match.teamBLogo)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                AppButton(
+                  title: canWatch ? (isLive ? "Watch Now" : "View Details") : "Watch Now",
+                  onTap: () {
+                    if (canWatch) {
+                      Get.toNamed(AppRoutes.matchPlay, arguments: match);
+                    } else {
+                      ctr.handleProtectedAction(() {
+                        Get.toNamed(AppRoutes.matchPlay, arguments: match);
+                      });
+                    }
+                  },
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _team(String? name, String? logo) {

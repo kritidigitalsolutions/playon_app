@@ -6,6 +6,7 @@ import 'package:play_on_app/view_model/after_controller/home_contollers/podcast_
 import 'package:play_on_app/views/after_login/match_pages/full_video_play_screen.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 import 'package:video_player/video_player.dart';
+import '../../../routes/app_routes.dart';
 
 class PodcastPlayScreen extends StatelessWidget {
   const PodcastPlayScreen({super.key});
@@ -112,6 +113,19 @@ class PodcastPlayScreen extends StatelessWidget {
         child: Stack(
           children: [
             Obx(() {
+              if (controller.isLock.value) {
+                return Container(
+                  color: Colors.black,
+                  child: const Center(
+                    child: Icon(
+                      Icons.play_circle_outline,
+                      size: 80,
+                      color: Colors.white38,
+                    ),
+                  ),
+                );
+              }
+
               if (controller.isLoading.value) {
                 return const Center(child: CircularProgressIndicator(color: AppColors.primary));
               }
@@ -133,9 +147,54 @@ class PodcastPlayScreen extends StatelessWidget {
               );
             }),
 
+            // Lock Overlay
+            Obx(() {
+              if (controller.isLock.value) {
+                return Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withValues(alpha: 0.88),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.lock_rounded,
+                          size: 75,
+                          color: Colors.white70,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          "Unlock Premium Podcast",
+                          style: text20(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "Subscribe to a plan to enjoy this podcast",
+                          style: text15(color: Colors.white70),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: () {
+                            Get.toNamed(AppRoutes.accessPlan, arguments: controller.podcast.value);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          child: Text("Upgrade Now", style: text14(fontWeight: FontWeight.bold, color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              return const SizedBox();
+            }),
+
             // Controls Overlay
             Obx(() {
-              if (!controller.showControls.value && controller.isPlaying.value) {
+              if (controller.isLock.value || (!controller.showControls.value && controller.isPlaying.value)) {
                 return const SizedBox();
               }
               return Stack(

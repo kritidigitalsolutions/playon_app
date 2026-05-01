@@ -5,8 +5,13 @@ import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/view_model/after_controller/match_controller/match_controller.dart';
 import 'package:play_on_app/views/after_login/match_pages/full_video_play_screen.dart';
+import 'package:play_on_app/utils/custom_button.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
+import 'package:play_on_app/model/response_model/star_player_model.dart' as star_model;
+import 'package:play_on_app/view_model/after_controller/player_controller.dart';
+import '../../../routes/app_routes.dart';
+import '../../../view_model/after_controller/plan_controller.dart';
 import 'package:video_player/video_player.dart';
 
 class HighlightsPlayerScreen extends StatefulWidget {
@@ -18,18 +23,29 @@ class HighlightsPlayerScreen extends StatefulWidget {
 
 class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
   final videoControllerX = Get.put(VideoControllerX());
-  final MatchDetailsController controller = Get.put(MatchDetailsController());
+  final MatchDetailsController matchDetailsController = Get.put(MatchDetailsController());
+  final PlayerController playerController = Get.put(PlayerController());
+  final PlanController planController = Get.find<PlanController>();
+
+  late star_model.StarPlayer player;
 
   @override
   void initState() {
     super.initState();
-    if (Get.arguments is model.Match) {
-      final match = Get.arguments as model.Match;
-      videoControllerX.match.value = match;
-      // Fetch highlights specifically for this screen
-      videoControllerX.fetchMatchDetails(match.sId!, isHighlight: true);
+
+    /// ✅ Get only star player
+    player = Get.arguments as star_model.StarPlayer;
+
+    videoControllerX.starPlayer.value = player;
+    matchDetailsController.starPlayer.value = player;
+
+    if (player.videoUrl != null) {
+      videoControllerX.initializeVideo(player.videoUrl!, isHighlight: true);
     }
   }
+
+  // Remove the local _checkHighlightAccess as it's now handled by matchDetailsController
+  // void _checkHighlightAccess() { ... }
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +55,8 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Back Button and Title
+
+              /// 🔙 Header
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
@@ -48,25 +65,35 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                       icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
                       onPressed: () => Get.back(),
                     ),
-                    Text(
-                      "Match Highlights",
-                      style: text18(fontWeight: FontWeight.bold),
+                    Expanded(
+                      child: Text(
+                        player.playerName ?? "Player Highlights",
+                        style: text18(fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+
+                    /// 🔗 Share
+                    IconButton(
+                      onPressed: () {
+                        final text =
+                            "${player.playerName} Highlights 🔥\n${player.videoUrl}";
+                        Get.snackbar("Share", text);
+                        // Use share_plus in real
+                      },
+                      icon: const Icon(Icons.share, color: Colors.white),
                     ),
                   ],
                 ),
               ),
 
-              // Video Player Section
+              /// 🎬 Video Player
               _buildVideoPlayer(),
 
-              // Match Info Section
+              /// 📄 Info Section
               Expanded(
                 child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      _buildMatchSummary(),
-                    ],
-                  ),
+                  child: _buildPlayerInfo(),
                 ),
               ),
             ],
@@ -76,6 +103,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
     );
   }
 
+  /// 🎬 VIDEO PLAYER
   Widget _buildVideoPlayer() {
     return GestureDetector(
       onTap: videoControllerX.toggleControls,
@@ -85,26 +113,91 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
         color: Colors.black,
         child: Stack(
           children: [
+            /// 🎥 VIDEO (Only show if unlocked)
             Obx(() {
+              if (matchDetailsController.isLock.value) {
+                return Container(
+                  color: Colors.black,
+                  child: const Center(
+                    child: Icon(
+                      Icons.play_circle_outline,
+                      size: 80,
+                      color: Colors.white38,
+                    ),
+                  ),
+                );
+              }
+
               if (videoControllerX.isLoading.value) {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              if (!videoControllerX.isInitialized.value || videoControllerX.videoController == null) {
-                return const Center(child: Text("No highlight video found", style: TextStyle(color: Colors.white)));
+              if (!videoControllerX.isInitialized.value ||
+                  videoControllerX.videoController == null) {
+                return const Center(
+                  child: Text(
+                    "No video found",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                );
               }
 
               return AspectRatio(
-                aspectRatio: videoControllerX.videoController!.value.aspectRatio,
-                child: Center(
-                  child: VideoPlayer(videoControllerX.videoController!),
-                ),
+                aspectRatio:
+                videoControllerX.videoController!.value.aspectRatio,
+                child: VideoPlayer(videoControllerX.videoController!),
               );
             }),
 
-            // Controls
+            /// 🔒 LOCK OVERLAY
             Obx(() {
-              if (!videoControllerX.showControls.value) return const SizedBox();
+              if (matchDetailsController.isLock.value) {
+                return Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withOpacity(0.88),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.lock_rounded,
+                          size: 75,
+                          color: Colors.white70,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          "Unlock Now",
+                          style: text20(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "Buy plan to watch highlight",
+                          style: text15(color: Colors.white70),
+                        ),
+                        const SizedBox(height: 24),
+
+                        CustomElevatedIconButton(
+                          height: 30,
+                          iconSize: 18,
+                          text: "Watch Now",
+                          icon: Icons.play_arrow_rounded,
+                          onPressed: () {
+                            Get.toNamed(AppRoutes.accessPlan, arguments: player);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              return const SizedBox();
+            }),
+
+            /// ▶ Controls
+            Obx(() {
+              if (matchDetailsController.isLock.value || !videoControllerX.showControls.value) {
+                return const SizedBox();
+              }
+
               return Stack(
                 children: [
                   Center(
@@ -118,39 +211,44 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
-                          videoControllerX.isPlaying.value ? Icons.pause : Icons.play_arrow,
+                          videoControllerX.isPlaying.value
+                              ? Icons.pause
+                              : Icons.play_arrow,
                           color: Colors.white,
                           size: 35,
                         ),
                       ),
                     ),
                   ),
+
+                  /// Progress
                   Positioned(
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    child: videoControllerX.videoController != null
-                        ? VideoProgressIndicator(
-                            videoControllerX.videoController!,
-                            allowScrubbing: true,
-                            colors: const VideoProgressColors(
-                              playedColor: AppColors.primary,
-                              backgroundColor: Colors.white24,
-                              bufferedColor: Colors.white38,
-                            ),
-                          )
-                        : const SizedBox(),
+                    child: VideoProgressIndicator(
+                      videoControllerX.videoController!,
+                      allowScrubbing: true,
+                      colors: const VideoProgressColors(
+                        playedColor: AppColors.primary,
+                        backgroundColor: Colors.white24,
+                        bufferedColor: Colors.white38,
+                      ),
+                    ),
                   ),
+
+                  /// Fullscreen
                   Positioned(
                     right: 12,
                     bottom: 12,
                     child: GestureDetector(
                       onTap: () {
-                        if (videoControllerX.videoController != null) {
-                          Get.to(() => FullScreenVideoPage(controller: videoControllerX.videoController!));
-                        }
+                        Get.to(() => FullScreenVideoPage(
+                          controller: videoControllerX.videoController!,
+                        ));
                       },
-                      child: const Icon(Icons.fullscreen, color: Colors.white),
+                      child:
+                      const Icon(Icons.fullscreen, color: Colors.white),
                     ),
                   ),
                 ],
@@ -162,108 +260,142 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
     );
   }
 
-  Widget _buildMatchSummary() {
-    return Obx(() {
-      final match = videoControllerX.match.value;
-      if (match == null) return const SizedBox.shrink();
+  /// 👤 PLAYER INFO UI
+  Widget _buildPlayerInfo() {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
 
-      return Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${match.teamA} vs ${match.teamB}',
-              style: text24(fontWeight: FontWeight.bold),
+          /// 🔥 Player Card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white10),
             ),
-            const SizedBox(height: 4),
-            Text(
-              '${match.tournament} • ${match.sport?.toUpperCase()}',
-              style: text14(color: AppColors.white70),
-            ),
-            const SizedBox(height: 20),
-            
-            // Match Result Card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withOpacity(0.1)),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    if (player.playerId?.sId != null) {
+                      playerController
+                          .navigateToPlayerDetail(player.playerId!.sId!);
+                    }
+                  },
+                  child: CircleAvatar(
+                    radius: 30,
+                    backgroundImage: player.playerId?.image != null
+                        ? NetworkImage(player.playerId!.image!)
+                        : (player.thumbnail != null
+                            ? NetworkImage(player.thumbnail!)
+                            : null),
+                    child: (player.playerId?.image == null &&
+                            player.thumbnail == null)
+                        ? const Icon(Icons.person)
+                        : null,
+                  ),
+                ),
+                const SizedBox(width: 16),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildTeamInfo(match.teamA ?? "Team A", true),
-                      Column(
-                        children: [
-                          Text(
-                            match.score ?? "FT",
-                            style: text20(fontWeight: FontWeight.bold, color: AppColors.primary),
-                          ),
-                          Text("FINAL SCORE", style: text10(color: AppColors.white70)),
-                        ],
+                      Text(
+                        player.playerName ?? "",
+                        style: text18(fontWeight: FontWeight.bold),
                       ),
-                      _buildTeamInfo(match.teamB ?? "Team B", false),
+                      const SizedBox(height: 4),
+                      Text(
+                        player.team ?? player.sportId?.name ?? "",
+                        style: text14(color: AppColors.white70),
+                      ),
                     ],
                   ),
-                  // const Divider(height: 32, color: Colors.white10),
-                  // _infoRow("Toss", match.tossWinner != null ? "${match.tossWinner} won and chose to ${match.tossDecision ?? 'bat'}" : "TBD"),
-                  // const SizedBox(height: 12),
-                  // _infoRow("Winner", match.winner != null ? "${match.winner} won by ${match.winMargin ?? 'N/A'}" : "Completed"),
-                  // const SizedBox(height: 12),
-                  // _infoRow("Venue", match.venue ?? "International Stadium"),
-                ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          /// 🎯 Title
+          Text(
+            player.title ?? "",
+            style: text18(
+              fontWeight: FontWeight.bold,
+              color: AppColors.primary,
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          /// 📝 Description
+          Text(
+            "Watch top moments of ${player.playerName}. Enjoy powerful performance and match highlights.",
+            style: text14(color: AppColors.white70),
+          ),
+
+          const SizedBox(height: 20),
+
+          /// 🏷 Tags
+          Row(
+            children: [
+              _chip(player.sportId?.name ?? "Sport"),
+              const SizedBox(width: 10),
+              Obx(() {
+                // Explicitly access observables to ensure proper tracking
+                final _ = planController.hasAccess.value; 
+                final __ = planController.mySubscription.value;
+
+                final isPremium = player.isPremium == true;
+                final hasAccess = !isPremium || planController.canWatchHighlight(player);
+
+                return _chip(isPremium ? (hasAccess ? "Premium ✅" : "Premium 🔒") : "Free Content");
+              }),
+            ],
+          ),
+
+          const SizedBox(height: 30),
+
+          /// 👤 Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                if (player.playerId?.sId != null) {
+                  playerController
+                      .navigateToPlayerDetail(player.playerId!.sId!);
+                }
+              },
+              icon: const Icon(Icons.person_outline),
+              label: const Text("View Full Profile"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
-            
-            const SizedBox(height: 20),
-            Text("Match Description", style: text16(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text(
-              match.description ?? "Experience the best moments from this thrilling match. Catch all the goals, wickets, and game-changing plays in this quick highlights package.",
-              style: text14(color: AppColors.white70),
-            ),
-          ],
-        ),
-      );
-    });
-  }
-
-  Widget _buildTeamInfo(String name, bool isLeft) {
-    return Column(
-      children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: Colors.white10,
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white24),
           ),
-          child: const Icon(Icons.shield, color: Colors.white54),
-        ),
-        const SizedBox(height: 8),
-        Text(name, style: text14(fontWeight: FontWeight.w600)),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _infoRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: text14(color: AppColors.white70)),
-        Flexible(
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            style: text14(fontWeight: FontWeight.w500),
-          ),
-        ),
-      ],
+  Widget _chip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white10,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(text, style: text12(color: Colors.white)),
     );
   }
 }

@@ -71,11 +71,26 @@ class AuthController extends GetxController {
   }
 
   Future<void> launchSocialUrl(String url) async {
-    final Uri uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      print("Could not launch $url");
+    String launchUrlStr = url;
+    // Check if it's an email address without mailto: scheme
+    if (url.contains('@') && !url.startsWith('mailto:') && !url.startsWith('http')) {
+      launchUrlStr = 'mailto:$url';
+    }
+    
+    final Uri uri = Uri.parse(launchUrlStr);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        // Fallback for mailto if canLaunchUrl fails
+        if (launchUrlStr.startsWith('mailto:')) {
+          await launchUrl(uri);
+        } else {
+          print("Could not launch $launchUrlStr");
+        }
+      }
+    } catch (e) {
+      print("Error launching social URL: $e");
     }
   }
 

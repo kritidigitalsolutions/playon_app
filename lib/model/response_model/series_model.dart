@@ -35,6 +35,7 @@ class Series {
   String? endDate;
   String? status;
   bool? isFeatured;
+  bool? isPremium;
   String? createdBy;
   String? createdAt;
   String? updatedAt;
@@ -62,6 +63,7 @@ class Series {
       this.endDate,
       this.status,
       this.isFeatured,
+      this.isPremium,
       this.createdBy,
       this.createdAt,
       this.updatedAt,
@@ -89,6 +91,7 @@ class Series {
     endDate = json['endDate'];
     status = json['status'];
     isFeatured = json['isFeatured'];
+    isPremium = json['isPremium'];
     createdBy = json['createdBy'];
     createdAt = json['createdAt'];
     updatedAt = json['updatedAt'];

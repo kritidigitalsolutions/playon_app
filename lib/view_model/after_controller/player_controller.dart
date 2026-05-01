@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'package:play_on_app/model/response_model/player_model.dart';
-import 'package:play_on_app/repo/player_repository.dart';
+import 'package:play_on_app/routes/app_routes.dart';
+
+import '../../repo/player_repository.dart';
 
 
 class PlayerController extends GetxController {
@@ -140,5 +142,31 @@ class PlayerController extends GetxController {
         .toSet()
         .toList()
       ..sort();
+  }
+
+  Future<void> navigateToPlayerDetail(String playerId) async {
+    loading.value = true;
+    try {
+      // Check if we have the player in our local list first
+      var player = allAvailablePlayers.firstWhereOrNull((p) => p.id == playerId);
+      
+      if (player == null) {
+        // If not found, fetch all players again or fetch specific player if API exists
+        await initialFetch();
+        player = allAvailablePlayers.firstWhereOrNull((p) => p.id == playerId);
+      }
+
+      if (player != null) {
+        Get.toNamed(AppRoutes.playerDetail, arguments: player);
+      } else {
+        // Try to create a minimal player object if still not found to allow navigation
+        // This handles cases where star player might reference a player not in the main list
+        Get.toNamed(AppRoutes.playerDetail, arguments: Player(id: playerId));
+      }
+    } catch (e) {
+      print("Error navigating to player detail: $e");
+    } finally {
+      loading.value = false;
+    }
   }
 }

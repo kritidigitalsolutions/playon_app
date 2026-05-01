@@ -13,6 +13,7 @@ import 'package:play_on_app/model/response_model/banner_model.dart';
 import 'package:play_on_app/model/response_model/channel_category_model.dart';
 import 'package:play_on_app/model/response_model/series_model.dart';
 import 'package:play_on_app/model/response_model/player_model.dart';
+import 'package:play_on_app/model/response_model/star_player_model.dart';
 import 'package:play_on_app/model/response_model/podcast_model.dart';
 import 'package:play_on_app/model/response_model/social_media_model.dart';
 import 'package:play_on_app/repo/legal_repository.dart';
@@ -45,7 +46,7 @@ class HomeController extends GetxController {
   var seriesList = <Series>[].obs;
   var isSeriesLoading = false.obs;
 
-  var starPlayers = <Player>[].obs;
+  var starPlayers = <StarPlayer>[].obs;
   var isPlayersLoading = false.obs;
 
   var podcastList = <Podcast>[].obs;
@@ -130,7 +131,9 @@ class HomeController extends GetxController {
               List<Match> fullMatches = [];
               for (var matchRes in matchResults) {
                 if (matchRes != null && matchRes['success'] == true && matchRes['match'] != null) {
-                  fullMatches.add(Match.fromJson(matchRes['match']));
+                  final m = Match.fromJson(matchRes['match']);
+                  m.isSeriesPremium = series.isPremium; // Propagate series premium status to match
+                  fullMatches.add(m);
                 }
               }
               series.fullMatches = fullMatches;
@@ -152,24 +155,13 @@ class HomeController extends GetxController {
   Future<void> fetchStarPlayers() async {
     isPlayersLoading.value = true;
     try {
-      final res = await _matchRepository.getPlayers();
+      final res = await _matchRepository.getStarPlayers();
       if (res['success'] == true) {
-        final data = PlayerModel.fromJson(res);
-        var fetchedPlayers = data.players ?? [];
-        
-        // Add Demo Players if empty
-        if (fetchedPlayers.isEmpty) {
-          fetchedPlayers = [
-            Player(id: "p1", name: "Virat Kohli", team: "India", sport: "Cricket", featured: true, position: "Batsman"),
-            Player(id: "p2", name: "Lionel Messi", team: "Argentina", sport: "Forward", featured: true, position: "Forward"),
-            Player(id: "p3", name: "Cristiano Ronaldo", team: "Portugal", sport: "Forward", featured: true, position: "Forward"),
-            Player(id: "p4", name: "Rohit Sharma", team: "India", sport: "Cricket", featured: true, position: "Batsman"),
-          ];
-        }
-        starPlayers.assignAll(fetchedPlayers);
+        final data = StarPlayerModel.fromJson(res);
+        starPlayers.assignAll(data.highlights ?? []);
       }
     } catch (e) {
-      print("Error fetching players: $e");
+      print("Error fetching star players: $e");
     } finally {
       isPlayersLoading.value = false;
     }
@@ -238,29 +230,42 @@ class HomeController extends GetxController {
   }
 
   void filterData(String query) {
-    if (query.isEmpty) {
+    String selectedSport = "";
+    if (selectedTabIndex.value != 0 && selectedTabIndex.value < sportsList.length) {
+      selectedSport = sportsList[selectedTabIndex.value].toLowerCase();
+    }
+
+    if (query.isEmpty && selectedSport.isEmpty) {
       filteredMatches.assignAll(allMatches);
       filteredLiveMatches.assignAll(liveMatches);
       filteredChannels.assignAll(allChannels);
     } else {
       final q = query.toLowerCase();
-      
+
       filteredMatches.assignAll(allMatches.where((m) {
-        return (m.title?.toLowerCase().contains(q) ?? false) ||
-               (m.teamA?.toLowerCase().contains(q) ?? false) ||
-               (m.teamB?.toLowerCase().contains(q) ?? false) ||
-               (m.sport?.toLowerCase().contains(q) ?? false);
+        bool matchesQuery = q.isEmpty ||
+            (m.title?.toLowerCase().contains(q) ?? false) ||
+            (m.teamA?.toLowerCase().contains(q) ?? false) ||
+            (m.teamB?.toLowerCase().contains(q) ?? false) ||
+            (m.sport?.toLowerCase().contains(q) ?? false);
+        bool matchesSport = selectedSport.isEmpty || (m.sport?.toLowerCase() == selectedSport);
+        return matchesQuery && matchesSport;
       }).toList());
 
       filteredLiveMatches.assignAll(liveMatches.where((m) {
-        return (m.title?.toLowerCase().contains(q) ?? false) ||
-               (m.teamA?.toLowerCase().contains(q) ?? false) ||
-               (m.teamB?.toLowerCase().contains(q) ?? false) ||
-               (m.sport?.toLowerCase().contains(q) ?? false);
+        bool matchesQuery = q.isEmpty ||
+            (m.title?.toLowerCase().contains(q) ?? false) ||
+            (m.teamA?.toLowerCase().contains(q) ?? false) ||
+            (m.teamB?.toLowerCase().contains(q) ?? false) ||
+            (m.sport?.toLowerCase().contains(q) ?? false);
+        bool matchesSport = selectedSport.isEmpty || (m.sport?.toLowerCase() == selectedSport);
+        return matchesQuery && matchesSport;
       }).toList());
 
       filteredChannels.assignAll(allChannels.where((c) {
-        return (c.name?.toLowerCase().contains(q) ?? false);
+        bool matchesQuery = q.isEmpty || (c.name?.toLowerCase().contains(q) ?? false);
+        bool matchesSport = selectedSport.isEmpty || (c.category?.toLowerCase() == selectedSport);
+        return matchesQuery && matchesSport;
       }).toList());
     }
   }
@@ -299,8 +304,9 @@ class HomeController extends GetxController {
   void changeTab(int index) {
     selectedTabIndex.value = index;
     selectedCategory.value = ""; // Reset middle chip when switching top tabs
-    // We fetch everything to keep the dashboard context available
-    fetchMatches();
+    
+    // Trigger data filtering based on the selected sport
+    filterData(searchQuery.value);
   }
 
   void selectSubCategory(String sport) {
@@ -362,8 +368,12 @@ class HomeController extends GetxController {
     }
   }
 
-  void handleProtectedAction(VoidCallback onSuccess) {
+  void handleProtectedAction(VoidCallback onSuccess, {bool checkAccess = false, bool hasPermission = true}) {
     if (isLogin.value) {
+      if (checkAccess && !hasPermission) {
+        Get.toNamed(AppRoutes.accessPlan);
+        return;
+      }
       onSuccess();
     } else {
       _showLoginBottomSheet();

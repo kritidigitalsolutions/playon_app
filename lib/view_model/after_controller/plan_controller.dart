@@ -4,6 +4,9 @@ import 'package:get/get.dart';
 import 'package:play_on_app/model/response_model/subscription_model.dart';
 import 'package:play_on_app/repo/plan_repository.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:play_on_app/model/response_model/series_model.dart' as series_model;
+import 'package:play_on_app/model/response_model/star_player_model.dart' as star_player_model;
+import 'package:play_on_app/model/response_model/podcast_model.dart' as podcast_model;
 import 'package:play_on_app/view_model/before_controller/auth_controller.dart';
 
 import '../../data/api_responce_data.dart';
@@ -48,7 +51,16 @@ class PlanController extends GetxController {
 
   // Comprehensive check if user can watch a specific match
   bool canWatchMatch(model.Match? match) {
+    // ALWAYS touch an observable at the start to ensure Obx doesn't throw "improper use" errors
+    // even if we return early for non-premium content.
+    final _ = hasAccess.value;
+    final __ = mySubscription.value;
+
     if (match == null) return false;
+    
+    // If it's not a premium match AND its parent series isn't premium, anyone can watch it for free
+    if (match.isPremium != true && match.isSeriesPremium != true) return true;
+
     if (hasAccess.value) return true; // Global full access
 
     final activeSubs = mySubscription.value.data?.subscriptions ?? [];
@@ -65,6 +77,49 @@ class PlanController extends GetxController {
     // 3. Check if any of the teams in this match are purchased
     if (allSubs.any((sub) => sub.teamId != null && 
         (sub.teamId == match.teamA || sub.teamId == match.teamB))) return true;
+
+    return false;
+  }
+
+  bool canWatchSeries(series_model.Series? series) {
+    final _ = hasAccess.value;
+    final __ = mySubscription.value;
+
+    if (series == null) return false;
+    if (series.isPremium == false) return true;
+    if (hasAccess.value) return true;
+
+    final activeSubs = mySubscription.value.data?.subscriptions ?? [];
+    final allSubs = activeSubs.where((sub) => sub.status == 'active').toList();
+
+    if (allSubs.any((sub) => sub.seriesId == series.sId || sub.seriesId == series.title)) return true;
+
+    return false;
+  }
+
+  bool canWatchHighlight(star_player_model.StarPlayer? highlight) {
+    final _ = hasAccess.value;
+    final __ = mySubscription.value;
+
+    if (highlight == null) return false;
+    if (highlight.isPremium == false) return true;
+    if (hasAccess.value) return true;
+
+    // Highlights might be covered by "full access" or specific sports pass if implemented.
+    // For now, if it's premium, we check if they have general access or if we treat them like matches/series.
+    // Usually highlights are free or part of a subscription. 
+    // If the user wants strictly according to isPremium:
+    
+    return false; // If premium and no global access, return false until specific highlight purchase logic is added
+  }
+
+  bool canWatchPodcast(podcast_model.Podcast? podcast) {
+    final _ = hasAccess.value;
+    final __ = mySubscription.value;
+
+    if (podcast == null) return false;
+    if (podcast.isPremium == false) return true;
+    if (hasAccess.value) return true;
 
     return false;
   }

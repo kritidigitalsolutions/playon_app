@@ -12,6 +12,7 @@ import 'package:play_on_app/view_model/after_controller/match_controller/match_c
 import 'package:play_on_app/views/after_login/match_pages/full_video_play_screen.dart';
 import 'package:video_player/video_player.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
+import 'package:share_plus/share_plus.dart';
 
 import '../../custom_background.dart/custom_widget.dart';
 
@@ -26,6 +27,28 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
   final videoControllerX = Get.put(VideoControllerX());
   final MatchDetailsController controller = Get.put(MatchDetailsController());
   int _selectedTabIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Check if we should start in highlight mode
+    if (Get.parameters['mode'] == 'highlight') {
+      _selectedTabIndex = 0;
+      if (videoControllerX.match.value != null) {
+        videoControllerX.fetchMatchDetails(videoControllerX.match.value!.sId!, isHighlight: true);
+      }
+    }
+  }
+
+  void _shareMatch() {
+    final match = videoControllerX.match.value;
+    if (match != null) {
+      final String text = 'Check out this match: ${match.teamA} vs ${match.teamB} on PlayOn!\n'
+          'Tournament: ${match.tournament}\n'
+          'Watch it here: https://playon.app/match/${match.sId}';
+      Share.share(text);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -148,12 +171,12 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          "This Match is Locked",
+                          "Unlock Now",
                           style: text20(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "Subscribe to watch live",
+                          "Buy plan to watch match",
                           style: text15(color: Colors.white70),
                         ),
                         const SizedBox(height: 24),
@@ -161,8 +184,8 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                         CustomElevatedIconButton(
                           height: 30,
                           iconSize: 18,
-                          text: "Unlock Now",
-                          icon: Icons.lock,
+                          text: "Watch Now",
+                          icon: Icons.play_arrow_rounded,
                           onPressed: () {
                             Get.toNamed(AppRoutes.accessPlan, arguments: controller.match.value);
                           },
@@ -293,7 +316,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                 ),
                 AppIconButton(
                   icon: Icons.share,
-                  onTap: () {},
+                  onTap: _shareMatch,
                   color: AppColors.white,
                 ),
               ],
