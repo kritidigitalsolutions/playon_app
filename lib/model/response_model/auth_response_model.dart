@@ -41,6 +41,7 @@ class UserData {
   String? email;
   String? profilePic;
   String? profileImage;
+  String? authProvider;
 
   UserData(
       {this.id,
@@ -49,7 +50,8 @@ class UserData {
       this.mobile,
       this.email,
       this.profilePic,
-      this.profileImage});
+      this.profileImage,
+      this.authProvider});
 
   UserData.fromJson(Map<String, dynamic> json) {
     id = json['id'] ?? json['_id'];
@@ -59,5 +61,6 @@ class UserData {
     email = json['email'];
     profilePic = json['profilePic'];
     profileImage = json['profileImage'];
+    authProvider = json['authProvider'];
   }
 }

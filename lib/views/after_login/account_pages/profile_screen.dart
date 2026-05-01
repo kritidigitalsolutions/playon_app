@@ -210,7 +210,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 10),
                       _glassInfoTile(
-                        text: _authController.userData.value?.mobile ?? "No phone number",
+                        text: (_authController.userData.value?.mobile != null && _authController.userData.value!.mobile!.isNotEmpty)
+                            ? _authController.userData.value!.mobile!
+                            : _authController.userData.value?.email ?? "No contact info",
                         isEditable: false,
                         onEdit: () {},
                       ),

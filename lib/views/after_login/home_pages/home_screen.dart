@@ -53,127 +53,132 @@ class _HomeScreenState extends State<HomeScreen> {
                 horizontal: 12.0,
                 vertical: 4, // Reduced from 6
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Image.asset(
-                    AppImage.logo,
-                    height: 50, // Reduced from 60
-                    width: 100, // Reduced from 120
-                    fit: BoxFit.cover,
-                  ),
-                  const SizedBox(width: 4), // Reduced from 5
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(30),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12, // Reduced from 16
-                            vertical: 6, // Reduced from 8
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.white24.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(30),
-                            border: Border.all(
-                              color: AppColors.white.withValues(alpha: 0.25),
-                              width: 1.2,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.search,
-                                color: AppColors.white70,
-                                size: 18, // Reduced from 20
+                  Row(
+                    children: [
+                      Image.asset(
+                        AppImage.logo,
+                        height: 50, // Reduced from 60
+                        width: 100, // Reduced from 120
+                        fit: BoxFit.cover,
+                      ),
+                      const SizedBox(width: 4), // Reduced from 5
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(30),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12, // Reduced from 16
+                                vertical: 6, // Reduced from 8
                               ),
-                              const SizedBox(width: 6), // Reduced from 8
-                              Expanded(
-                                child: TextField(
-                                  controller: searchController,
-                                  onChanged: (value) {
-                                    ctr.searchQuery.value = value;
-                                    if (value.isNotEmpty) {
-                                      ctr.selectedCategory.value = "";
-                                    }
-                                  },
-                                  style: text13(color: AppColors.white),
-                                  decoration: InputDecoration(
-                                    hintText: "Search Matches",
-                                    hintStyle:
-                                    text13(color: AppColors.textSecondary),
-                                    border: InputBorder.none,
-                                    isDense: true,
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      vertical: 10,
-                                    ),
-                                  ),
+                              decoration: BoxDecoration(
+                                color: AppColors.white24.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(30),
+                                border: Border.all(
+                                  color: AppColors.white.withValues(alpha: 0.25),
+                                  width: 1.2,
                                 ),
                               ),
-                            ],
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.search,
+                                    color: AppColors.white70,
+                                    size: 18, // Reduced from 20
+                                  ),
+                                  const SizedBox(width: 6), // Reduced from 8
+                                  Expanded(
+                                    child: TextField(
+                                      controller: searchController,
+                                      onChanged: (value) {
+                                        ctr.searchQuery.value = value;
+                                        if (value.isNotEmpty) {
+                                          ctr.selectedCategory.value = "";
+                                        }
+                                      },
+                                      style: text13(color: AppColors.white),
+                                      decoration: InputDecoration(
+                                        hintText: "Search Matches",
+                                        hintStyle:
+                                        text13(color: AppColors.textSecondary),
+                                        border: InputBorder.none,
+                                        isDense: true,
+                                        contentPadding: const EdgeInsets.symmetric(
+                                          vertical: 10,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 4), // Reduced from 5
-                  Obx(() => AppIconButton(
-                    icon: ctr.isLogin.value ? Icons.person : Icons.login,
-                    color: AppColors.white,
-                    onTap: () {
-                      if (ctr.isLogin.value) {
-                        Get.toNamed(AppRoutes.profilePage);
-                      } else {
-                        ctr.handleProtectedAction(() {
-                          Get.toNamed(AppRoutes.profilePage);
-                        });
-                      }
-                    },
-                  )),
-                  const SizedBox(width: 4), // Reduced from 5
-                  Stack(
-                    children: [
-                      AppIconButton(
-                        icon: Icons.notifications,
-                        color: AppColors.warning,
+                      const SizedBox(width: 4), // Reduced from 5
+                      Obx(() => AppIconButton(
+                        icon: ctr.isLogin.value ? Icons.person : Icons.login,
+                        color: AppColors.white,
                         onTap: () {
-                          ctr.handleProtectedAction(() {
-                            Get.toNamed(AppRoutes.notification);
-                          });
+                          if (ctr.isLogin.value) {
+                            Get.toNamed(AppRoutes.profilePage);
+                          } else {
+                            ctr.handleProtectedAction(() {
+                              Get.toNamed(AppRoutes.profilePage);
+                            });
+                          }
                         },
-                      ),
-                      Obx(() {
-                        final notiCtr = Get.find<NotificationController>();
-                        return notiCtr.unreadCount.value > 0
-                            ? Positioned(
-                          right: 5,
-                          top: 5,
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            constraints: const BoxConstraints(
-                              minWidth: 16,
-                              minHeight: 16,
-                            ),
-                            child: Text(
-                              '${notiCtr.unreadCount.value}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
+                      )),
+                      const SizedBox(width: 4), // Reduced from 5
+                      Stack(
+                        children: [
+                          AppIconButton(
+                            icon: Icons.notifications,
+                            color: AppColors.warning,
+                            onTap: () {
+                              ctr.handleProtectedAction(() {
+                                Get.toNamed(AppRoutes.notification);
+                              });
+                            },
                           ),
-                        )
-                            : const SizedBox.shrink();
-                      }),
+                          Obx(() {
+                            final notiCtr = Get.find<NotificationController>();
+                            return notiCtr.unreadCount.value > 0
+                                ? Positioned(
+                              right: 5,
+                              top: 5,
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 16,
+                                  minHeight: 16,
+                                ),
+                                child: Text(
+                                  '${notiCtr.unreadCount.value}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            )
+                                : const SizedBox.shrink();
+                          }),
+                        ],
+                      ),
+                      const SizedBox(width: 4), // Reduced from 5
                     ],
                   ),
-                  const SizedBox(width: 4), // Reduced from 5
                 ],
               ),
             ),

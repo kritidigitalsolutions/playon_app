@@ -137,63 +137,66 @@ class AuthController extends GetxController {
   Future<void> loginWithGoogle() async {
     isLoading.value = true;
     try {
-      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        scopes: ['email'],
+        serverClientId: "257271466858-7c4qa7ttf0entmjckpcghvvso0f81pb0.apps.googleusercontent.com",
+      );
 
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
       if (googleUser == null) {
         isLoading.value = false;
-        return; // User cancelled login
+        return;
       }
 
       final GoogleSignInAuthentication googleAuth =
       await googleUser.authentication;
 
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
+      final String? idToken = googleAuth.idToken;
 
-      final UserCredential userCredential =
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      final response = await _repository.googleLogin({
+        "idToken": idToken,
+      });
 
-      final User? user = userCredential.user;
+      print("Google Token Sent: $idToken");
 
-      if (user != null) {
-        final String? idToken = await user.getIdToken();
+      final data = VerifyOtpResponseModel.fromJson(response);
+      if (data.success == true) {
+        final userDetail = UserDetails(
+          token: data.token,
+          email: data.user?.email,
+          phone: data.user?.mobile,
+          isNewUser: data.isNewUser,
+          name: data.user?.fullName,
+          image: data.user?.profilePic ?? data.user?.profileImage,
+        );
+        await HiveService.saveUser(userDetail);
+        userData.value = data.user;
 
-        final response = await _repository.googleLogin({
-          "idToken": idToken,
-        });
-
-        final data = VerifyOtpResponseModel.fromJson(response);
-
-        if (data.success == true) {
-          final userDetail = UserDetails(
-            token: data.token,
-            phone: user.phoneNumber ?? "",
-            isNewUser: data.isNewUser,
-            name: data.user?.fullName ?? user.displayName,
-          );
-
-          await HiveService.saveUser(userDetail);
-
-          if (Get.isRegistered<HomeController>()) {
-            Get.find<HomeController>().isLogin.value = true;
-          }
-
-          if (data.isNewUser == true) {
-            Get.offAllNamed(AppRoutes.fullnameEnter);
-          } else {
-            Get.offAllNamed(AppRoutes.myHomePage);
-          }
-        } else {
-          showCustomSnackbar(
-            title: "Login Failed",
-            message: data.message ?? "Server error",
-            type: SnackType.error,
-          );
+        if (Get.isRegistered<HomeController>()) {
+          final homeCtr = Get.find<HomeController>();
+          homeCtr.isLogin.value = true;
+          homeCtr.userName.value = data.user?.fullName ?? "";
+          homeCtr.fetchMatches();
         }
+
+        showCustomSnackbar(
+          title: "Success",
+          message: data.message ?? "Google login successful",
+          type: SnackType.success,
+        );
+
+        if (data.isNewUser == true) {
+          Get.offAllNamed(AppRoutes.fullnameEnter);
+        } else {
+          Get.offAllNamed(AppRoutes.myHomePage);
+        }
+      } else {
+        showCustomSnackbar(
+          title: "Error",
+          message: data.message ?? "Google login failed",
+          type: SnackType.error,
+        );
       }
     } catch (e) {
       print("Google Login Error: $e");
@@ -206,6 +209,8 @@ class AuthController extends GetxController {
       isLoading.value = false;
     }
   }
+
+
 
   Future<void> verifyOtp() async {
     if (otpController.text.isEmpty) {
@@ -229,7 +234,9 @@ class AuthController extends GetxController {
         await HiveService.saveUser(userDetail);
 
         if (Get.isRegistered<HomeController>()) {
-          Get.find<HomeController>().isLogin.value = true;
+          final homeCtr = Get.find<HomeController>();
+          homeCtr.isLogin.value = true;
+          homeCtr.userName.value = nameController.text;
         }
 
         if (data.isNewUser == true) {
@@ -271,7 +278,9 @@ class AuthController extends GetxController {
           await HiveService.saveUser(user);
         }
         if (Get.isRegistered<HomeController>()) {
-          Get.find<HomeController>().isLogin.value = true;
+          final homeCtr = Get.find<HomeController>();
+          homeCtr.isLogin.value = true;
+          homeCtr.userName.value = nameController.text;
         }
         Get.offAllNamed(AppRoutes.myHomePage);
       }
@@ -362,7 +371,9 @@ class AuthController extends GetxController {
     }
     await HiveService.logout();
     if (Get.isRegistered<HomeController>()) {
-      Get.find<HomeController>().isLogin.value = false;
+      final homeCtr = Get.find<HomeController>();
+      homeCtr.isLogin.value = false;
+      homeCtr.userName.value = "";
     }
     Get.offAllNamed(AppRoutes.login);
   }
@@ -378,7 +389,9 @@ class AuthController extends GetxController {
       if (response['success'] == true) {
         await HiveService.logout();
         if (Get.isRegistered<HomeController>()) {
-          Get.find<HomeController>().isLogin.value = false;
+          final homeCtr = Get.find<HomeController>();
+          homeCtr.isLogin.value = false;
+          homeCtr.userName.value = "";
         }
         showCustomSnackbar(
           title: "Account Deleted",

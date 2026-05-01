@@ -64,10 +64,16 @@ class HomeController extends GetxController {
 
   var sportsList = <String>["Home"].obs;
 
+  var isLogin = false.obs;
+  var userName = "".obs;
+
   @override
   void onInit() {
     super.onInit();
     isLogin.value = HiveService.isLogin();
+    if (isLogin.value) {
+      userName.value = HiveService.getUser()?.name ?? "";
+    }
     fetchSports();
     fetchChannelCategories();
     fetchMatches();
@@ -345,10 +351,15 @@ class HomeController extends GetxController {
 
   var isSilentLoading = false.obs;
 
-  var isLogin = false.obs;
+  // var isLogin = false.obs;
 
   void toggleLogin() {
     isLogin.value = !isLogin.value;
+    if (isLogin.value) {
+      userName.value = HiveService.getUser()?.name ?? "";
+    } else {
+      userName.value = "";
+    }
   }
 
   void handleProtectedAction(VoidCallback onSuccess) {
