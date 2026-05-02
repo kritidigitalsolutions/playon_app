@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:play_on_app/model/response_model/channel_model.dart' as model;
 import 'package:play_on_app/res/app_colors.dart';
+import 'package:play_on_app/utils/hive_service/hive_service.dart';
 import 'package:video_player/video_player.dart';
 import 'package:get/get.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -22,6 +23,19 @@ class _VideoPlayerScreenState extends State<ChannelPlayScreen> {
   @override
   void initState() {
     super.initState();
+    if (!HiveService.isLogin()) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Get.back();
+        Get.snackbar(
+          "Access Denied",
+          "Please login to watch live channels",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      });
+      return;
+    }
     channel = Get.arguments as model.Channel?;
     _initializePlayer();
   }

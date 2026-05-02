@@ -875,7 +875,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   icon: canWatch ? Icons.play_arrow : Icons.lock_outline,
                   onPressed: () {
                     if (canWatch) {
-                      Get.toNamed(AppRoutes.matchPlay, arguments: match);
+                      ctr.handleProtectedAction(() {
+                        Get.toNamed(AppRoutes.matchPlay, arguments: match);
+                      });
                     } else {
                       ctr.handleProtectedAction(() {
                         Get.toNamed(AppRoutes.matchPlay, arguments: match);
@@ -1219,7 +1221,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 return GestureDetector(
                   onTap: () {
                     if (canWatch) {
-                      Get.toNamed(AppRoutes.highlightsPlayer, arguments: player);
+                      ctr.handleProtectedAction(() {
+                        Get.toNamed(AppRoutes.highlightsPlayer, arguments: player);
+                      });
                     } else {
                       ctr.handleProtectedAction(() {
                         Get.toNamed(AppRoutes.highlightsPlayer, arguments: player);

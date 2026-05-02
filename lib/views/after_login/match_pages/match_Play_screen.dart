@@ -12,6 +12,7 @@ import 'package:play_on_app/view_model/after_controller/match_controller/match_c
 import 'package:play_on_app/views/after_login/match_pages/full_video_play_screen.dart';
 import 'package:video_player/video_player.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
+import 'package:play_on_app/utils/hive_service/hive_service.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../custom_background.dart/custom_widget.dart';
@@ -31,6 +32,21 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
   @override
   void initState() {
     super.initState();
+    // Force authentication check for any match/highlight content
+    if (!HiveService.isLogin()) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Get.back();
+        Get.toNamed(AppRoutes.login);
+        Get.snackbar(
+          "Authentication Required",
+          "Please login to watch matches and highlights.",
+          backgroundColor: Colors.red.withOpacity(0.8),
+          colorText: Colors.white,
+        );
+      });
+      return;
+    }
+
     // Check if we should start in highlight mode
     if (Get.parameters['mode'] == 'highlight') {
       _selectedTabIndex = 0;

@@ -12,6 +12,7 @@ import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/custom_snakebar.dart';
 import 'package:play_on_app/utils/hive_service/hive_service.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
+import 'package:play_on_app/data/network/notification_service.dart';
 
 import '../../utils/hive_service/userdetail.dart';
 
@@ -187,22 +188,27 @@ class AuthController extends GetxController {
         );
         await HiveService.saveUser(userDetail);
         userData.value = data.user;
+        
+        // Pre-fill name from Google if available for background sync
+        if (data.user?.fullName != null && data.user!.fullName!.isNotEmpty) {
+          nameController.text = data.user!.fullName!;
+        } else if (googleUser.displayName != null) {
+          nameController.text = googleUser.displayName!;
+        }
+
+        // Sync FCM token after successful login
+        NotificationService.syncTokenToServer();
 
         if (Get.isRegistered<HomeController>()) {
           final homeCtr = Get.find<HomeController>();
           homeCtr.isLogin.value = true;
-          homeCtr.userName.value = data.user?.fullName ?? "";
+          homeCtr.userName.value = nameController.text;
           homeCtr.fetchMatches();
         }
 
-        showCustomSnackbar(
-          title: "Success",
-          message: data.message ?? "Google login successful",
-          type: SnackType.success,
-        );
-
         if (data.isNewUser == true) {
-          Get.offAllNamed(AppRoutes.fullnameEnter);
+          // Directly go to Sport Interest instead of Full Name screen
+          Get.offAllNamed(AppRoutes.sportInterrestScreen);
         } else {
           Get.offAllNamed(AppRoutes.myHomePage);
         }
@@ -248,6 +254,14 @@ class AuthController extends GetxController {
         );
         await HiveService.saveUser(userDetail);
 
+        // Pre-fill name if available
+        if (data.user?.fullName != null) {
+          nameController.text = data.user!.fullName!;
+        }
+
+        // Sync FCM token after successful login
+        NotificationService.syncTokenToServer();
+
         if (Get.isRegistered<HomeController>()) {
           final homeCtr = Get.find<HomeController>();
           homeCtr.isLogin.value = true;
@@ -255,7 +269,7 @@ class AuthController extends GetxController {
         }
 
         if (data.isNewUser == true) {
-          Get.offAllNamed(AppRoutes.fullnameEnter);
+          Get.offAllNamed(AppRoutes.sportInterrestScreen);
         } else {
           Get.offAllNamed(AppRoutes.myHomePage);
         }

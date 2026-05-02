@@ -297,7 +297,9 @@ class _SportChannelListState extends State<SportChannelList> {
               AppButton(
                 title: "Watch",
                 onTap: () {
-                  Get.toNamed(AppRoutes.channelPlay, arguments: channel);
+                  ctr.handleProtectedAction(() {
+                    Get.toNamed(AppRoutes.channelPlay, arguments: channel);
+                  });
                 },
                 height: 30,
                 textStyle: text13(),

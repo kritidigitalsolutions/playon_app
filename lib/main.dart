@@ -24,50 +24,72 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  await GetStorage.init();
-  
-  // Initialize Timezone using MethodChannel instead of broken flutter_timezone plugin
-  String timeZoneName;
   try {
-    const channel = MethodChannel('com.playon.app/timezone');
-    timeZoneName = await channel.invokeMethod<String>('getLocalTimezone') ?? 'UTC';
+    WidgetsFlutterBinding.ensureInitialized();
+    
+    // 1. Firebase Initialization with Timeout
+    try {
+      await Firebase.initializeApp().timeout(const Duration(seconds: 8));
+    } catch (e) {
+      debugPrint("Firebase init failed: $e");
+    }
+
+    await GetStorage.init();
+    
+    // 2. Timezone Initialization
+    String timeZoneName = 'UTC';
+    try {
+      const channel = MethodChannel('com.playon.app/timezone');
+      timeZoneName = await channel.invokeMethod<String>('getLocalTimezone') ?? 'UTC';
+    } catch (e) {
+      debugPrint("Native timezone channel error: $e");
+    }
+
+    tz.initializeTimeZones();
+    try {
+      tz.setLocalLocation(tz.getLocation(timeZoneName));
+    } catch (e) {
+      tz.setLocalLocation(tz.getLocation('UTC'));
+    }
+
+    // 3. Hive Initialization
+    await Hive.initFlutter();
+    if (!Hive.isAdapterRegistered(0)) { // UserDetailsAdapter ID
+      Hive.registerAdapter(UserDetailsAdapter());
+    }
+    
+    try {
+      await Hive.openBox<UserDetails>('userBox');
+    } catch (e) {
+      await Hive.deleteBoxFromDisk('userBox');
+      await Hive.openBox<UserDetails>('userBox');
+    }
+    
+    // 4. Notification Service
+    try {
+      await NotificationService.init();
+      FirebaseMessaging.onBackgroundMessage(NotificationService.backgroundHandler);
+    } catch (e) {
+      debugPrint("Notification init failed: $e");
+    }
+
+    // UI Configuration
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: AppColors.secPrimary,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+    );
+
+    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
   } catch (e) {
-    timeZoneName = 'UTC';
+    debugPrint("Critical app initialization error: $e");
   }
 
-  tz.initializeTimeZones();
-  tz.setLocalLocation(tz.getLocation(timeZoneName));
-
-  await Hive.initFlutter();
-  Hive.registerAdapter(UserDetailsAdapter());
-  
-  try {
-    await Hive.openBox<UserDetails>('userBox');
-  } catch (e) {
-    // If opening the box fails due to corrupted/outdated data, delete it and try again
-    await Hive.deleteBoxFromDisk('userBox');
-    await Hive.openBox<UserDetails>('userBox');
-  }
-  
-  // Initialize Notification Service AFTER Hive is ready
-  await NotificationService.init();
-  FirebaseMessaging.onBackgroundMessage(NotificationService.backgroundHandler);
-
-  // 🔥 System UI (Status bar + Navigation bar)
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light, // white icons
-      systemNavigationBarColor: AppColors.secPrimary,
-      systemNavigationBarIconBrightness: Brightness.light,
-    ),
-  );
-
-  // 🔥 Lock orientation (optional but recommended)
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-
+  // 5. Ensure runApp is ALWAYS called
   runApp(const MyApp());
 }
 

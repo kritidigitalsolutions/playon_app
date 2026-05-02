@@ -18,7 +18,12 @@ class MainActivity: FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler {
             call, result ->
             if (call.method == "getLocalTimezone") {
-                result.success(TimeZone.getDefault().id)
+                try {
+                    val zoneId = TimeZone.getDefault().id ?: "UTC"
+                    result.success(zoneId)
+                } catch (e: Exception) {
+                    result.success("UTC")
+                }
             } else {
                 result.notImplemented()
             }
