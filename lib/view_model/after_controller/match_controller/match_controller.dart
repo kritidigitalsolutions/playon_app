@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:play_on_app/model/response_model/highlight_model.dart';
+import 'package:play_on_app/model/response_model/comment_model.dart' as comment_model;
 import 'package:play_on_app/model/response_model/star_player_model.dart' as star_model;
 import 'package:play_on_app/repo/match_repository.dart';
 import 'package:video_player/video_player.dart';
@@ -20,6 +21,10 @@ class MatchDetailsController extends GetxController {
 
   var highlights = <HighlightItem>[].obs;
   var isHighlightsLoading = false.obs;
+
+  var comments = <comment_model.Comment>[].obs;
+  var isCommentsLoading = false.obs;
+  final commentController = TextEditingController();
 
   final MatchRepository _repository = MatchRepository();
   final planController = Get.put(PlanController());
@@ -41,11 +46,35 @@ class MatchDetailsController extends GetxController {
       _initializeMatchStatus();
       _checkReminderStatus();
       fetchHighlights();
+      fetchComments();
     } else if (Get.arguments is star_model.StarPlayer) {
       starPlayer.value = Get.arguments;
+    } else if (Get.arguments is String) {
+      // Handle deep link ID
+      fetchMatchDetailsById(Get.arguments);
     }
 
     checkAccess();
+  }
+
+  Future<void> fetchMatchDetailsById(String id) async {
+    try {
+      final res = await _repository.getMatchDetails(id);
+      if (res['success'] == true) {
+        if (res['match'] != null) {
+          match.value = model.Match.fromJson(res['match']);
+        } else if (res['data'] != null) {
+          match.value = model.Match.fromJson(res['data']);
+        }
+        _initializeMatchStatus();
+        _checkReminderStatus();
+        fetchHighlights();
+        fetchComments();
+        checkAccess();
+      }
+    } catch (e) {
+      print("Error fetching match by ID: $e");
+    }
   }
 
   Future<void> fetchHighlights() async {
@@ -61,6 +90,40 @@ class MatchDetailsController extends GetxController {
       print("Error fetching highlights: $e");
     } finally {
       isHighlightsLoading.value = false;
+    }
+  }
+
+  Future<void> fetchComments() async {
+    if (match.value?.sId == null) return;
+    isCommentsLoading.value = true;
+    try {
+      final res = await _repository.getMatchComments(match.value!.sId!);
+      if (res['success'] == true) {
+        final data = comment_model.CommentModel.fromJson(res);
+        comments.assignAll(data.data ?? []);
+      }
+    } catch (e) {
+      print("Error fetching comments: $e");
+    } finally {
+      isCommentsLoading.value = false;
+    }
+  }
+
+  Future<void> addComment() async {
+    if (match.value?.sId == null || commentController.text.trim().isEmpty) return;
+
+    final commentText = commentController.text.trim();
+    commentController.clear();
+
+    try {
+      final res = await _repository.addComment(match.value!.sId!, commentText);
+      if (res['success'] == true) {
+        fetchComments();
+      } else {
+        Get.snackbar("Error", res['message'] ?? "Failed to add comment");
+      }
+    } catch (e) {
+      Get.snackbar("Error", "Failed to add comment");
     }
   }
 
@@ -198,6 +261,7 @@ class MatchDetailsController extends GetxController {
   @override
   void onClose() {
     _timer?.cancel();
+    commentController.dispose();
     super.onClose();
   }
 }
@@ -223,6 +287,8 @@ class VideoControllerX extends GetxController {
       fetchMatchDetails(match.value!.sId!);
     } else if (Get.arguments is star_model.StarPlayer) {
       starPlayer.value = Get.arguments;
+    } else if (Get.arguments is String) {
+      fetchMatchDetails(Get.arguments);
     }
 
     // Stop playback if access is revoked

@@ -268,19 +268,36 @@ class _HomeScreenState extends State<HomeScreen> {
                         }),
                         const SizedBox(height: 16),
                         // Trending Matches Section
+                        // Obx(() {
+                        //   String dashboardSport = (ctr.selectedTabIndex.value != 0
+                        //       ? ctr.sportsList[ctr.selectedTabIndex.value]
+                        //       : "");
+                        //   var trendingMatches = ctr.allMatches.where((m) => m.isTrending == true).toList();
+                        //
+                        //   if (dashboardSport.isNotEmpty) {
+                        //     trendingMatches = trendingMatches
+                        //         .where((m) => m.sport?.toLowerCase() == dashboardSport.toLowerCase())
+                        //         .toList();
+                        //   }
+                        //
+                        //   return _buildTrendingMatches(trendingMatches);
+                        // }),
+                        // const SizedBox(height: 16),
+
+                        // Trending Series Section
                         Obx(() {
                           String dashboardSport = (ctr.selectedTabIndex.value != 0
                               ? ctr.sportsList[ctr.selectedTabIndex.value]
                               : "");
-                          var trendingMatches = ctr.allMatches.where((m) => m.isTrending == true).toList();
-                          
+                          var trendingSeries = ctr.seriesList.take(10).toList();
+
                           if (dashboardSport.isNotEmpty) {
-                            trendingMatches = trendingMatches
-                                .where((m) => m.sport?.toLowerCase() == dashboardSport.toLowerCase())
+                            trendingSeries = trendingSeries
+                                .where((s) => s.sport?.toLowerCase() == dashboardSport.toLowerCase())
                                 .toList();
                           }
-                          
-                          return _buildTrendingMatches(trendingMatches);
+
+                          return _buildTrendingSeries(trendingSeries);
                         }),
                         const SizedBox(height: 16),
                         // Series Sections
@@ -617,9 +634,20 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader(
-          "Latest Highlights",
-          "",
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("Match Highlights", style: text18(fontWeight: FontWeight.bold)),
+              TextButton(
+                onPressed: () {
+                  ctr.changeIndex(3); // Navigate to Highlights tab
+                },
+                child: Text("See All", style: text14(color: AppColors.primary)),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 12),
         CarouselSlider.builder(
@@ -628,9 +656,7 @@ class _HomeScreenState extends State<HomeScreen> {
             final match = matches[index];
             return GestureDetector(
               onTap: () {
-                ctr.handleProtectedAction(() {
-                  Get.toNamed(AppRoutes.matchPlay, arguments: match);
-                });
+                Get.toNamed(AppRoutes.matchPlay, arguments: match, parameters: {'mode': 'highlight'});
               },
               child: Container(
                 width: double.infinity,
@@ -668,26 +694,53 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 40),
                       ),
                     ),
-                    Positioned(
-                      bottom: 16,
-                      left: 16,
-                      right: 16,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            match.title ?? "${match.teamA} vs ${match.teamB}",
-                            style: text18(fontWeight: FontWeight.bold, color: Colors.white),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                        Positioned(
+                          bottom: 16,
+                          left: 16,
+                          right: 16,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  if (match.seriesId != null)
+                                  Container(
+                                    margin: const EdgeInsets.only(right: 8),
+                                    height: 20,
+                                    width: 20,
+                                    decoration: const BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: ClipOval(
+                                      child: Image.network(
+                                        ctr.getSeriesLogo(match.seriesId),
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) => const Icon(
+                                          Icons.emoji_events,
+                                          size: 12,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Text(
+                                      match.title ?? "${match.teamA} vs ${match.teamB}",
+                                      style: text18(fontWeight: FontWeight.bold, color: Colors.white),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                ctr.getSeriesName(match.seriesId) ?? match.tournament ?? "Match Highlights",
+                                style: text12(color: Colors.white70),
+                              ),
+                            ],
                           ),
-                          Text(
-                            match.tournament ?? "Match Highlights",
-                            style: text12(color: Colors.white70),
-                          ),
-                        ],
-                      ),
-                    ),
+                        ),
                   ],
                 ),
               ),
@@ -818,6 +871,27 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Row(
                   children: [
+                    if (match.seriesId != null)
+                      Container(
+                        margin: const EdgeInsets.only(right: 8),
+                        height: 24,
+                        width: 24,
+                        decoration: BoxDecoration(
+                          color: AppColors.white.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: ClipOval(
+                          child: Image.network(
+                            ctr.getSeriesLogo(match.seriesId),
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => const Icon(
+                              Icons.emoji_events,
+                              color: Colors.white70,
+                              size: 14,
+                            ),
+                          ),
+                        ),
+                      ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
@@ -845,7 +919,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const Icon(Icons.lock, color: AppColors.white70, size: 18),
                     const SizedBox(width: 8),
                     Text(
-                      match.tournament ?? "LIVE MATCH",
+                      ctr.getSeriesName(match.seriesId) ?? match.tournament ?? "LIVE MATCH",
                       style: text13(color: AppColors.white70),
                     ),
                   ],
@@ -893,70 +967,236 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Widget _buildTrendingMatches(List<model.Match> matches) {
-    if (matches.isEmpty) return const SizedBox.shrink();
+  // Widget _buildTrendingMatches(List<model.Match> matches) {
+  //   if (matches.isEmpty) return const SizedBox.shrink();
+  //
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       // _buildSectionHeader("Trending Sports", ""),
+  //       const SizedBox(height: 14),
+  //
+  //       SizedBox(
+  //         height: 190,
+  //         child: ListView.builder(
+  //           scrollDirection: Axis.horizontal,
+  //           padding: const EdgeInsets.symmetric(horizontal: 12),
+  //           itemCount: matches.length,
+  //           itemBuilder: (context, index) {
+  //             final match = matches[index];
+  //
+  //             return Obx(() {
+  //               final canWatch = Get.find<PlanController>().canWatchMatch(match);
+  //               return GestureDetector(
+  //                 onTap: () {
+  //                   if (match.status?.toLowerCase() == 'upcoming') {
+  //                     Get.toNamed(AppRoutes.matchDetails, arguments: match);
+  //                   } else if (canWatch) {
+  //                     Get.toNamed(AppRoutes.matchPlay, arguments: match);
+  //                   } else {
+  //                     ctr.handleProtectedAction(() {
+  //                       Get.toNamed(AppRoutes.matchPlay, arguments: match);
+  //                     });
+  //                   }
+  //                 },
+  //                 child: Container(
+  //                   width: 280,
+  //                   margin: const EdgeInsets.only(right: 14),
+  //                   decoration: BoxDecoration(
+  //                     borderRadius: BorderRadius.circular(18),
+  //                     boxShadow: [
+  //                       BoxShadow(
+  //                         color: Colors.black.withValues(alpha: 0.4),
+  //                         blurRadius: 10,
+  //                         offset: const Offset(0, 6),
+  //                       ),
+  //                     ],
+  //                   ),
+  //                   child: Stack(
+  //                     children: [
+  //                       /// 🔹 Background Image
+  //                       Hero(
+  //                         tag: 'trending_${match.sId}',
+  //                         child: ClipRRect(
+  //                           borderRadius: BorderRadius.circular(18),
+  //                           child: Image.network(
+  //                             match.thumbnail ?? "",
+  //                             width: double.infinity,
+  //                             height: double.infinity,
+  //                             fit: BoxFit.cover,
+  //                             errorBuilder: (_, __, ___) => Image.asset(
+  //                               'assets/auth/cri.png',
+  //                               fit: BoxFit.cover,
+  //                             ),
+  //                           ),
+  //                         ),
+  //                       ),
+  //
+  //                       /// 🔹 Gradient Overlay
+  //                       Container(
+  //                         decoration: BoxDecoration(
+  //                           borderRadius: BorderRadius.circular(18),
+  //                           gradient: LinearGradient(
+  //                             begin: Alignment.bottomCenter,
+  //                             end: Alignment.topCenter,
+  //                             colors: [
+  //                               Colors.black.withValues(alpha: 0.8),
+  //                               Colors.transparent,
+  //                             ],
+  //                           ),
+  //                         ),
+  //                       ),
+  //
+  //                       /// 🔥 Trending Badge
+  //                       Positioned(
+  //                         top: 10,
+  //                         left: 10,
+  //                         child: Container(
+  //                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+  //                           decoration: BoxDecoration(
+  //                             color: Colors.orangeAccent,
+  //                             borderRadius: BorderRadius.circular(6),
+  //                           ),
+  //                           child: Row(
+  //                             children: [
+  //                               const Icon(Icons.local_fire_department, size: 14, color: Colors.white),
+  //                               const SizedBox(width: 4),
+  //                               Text(
+  //                                 "TRENDING",
+  //                                 style: text10(
+  //                                   color: Colors.white,
+  //                                   fontWeight: FontWeight.bold,
+  //                                 ),
+  //                               ),
+  //                             ],
+  //                           ),
+  //                         ),
+  //                       ),
+  //
+  //                       /// 🔻 Bottom Content
+  //                       Positioned(
+  //                         bottom: 0,
+  //                         left: 0,
+  //                         right: 0,
+  //                         child: Padding(
+  //                           padding: const EdgeInsets.all(12),
+  //                           child: Column(
+  //                             crossAxisAlignment: CrossAxisAlignment.start,
+  //                             children: [
+  //                               Row(
+  //                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                                 children: [
+  //                                   /// Sport Tag
+  //                                   Container(
+  //                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+  //                                     decoration: BoxDecoration(
+  //                                       color: AppColors.primary.withValues(alpha: 0.8),
+  //                                       borderRadius: BorderRadius.circular(4),
+  //                                     ),
+  //                                     child: Text(
+  //                                       match.sport?.toUpperCase() ?? "SPORT",
+  //                                       style: text10(
+  //                                         color: Colors.white,
+  //                                         fontWeight: FontWeight.bold,
+  //                                       ),
+  //                                     ),
+  //                                   ),
+  //                                   if (match.isPremium != false && !canWatch)
+  //                                     const Icon(Icons.lock, color: Colors.white, size: 16),
+  //                                 ],
+  //                               ),
+  //
+  //                               const SizedBox(height: 6),
+  //
+  //                               /// Match Title
+  //                               Text(
+  //                                 match.title ?? "${match.teamA} vs ${match.teamB}",
+  //                                 style: text14(
+  //                                   fontWeight: FontWeight.bold,
+  //                                   color: Colors.white,
+  //                                 ),
+  //                                 maxLines: 2,
+  //                                 overflow: TextOverflow.ellipsis,
+  //                               ),
+  //                             ],
+  //                           ),
+  //                         ),
+  //                       ),
+  //                     ],
+  //                   ),
+  //                 ),
+  //               );
+  //             });
+  //           },
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
+
+  Widget _buildTrendingSeries(List<series_model.Series> series) {
+    if (series.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader("Trending Matches", ""),
+        _buildSectionHeader("Trending Series", "View All"),
         const SizedBox(height: 14),
 
         SizedBox(
-          height: 190,
+          height: 190, // slightly increased height for better proportion
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            itemCount: matches.length,
+            itemCount: series.length,
             itemBuilder: (context, index) {
-              final match = matches[index];
+              final item = series[index];
 
-              return Obx(() {
-                final canWatch = Get.find<PlanController>().canWatchMatch(match);
-                return GestureDetector(
+              return TweenAnimationBuilder(
+                duration: Duration(milliseconds: 400 + (index * 100)),
+                tween: Tween<double>(begin: 0.85, end: 1),
+                builder: (context, double value, child) {
+                  return Transform.scale(
+                    scale: value,
+                    child: Opacity(opacity: value, child: child),
+                  );
+                },
+                child: GestureDetector(
                   onTap: () {
-                    if (canWatch) {
-                      Get.toNamed(AppRoutes.matchPlay, arguments: match);
-                    } else {
-                      ctr.handleProtectedAction(() {
-                        Get.toNamed(AppRoutes.matchPlay, arguments: match);
-                      });
-                    }
+                    Get.toNamed(AppRoutes.seriesDetail, arguments: item);
                   },
                   child: Container(
-                    width: 280,
+                    width: 210,
+                    height: 160,
                     margin: const EdgeInsets.only(right: 14),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(18),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.4),
-                          blurRadius: 10,
+                          color: Colors.black.withOpacity(0.35),
+                          blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
                       ],
                     ),
                     child: Stack(
                       children: [
-                        /// 🔹 Background Image
-                        Hero(
-                          tag: 'trending_${match.sId}',
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(18),
-                            child: Image.network(
-                              match.thumbnail ?? "",
-                              width: double.infinity,
-                              height: double.infinity,
+                        /// Background Image
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: Image.network(
+                            item.banner ?? "",
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Image.asset(
+                              'assets/auth/cri.png',
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Image.asset(
-                                'assets/auth/cri.png',
-                                fit: BoxFit.cover,
-                              ),
                             ),
                           ),
                         ),
 
-                        /// 🔹 Gradient Overlay
+                        /// Gradient Overlay
                         Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(18),
@@ -964,93 +1204,63 @@ class _HomeScreenState extends State<HomeScreen> {
                               begin: Alignment.bottomCenter,
                               end: Alignment.topCenter,
                               colors: [
-                                Colors.black.withOpacity(0.8),
+                                Colors.black.withOpacity(0.9),
+                                Colors.black.withOpacity(0.3),
                                 Colors.transparent,
                               ],
                             ),
                           ),
                         ),
 
-                        /// 🔥 Trending Badge
-                        Positioned(
-                          top: 10,
-                          left: 10,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.orangeAccent,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.local_fire_department, size: 14, color: Colors.white),
-                                const SizedBox(width: 4),
-                                Text(
-                                  "TRENDING",
-                                  style: text10(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
+                        /// Logo (unchanged)
+                        if (item.tournamentLogo != null)
+                          Positioned(
+                            top: 10,
+                            left: 10,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(50),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                                child: Container(
+                                  height: 40,
+                                  width: 40,
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.3),
+                                    ),
+                                  ),
+                                  child: Image.network(
+                                    item.tournamentLogo!,
+                                    fit: BoxFit.contain,
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
                           ),
-                        ),
 
-                        /// 🔻 Bottom Content
+                        /// Title (clean, no HOT tag)
                         Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    /// Sport Tag
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primary.withOpacity(0.8),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        match.sport?.toUpperCase() ?? "SPORT",
-                                        style: text10(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    if (match.isPremium != false && !canWatch)
-                                      const Icon(Icons.lock, color: Colors.white, size: 16),
-                                  ],
-                                ),
-
-                                const SizedBox(height: 6),
-
-                                /// Match Title
-                                Text(
-                                  match.title ?? "${match.teamA} vs ${match.teamB}",
-                                  style: text14(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
+                          bottom: 12,
+                          left: 12,
+                          right: 12,
+                          child: Text(
+                            item.title ?? "Series",
+                            style: text12(
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
                             ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
                   ),
-                );
-              });
+                ),
+              );
             },
           ),
         ),
@@ -1067,10 +1277,7 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildSectionHeader(item.title ?? "Series", "View All", onActionTap: () {
-              Get.toNamed(AppRoutes.seeAllMatches, arguments: {
-                'title': item.title ?? "Series",
-                'matches': item.fullMatches ?? [],
-              });
+              Get.toNamed(AppRoutes.seriesDetail, arguments: item);
             }),
             const SizedBox(height: 12),
             if (item.fullMatches != null && item.fullMatches!.isNotEmpty)
@@ -1086,7 +1293,9 @@ class _HomeScreenState extends State<HomeScreen> {
               final canWatch = Get.find<PlanController>().canWatchMatch(match);
               return GestureDetector(
                 onTap: () {
-                  if (canWatch) {
+                  if (match.status?.toLowerCase() == 'upcoming') {
+                    Get.toNamed(AppRoutes.matchDetails, arguments: match);
+                  } else if (canWatch) {
                     Get.toNamed(AppRoutes.matchPlay, arguments: match);
                   } else {
                     ctr.handleProtectedAction(() {
@@ -1098,16 +1307,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: 240,
                   margin: const EdgeInsets.only(right: 14),
                   decoration: BoxDecoration(
-                    color: AppColors.white.withOpacity(0.05),
+                    color: AppColors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.white.withOpacity(0.1), width: 1),
+                    border: Border.all(color: AppColors.white.withValues(alpha: 0.1), width: 1),
                     image: DecorationImage(
                       image: match.thumbnail != null && match.thumbnail!.isNotEmpty
                           ? NetworkImage(match.thumbnail!)
                           : const AssetImage('assets/auth/cri.png') as ImageProvider,
                       fit: BoxFit.cover,
                       colorFilter: ColorFilter.mode(
-                        Colors.black.withOpacity(0.4),
+                        Colors.black.withValues(alpha: 0.4),
                         BlendMode.darken,
                       ),
                     ),
@@ -1132,12 +1341,35 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            Text(
+                          if (match.seriesId != null)
+                            Container(
+                              margin: const EdgeInsets.only(right: 12),
+                              height: 24,
+                              width: 24,
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              child: ClipOval(
+                                child: Image.network(
+                                  ctr.getSeriesLogo(match.seriesId),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => const Icon(
+                                    Icons.emoji_events,
+                                    size: 14,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          Expanded(
+                            child: Text(
                               match.title ?? "${match.teamA} vs ${match.teamB}",
                               style: text14(fontWeight: FontWeight.bold, color: Colors.white),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
+                          ),
                             const SizedBox(height: 4),
                             Row(
                               children: [
@@ -1259,8 +1491,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   begin: Alignment.bottomCenter,
                                   end: Alignment.topCenter,
                                   colors: [
-                                    Colors.black.withOpacity(0.95),
-                                    Colors.black.withOpacity(0.6),
+                                    Colors.black.withValues(alpha: 0.95),
+                                    Colors.black.withValues(alpha: 0.6),
                                     Colors.transparent,
                                   ],
                                   stops: const [0.0, 0.5, 1.0],
@@ -1274,7 +1506,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
+                                color: Colors.white.withValues(alpha: 0.2),
                                 shape: BoxShape.circle,
                                 border: Border.all(color: Colors.white30),
                               ),
@@ -1294,7 +1526,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.6),
+                                color: Colors.black.withValues(alpha: 0.6),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
@@ -1352,7 +1584,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 borderRadius: BorderRadius.circular(22),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.4),
+                                    color: Colors.black.withValues(alpha: 0.4),
                                     blurRadius: 12,
                                     offset: const Offset(0, 6),
                                   ),
@@ -1444,7 +1676,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   begin: Alignment.bottomCenter,
                                   end: Alignment.topCenter,
                                   colors: [
-                                    Colors.black.withOpacity(0.6),
+                                    Colors.black.withValues(alpha: 0.6),
                                     Colors.transparent,
                                   ],
                                 ),
@@ -1583,9 +1815,13 @@ class _HomeScreenState extends State<HomeScreen> {
             final canWatch = Get.find<PlanController>().canWatchMatch(match);
             return GestureDetector(
               onTap: () {
-                ctr.handleProtectedAction(() {
-                  Get.toNamed(AppRoutes.matchPlay, arguments: match);
-                });
+                if (match.status?.toLowerCase() == 'upcoming') {
+                  Get.toNamed(AppRoutes.matchDetails, arguments: match);
+                } else {
+                  ctr.handleProtectedAction(() {
+                    Get.toNamed(AppRoutes.matchPlay, arguments: match);
+                  });
+                }
               },
               child: Container(
                 width: 160,
@@ -1669,9 +1905,13 @@ class _HomeScreenState extends State<HomeScreen> {
           final match = matches[index];
           return GestureDetector(
             onTap: () {
-              ctr.handleProtectedAction(() {
-                Get.toNamed(AppRoutes.matchPlay, arguments: match);
-              });
+              if (match.status?.toLowerCase() == 'upcoming') {
+                Get.toNamed(AppRoutes.matchDetails, arguments: match);
+              } else {
+                ctr.handleProtectedAction(() {
+                  Get.toNamed(AppRoutes.matchPlay, arguments: match);
+                });
+              }
             },
             child: Container(
               width: 180,
@@ -1787,15 +2027,42 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      match.title ?? "Match Highlights",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: text13(fontWeight: FontWeight.w600),
+                    child: Row(
+                      children: [
+                        if (match.seriesId != null)
+                          Container(
+                            margin: const EdgeInsets.only(right: 6),
+                            height: 18,
+                            width: 18,
+                            decoration: BoxDecoration(
+                              color: AppColors.white.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: ClipOval(
+                              child: Image.network(
+                                ctr.getSeriesLogo(match.seriesId),
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => const Icon(
+                                  Icons.emoji_events,
+                                  size: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                          ),
+                        Expanded(
+                          child: Text(
+                            match.title ?? "Match Highlights",
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: text13(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Text(
-                    match.tournament ?? "",
+                    ctr.getSeriesName(match.seriesId) ?? match.tournament ?? "",
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: text11(color: AppColors.textSecondary),
@@ -1869,15 +2136,42 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              match.title ?? "${match.teamA} vs ${match.teamB}",
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: text13(fontWeight: FontWeight.w600),
+            child: Row(
+              children: [
+                if (match.seriesId != null)
+                  Container(
+                    margin: const EdgeInsets.only(right: 6),
+                    height: 16,
+                    width: 16,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: ClipOval(
+                      child: Image.network(
+                        ctr.getSeriesLogo(match.seriesId),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => const Icon(
+                          Icons.emoji_events,
+                          size: 10,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ),
+                Expanded(
+                  child: Text(
+                    match.title ?? "${match.teamA} vs ${match.teamB}",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: text13(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
             ),
           ),
           Text(
-            match.tournament ?? "",
+            ctr.getSeriesName(match.seriesId) ?? match.tournament ?? "",
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: text11(color: AppColors.textSecondary),

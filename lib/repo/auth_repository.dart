@@ -75,4 +75,13 @@ class AuthRepository {
       rethrow;
     }
   }
+
+  Future<dynamic> getReferralCode() async {
+    try {
+      final response = await _apiService.getApi(AppUrls.referralCode);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

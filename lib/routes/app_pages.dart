@@ -34,6 +34,7 @@ import '../views/after_login/account_pages/player_detail_screen.dart';
 import 'package:play_on_app/views/after_login/home_pages/see_all_matches_screen.dart';
 import 'package:play_on_app/views/after_login/home_pages/podcast_list_screen.dart';
 import 'package:play_on_app/views/after_login/home_pages/podcast_play_screen.dart';
+import 'package:play_on_app/views/after_login/series_pages/series_detail_screen.dart';
 import 'package:play_on_app/bindings/plan_binding.dart';
 import 'app_routes.dart';
 
@@ -166,6 +167,10 @@ class AppPages {
     GetPage(
       name: AppRoutes.podcastPlay,
       page: () => const PodcastPlayScreen(),
+    ),
+    GetPage(
+      name: AppRoutes.seriesDetail,
+      page: () => const SeriesDetailScreen(),
     ),
   ];
 }

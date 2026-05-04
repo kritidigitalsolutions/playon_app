@@ -25,6 +25,7 @@ class Series {
   String? sport;
   String? slug;
   String? banner;
+  String? tournamentLogo;
   String? description;
   String? teamA;
   String? teamB;
@@ -53,6 +54,7 @@ class Series {
       this.sport,
       this.slug,
       this.banner,
+      this.tournamentLogo,
       this.description,
       this.teamA,
       this.teamB,
@@ -81,6 +83,7 @@ class Series {
     sport = json['sport'];
     slug = json['slug'];
     banner = json['banner'];
+    tournamentLogo = json['tournamentLogo'];
     description = json['description'];
     teamA = json['teamA'];
     teamB = json['teamB'];

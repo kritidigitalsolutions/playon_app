@@ -29,6 +29,12 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
+    // If the current route is no longer the splash screen, it means 
+    // a deep link or another navigation has already occurred.
+    if (Get.currentRoute != AppRoutes.splashScreen) {
+      return;
+    }
+
     // Go to Home Screen by default without requiring login
     Get.offAllNamed(AppRoutes.myHomePage);
   }

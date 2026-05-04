@@ -1,20 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/utils/custom_button.dart';
 import 'package:play_on_app/utils/hive_service/hive_service.dart';
+import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:flutter/services.dart';
+
 class ReferralScreen extends StatelessWidget {
   const ReferralScreen({super.key});
+
   Future<void> _openWhatsApp() async {
-    final user = HiveService.getUser();
+    final controller = Get.find<HomeController>();
+    final referralCode = controller.referralCode.value;
 
     final text = "Hey! Join me on PlayOn App to watch live sports and matches. "
-        "Use my referral to get an exclusive 50% discount on your first match pass! 🏏⚽\n"
-        "Download now: https://playon.com/download?ref=${user?.phone ?? 'playon'}";
+        "Use my referral code: $referralCode to get an exclusive 50% discount on your first match pass! 🏏⚽\n"
+        "Download now: https://playon.com/download?ref=$referralCode";
 
     final url = Uri.parse(
       "https://wa.me/?text=${Uri.encodeComponent(text)}",
@@ -25,18 +31,20 @@ class ReferralScreen extends StatelessWidget {
     }
   }
 
-  // void _shareReferral() {
-  //   final user = HiveService.getUser();
-  //   final name = user?.name ?? "your friend";
-  //   final text = "Hey! Join me on PlayOn App to watch live sports and matches. "
-  //       "Use my referral to get an exclusive 50% discount on your first match pass! 🏏⚽\n"
-  //       "Download now: https://playon.com/download?ref=${user?.phone ?? 'playon'}";
-  //
-  //   Share.share(text, subject: 'Join PlayOn and watch Live Sports!');
-  // }
+  void _shareReferral() {
+    final controller = Get.find<HomeController>();
+    final referralCode = controller.referralCode.value;
+
+    final text = "Hey! Join me on PlayOn App to watch live sports and matches. "
+        "Use my referral code: $referralCode to get an exclusive 50% discount on your first match pass! 🏏⚽\n"
+        "Download now: https://playon.com/download?ref=$referralCode";
+
+    Share.share(text, subject: 'Join PlayOn and watch Live Sports!');
+  }
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<HomeController>();
     return Scaffold(
       body: BackgroundWithOutImg(
         child: SafeArea(
@@ -67,6 +75,61 @@ class ReferralScreen extends StatelessWidget {
                 ),
 
                 const SizedBox(height: 50),
+
+                // Referral Code Display
+                Obx(() {
+                  if (controller.isReferralLoading.value) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (controller.referralCode.value.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 24),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.white.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.white.withValues(alpha: 0.1)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Your Referral Code",
+                              style: text12(color: AppColors.white70),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              controller.referralCode.value,
+                              style: text20(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.copy, color: AppColors.white),
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: controller.referralCode.value));
+                            Get.snackbar(
+                              "Copied",
+                              "Referral code copied to clipboard",
+                              snackPosition: SnackPosition.BOTTOM,
+                              backgroundColor: Colors.green.withValues(alpha: 0.8),
+                              colorText: Colors.white,
+                              margin: const EdgeInsets.all(16),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                }),
 
                 // Reward 1 - Amazon Voucher
                 _buildRewardCard(

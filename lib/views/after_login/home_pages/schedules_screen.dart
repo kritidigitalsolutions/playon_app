@@ -267,55 +267,123 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.08),
+              color: Colors.black.withOpacity(0.4),
+              image: match.thumbnail != null && match.thumbnail!.isNotEmpty
+                  ? DecorationImage(
+                      image: NetworkImage(match.thumbnail!),
+                      fit: BoxFit.cover,
+                      colorFilter: ColorFilter.mode(
+                        Colors.black.withOpacity(0.7),
+                        BlendMode.darken,
+                      ),
+                    )
+                  : null,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.white.withOpacity(0.15)),
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Series info row
+                Row(
+                  children: [
+                    Builder(builder: (context) {
+                      final homeController = Get.find<HomeController>();
+                      final seriesLogo = homeController.getSeriesLogo(match.seriesId);
+
+                      return Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: seriesLogo.isNotEmpty
+                            ? Image.network(
+                                seriesLogo,
+                                height: 14,
+                                width: 14,
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const Icon(Icons.emoji_events, color: Colors.blue, size: 14),
+                              )
+                            : const Icon(Icons.emoji_events, color: Colors.blue, size: 14),
+                      );
+                    }),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Builder(
+                        builder: (context) {
+                          final homeController = Get.find<HomeController>();
+                          final seriesName = homeController.getSeriesName(match.seriesId);
+                          return Text(
+                            (seriesName.isNotEmpty ? seriesName : (match.tournament ?? "SERIES")).toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          );
+                        }
+                      ),
+                    ),
+                    if (isLive)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          "LIVE",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
                 Row(
                   children: [
                     Expanded(child: _team(match.teamA, match.teamALogo)),
                     Column(
                       children: [
-                        isLive
-                            ? Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Text(
-                                  "LIVE",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              )
-                            : const Text("VS",
-                                style: TextStyle(color: Colors.white70)),
-                        const SizedBox(height: 6),
+                        const Text("VS",
+                            style: TextStyle(
+                              color: Colors.white24,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            )),
+                        const SizedBox(height: 4),
                         Text(time,
                             style: const TextStyle(
-                                color: Colors.white70, fontSize: 12)),
+                                color: Colors.white70,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500)),
                       ],
                     ),
                     Expanded(child: _team(match.teamB, match.teamBLogo)),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 20),
                 AppButton(
-                  title: canWatch ? (isLive ? "Watch Now" : "View Details") : "Watch Now",
+                  height: 40,
+                  title: isLive ? "Watch Now" : "View Details",
                   onTap: () {
-                    if (canWatch) {
-                      Get.toNamed(AppRoutes.matchPlay, arguments: match);
-                    } else {
-                      ctr.handleProtectedAction(() {
+                    if (isLive) {
+                      if (canWatch) {
                         Get.toNamed(AppRoutes.matchPlay, arguments: match);
-                      });
+                      } else {
+                        ctr.handleProtectedAction(() {
+                          Get.toNamed(AppRoutes.matchPlay, arguments: match);
+                        });
+                      }
+                    } else {
+                      Get.toNamed(AppRoutes.matchDetails, arguments: match);
                     }
                   },
                 ),
@@ -330,15 +398,29 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
   Widget _team(String? name, String? logo) {
     return Column(
       children: [
-        if (logo != null && logo.isNotEmpty)
-          Image.network(logo, height: 40, width: 40)
-        else
-          const Icon(Icons.shield, color: Colors.white, size: 40),
-        const SizedBox(height: 6),
+        Container(
+          height: 50,
+          width: 50,
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: logo != null && logo.isNotEmpty
+              ? Image.network(logo, fit: BoxFit.contain)
+              : const Icon(Icons.shield, color: Colors.white38, size: 30),
+        ),
+        const SizedBox(height: 8),
         Text(
           name ?? "Team",
           textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.white, fontSize: 13),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );

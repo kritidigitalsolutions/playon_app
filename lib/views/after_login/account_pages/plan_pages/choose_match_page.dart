@@ -278,13 +278,42 @@ class _ChooseMatchPageState extends State<ChooseMatchPage> {
             children: [
               Row(
                 children: [
+                  if (match.seriesId != null)
+                    Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      height: 24,
+                      width: 24,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: ClipOval(
+                        child: Image.network(
+                          homeController.getSeriesLogo(match.seriesId),
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => const Icon(
+                            Icons.emoji_events,
+                            size: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(color: AppColors.error, borderRadius: BorderRadius.circular(20)),
                     child: Text("LIVE", style: text12(fontWeight: FontWeight.bold)),
                   ),
                   const Spacer(),
-                  Text(match.venue ?? "", style: text13(color: AppColors.white70)),
+                  Expanded(
+                    child: Text(
+                      homeController.getSeriesName(match.seriesId) ?? match.tournament ?? match.venue ?? "",
+                      style: text13(color: AppColors.white70),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.end,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -370,7 +399,41 @@ class _ChooseMatchPageState extends State<ChooseMatchPage> {
                   ),
                   Padding(
                     padding: const EdgeInsets.all(10),
-                    child: Text("${match.teamA} vs ${match.teamB}", textAlign: TextAlign.center, style: text13(), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (match.seriesId != null)
+                          Container(
+                            margin: const EdgeInsets.only(right: 6),
+                            height: 16,
+                            width: 16,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: ClipOval(
+                              child: Image.network(
+                                homeController.getSeriesLogo(match.seriesId),
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => const Icon(
+                                  Icons.emoji_events,
+                                  size: 10,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                          ),
+                        Expanded(
+                          child: Text(
+                            "${match.teamA} vs ${match.teamB}",
+                            textAlign: TextAlign.center,
+                            style: text13(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10.0),

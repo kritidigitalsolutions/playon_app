@@ -6,6 +6,7 @@ import 'package:play_on_app/utils/app_text_style.dart';
 
 import 'package:play_on_app/model/response_model/channel_model.dart';
 import 'package:play_on_app/repo/channel_repository.dart';
+import 'package:play_on_app/repo/auth_repository.dart';
 import 'package:play_on_app/model/response_model/match_model.dart';
 import 'package:play_on_app/repo/match_repository.dart';
 import 'package:play_on_app/utils/hive_service/hive_service.dart';
@@ -17,6 +18,8 @@ import 'package:play_on_app/model/response_model/star_player_model.dart';
 import 'package:play_on_app/model/response_model/podcast_model.dart';
 import 'package:play_on_app/model/response_model/social_media_model.dart';
 import 'package:play_on_app/repo/legal_repository.dart';
+
+import '../../../repo/auth_repository.dart';
 
 class HomeController extends GetxController {
   final MatchRepository _matchRepository = MatchRepository();
@@ -67,6 +70,8 @@ class HomeController extends GetxController {
 
   var isLogin = false.obs;
   var userName = "".obs;
+  var referralCode = "".obs;
+  var isReferralLoading = false.obs;
 
   @override
   void onInit() {
@@ -84,11 +89,29 @@ class HomeController extends GetxController {
     fetchStarPlayers();
     fetchPodcasts();
     fetchSocialMedia();
-    
+    fetchReferralCode();
+
     // Setup search listeners
     searchQuery.listen((query) {
       filterData(query);
     });
+  }
+
+  final AuthRepository _authRepository = AuthRepository();
+
+  Future<void> fetchReferralCode() async {
+    if (!isLogin.value) return;
+    try {
+      isReferralLoading.value = true;
+      final response = await _authRepository.getReferralCode();
+      if (response['success'] == true) {
+        referralCode.value = response['referralCode'] ?? "";
+      }
+    } catch (e) {
+      debugPrint("Error fetching referral code: $e");
+    } finally {
+      isReferralLoading.value = false;
+    }
   }
 
   Future<void> fetchBanners() async {
@@ -316,6 +339,18 @@ class HomeController extends GetxController {
       selectedCategory.value = sport;
     }
     // No need to fetch, we filter the already loaded allMatches
+  }
+
+  String getSeriesName(String? seriesId) {
+    if (seriesId == null) return "";
+    final series = seriesList.firstWhereOrNull((s) => s.sId == seriesId);
+    return series?.title ?? "";
+  }
+
+  String getSeriesLogo(String? seriesId) {
+    if (seriesId == null) return "";
+    final series = seriesList.firstWhereOrNull((s) => s.sId == seriesId);
+    return series?.tournamentLogo ?? series?.banner ?? "";
   }
 
   Future<void> fetchMatches({String? sport}) async {

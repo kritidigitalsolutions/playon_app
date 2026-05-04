@@ -14,6 +14,8 @@ import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
 import 'package:video_player/video_player.dart';
 
+import '../../../view_model/after_controller/home_contollers/home_controller.dart';
+
 class RecapMatchScreen extends StatefulWidget {
   const RecapMatchScreen({super.key});
 
@@ -25,6 +27,7 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
   final videoControllerX = Get.put(VideoControllerX());
   final MatchDetailsController controller = Get.put(MatchDetailsController());
   final WatchlistController watchlistController = Get.find<WatchlistController>();
+  final HomeController homeController = Get.find<HomeController>();
 
   final RxBool isInWatchlist = false.obs;
   final RxBool isWatchlistLoading = false.obs;
@@ -287,91 +290,201 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
   Widget _buildMatchInfo() {
     return Obx(() {
       final match = videoControllerX.match.value;
-      if (match == null) {
-        return Container(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Loading Match Info...",
-                style: text20(fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-        );
-      }
+      if (match == null) return const SizedBox();
 
       return Container(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Team A vs Team B
+            Text(
+              "${match.teamA ?? ""} vs ${match.teamB ?? ""}",
+              style: text20(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+
+            // Description
+            if (match.description != null && match.description!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Text(
+                  match.description!,
+                  style: text14(color: AppColors.white70),
+                ),
+              ),
+
+            // Logo and Score section
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+              decoration: BoxDecoration(
+                color: AppColors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.white.withOpacity(0.1)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  // Team A
+                  Column(
+                    children: [
+                      _teamLogo(match.teamALogo, size: 50),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: 80,
+                        child: Text(
+                          match.teamA ?? "",
+                          textAlign: TextAlign.center,
+                          style: text12(fontWeight: FontWeight.bold),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Score
+                  Column(
+                    children: [
+                      Text(
+                        match.score ?? "vs",
+                        style: text24(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Team B
+                  Column(
+                    children: [
+                      _teamLogo(match.teamBLogo, size: 50),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: 80,
+                        child: Text(
+                          match.teamB ?? "",
+                          textAlign: TextAlign.center,
+                          style: text12(fontWeight: FontWeight.bold),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Series and Watchlist Button
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (match.seriesId != null)
+                  Container(
+                    margin: const EdgeInsets.only(right: 10),
+                    height: 35,
+                    width: 35,
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppColors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Image.network(
+                      homeController.getSeriesLogo(match.seriesId),
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.emoji_events, color: AppColors.primary, size: 18),
+                    ),
+                  ),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${match.teamA} vs ${match.teamB}',
-                        style: text20(fontWeight: FontWeight.bold),
+                        homeController.getSeriesName(match.seriesId) ?? match.tournament ?? "Series",
+                        style: text16(fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        '${match.tournament} • ${match.sport?.toUpperCase()}',
-                        style: text14(color: AppColors.white70),
+                        match.sport?.toUpperCase() ?? "",
+                        style: text12(color: AppColors.white.withOpacity(0.5)),
                       ),
                     ],
                   ),
                 ),
+                Obx(() => CustomElevatedIconButton(
+                      height: 32,
+                      isLoading: isWatchlistLoading.value,
+                      text: isInWatchlist.value ? "Saved" : "Watchlist",
+                      icon: isInWatchlist.value
+                          ? Icons.bookmark_rounded
+                          : Icons.bookmark_border_rounded,
+                      onPressed: () async {
+                        if (match.sId != null) {
+                          isWatchlistLoading.value = true;
+                          final success = await watchlistController.toggleWatchlist(match.sId!, "match");
+                          if (success) {
+                            await watchlistController.fetchWatchlist();
+                            isInWatchlist.value = watchlistController.watchlistItems.any((e) => e.sId == match.sId);
+                            Get.snackbar(
+                              "Watchlist",
+                              isInWatchlist.value ? "Added to watchlist" : "Removed from watchlist",
+                              snackPosition: SnackPosition.BOTTOM,
+                            );
+                          }
+                          isWatchlistLoading.value = false;
+                        }
+                      },
+                    )),
               ],
             ),
-            const SizedBox(height: 12),
-            Obx(() => CustomElevatedIconButton(
-              height: 36,
-              isLoading: isWatchlistLoading.value,
-
-              text: isInWatchlist.value ? "Saved" : "Watchlist",
-
-              icon: isInWatchlist.value
-                  ? Icons.bookmark_rounded
-                  : Icons.bookmark_border_rounded,
-
-              onPressed: () async {
-                final match = videoControllerX.match.value;
-
-                if (match != null && match.sId != null) {
-                  isWatchlistLoading.value = true;
-
-                  final success = await watchlistController
-                      .toggleWatchlist(match.sId!, "match");
-
-                  if (success) {
-                    // 🔥 Watchlist refresh karo
-                    await watchlistController.fetchWatchlist();
-
-                    // 🔥 LOCAL LIST se check karo (fast & correct)
-                    final exists = watchlistController.watchlistItems
-                        .any((e) => e.sId == match.sId);
-
-                    isInWatchlist.value = exists;
-
-                    Get.snackbar(
-                      "Watchlist",
-                      exists ? "Added to watchlist" : "Removed from watchlist",
-                      snackPosition: SnackPosition.BOTTOM,
-                    );
-                  }
-
-                  isWatchlistLoading.value = false;
-                }
-              },
-            )),
           ],
         ),
       );
     });
+  }
+
+  Widget _teamLogo(String? url, {double size = 48}) {
+    return Container(
+      height: size,
+      width: size,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.primary.withOpacity(0.5), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.2),
+            blurRadius: 10,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child: Padding(
+          padding: const EdgeInsets.all(2),
+          child: url != null && url.isNotEmpty
+              ? Image.network(
+                  url,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => Icon(
+                    Icons.shield,
+                    color: Colors.grey.shade400,
+                    size: size * 0.5,
+                  ),
+                )
+              : Icon(
+                  Icons.shield,
+                  color: Colors.grey.shade400,
+                  size: size * 0.5,
+                ),
+        ),
+      ),
+    );
   }
 
   Widget _buildHighlights() {

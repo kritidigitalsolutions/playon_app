@@ -18,6 +18,8 @@ import 'package:play_on_app/views/after_login/channel_page/sport_channel_list.da
 import 'package:play_on_app/views/after_login/home_pages/home_screen.dart';
 import 'package:play_on_app/views/after_login/home_pages/schedules_screen.dart';
 import 'package:play_on_app/views/after_login/home_pages/watch_list_screen.dart';
+import 'package:play_on_app/views/after_login/home_pages/series_list_screen.dart';
+import 'package:play_on_app/views/after_login/home_pages/all_highlights_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:timezone/data/latest.dart' as tz;
@@ -100,21 +102,25 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       title: 'PlayOn',
-
       debugShowCheckedModeBanner: false,
-
-      // 🔥 Initial Route
       initialRoute: AppRoutes.splashScreen,
-
-      // 🔥 All Routes
       getPages: AppPages.routes,
-
-      // 🔥 Theme (dark style)
       theme: ThemeData(
         scaffoldBackgroundColor: AppColors.secPrimary,
         fontFamily: "Poppins",
         useMaterial3: true,
       ),
+      routingCallback: (routing) {
+        if (routing?.current != null && routing!.current.startsWith('/match/')) {
+          final matchId = routing.current.split('/').last;
+          // You might need to check if user is logged in or redirect accordingly
+          // For now, let's assume we want to go to match details for the given ID
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Get.offAllNamed(AppRoutes.myHomePage); // Reset to home
+            Get.toNamed(AppRoutes.matchDetails, arguments: matchId);
+          });
+        }
+      },
     );
   }
 }
@@ -137,7 +143,8 @@ class _MyHomePageState extends State<MyHomePage> {
     final List<Widget> screens = [
       HomeScreen(),
       const SportChannelList(),
-      // CreateWatchlistScreen(),
+      const SeriesListScreen(),
+      const AllHighlightsScreen(),
       MatchScheduleScreen(),
     ];
 
@@ -292,8 +299,9 @@ class _MyHomePageState extends State<MyHomePage> {
               children: [
                 _navItem(Icons.home, 'Home', 0, currentIndex),
                 _navItem(Icons.live_tv, 'Live TV', 1, currentIndex),
-                // _navItem(Icons.bookmark_border, 'Watchlist', 2, currentIndex),
-                _navItem(Icons.calendar_today, 'Schedules', 2, currentIndex),
+                _navItem(Icons.list_alt, 'Series', 2, currentIndex),
+                _navItem(Icons.video_library, 'Highlights', 3, currentIndex),
+                _navItem(Icons.calendar_today, 'Schedules', 4, currentIndex),
               ],
             ),
           ),

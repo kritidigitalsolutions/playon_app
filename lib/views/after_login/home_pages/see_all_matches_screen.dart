@@ -135,9 +135,40 @@ class SeeAllMatchesScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          match.tournament ?? match.sport?.toUpperCase() ?? "Match",
-                          style: text12(color: AppColors.primary),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              if (match.seriesId != null)
+                                Container(
+                                  margin: const EdgeInsets.only(right: 6),
+                                  height: 16,
+                                  width: 16,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: ClipOval(
+                                    child: Image.network(
+                                      ctr.getSeriesLogo(match.seriesId),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) => const Icon(
+                                        Icons.emoji_events,
+                                        size: 10,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              Expanded(
+                                child: Text(
+                                  ctr.getSeriesName(match.seriesId) ?? match.tournament ?? match.sport?.toUpperCase() ?? "Match",
+                                  style: text12(color: AppColors.primary),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         if (match.isPremium == false)
                           Container(
