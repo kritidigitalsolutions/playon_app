@@ -64,6 +64,7 @@ dependencies:
   razorpay_flutter: ^1.4.4
   google_sign_in: ^6.1.0
   firebase_auth: ^5.7.0
+  google_mobile_ads: ^8.0.0
 
 dev_dependencies:
   flutter_test:

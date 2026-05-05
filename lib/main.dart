@@ -22,6 +22,7 @@ import 'package:play_on_app/views/after_login/home_pages/series_list_screen.dart
 import 'package:play_on_app/views/after_login/home_pages/all_highlights_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -32,8 +33,9 @@ void main() async {
     // 1. Firebase Initialization with Timeout
     try {
       await Firebase.initializeApp().timeout(const Duration(seconds: 8));
+      await MobileAds.instance.initialize();
     } catch (e) {
-      debugPrint("Firebase init failed: $e");
+      debugPrint("Firebase or AdMob init failed: $e");
     }
 
     await GetStorage.init();

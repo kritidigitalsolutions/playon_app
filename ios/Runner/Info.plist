@@ -60,5 +60,7 @@
 	</array>
 	<key>FlutterDeepLinkingEnabled</key>
 	<true/>
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-9899829518030319~1225929015</string>
 </dict>
 </plist>

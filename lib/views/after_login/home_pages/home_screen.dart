@@ -21,6 +21,7 @@ import '../../../view_model/after_controller/home_contollers/home_controller.dar
 import '../../../view_model/after_controller/plan_controller.dart';
 import '../../custom_background.dart/ad_banner_widget.dart';
 import '../../custom_background.dart/custom_widget.dart';
+import '../../widgets/admob_banner_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -228,6 +229,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       // Dynamic Ad Banners
                       if (ctr.searchQuery.value.isEmpty) ...[
                         const AdBannerWidget(),
+                        const SizedBox(height: 8),
+                        const AdMobBannerWidget(),
                         const SizedBox(height: 16),
                       ],
 
