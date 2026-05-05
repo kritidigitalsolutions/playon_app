@@ -166,18 +166,19 @@ class MatchRepository {
     }
   }
 
-  Future<dynamic> getMatchComments(String matchId) async {
+  Future<dynamic> getMatchComments(String itemId) async {
     try {
-      final response = await _apiServices.getApi(AppUrls.matchComments(matchId));
+      final response = await _apiServices.getApi(AppUrls.getComments(itemId));
       return response;
     } catch (e) {
       rethrow;
     }
   }
 
-  Future<dynamic> addComment(String matchId, String comment) async {
+  Future<dynamic> addComment(String itemId, String comment) async {
     try {
-      final response = await _apiServices.postApi(AppUrls.addComment(matchId), {
+      final response = await _apiServices.postApi(AppUrls.comments, {
+        'itemId': itemId,
         'comment': comment,
       });
       return response;

@@ -1,8 +1,10 @@
 import 'dart:ui';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
@@ -87,12 +89,174 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
 
                 // Tab Section
                 _buildHighlights(),
+
+                // Comments Section
+                _buildCommentsSection(),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildCommentsSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                "Comments",
+                style: text18(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(width: 8),
+              Obx(() => Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      "${controller.comments.length}",
+                      style: text12(color: AppColors.primary, fontWeight: FontWeight.bold),
+                    ),
+                  )),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Add Comment Input
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: AppColors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.white.withOpacity(0.1)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: controller.commentController,
+                    style: text14(),
+                    decoration: InputDecoration(
+                      hintText: "Add a comment...",
+                      hintStyle: text14(color: AppColors.white.withOpacity(0.4)),
+                      border: InputBorder.none,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: controller.addComment,
+                  icon: const Icon(Icons.send_rounded, color: AppColors.primary),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Comments List
+          Obx(() {
+            if (controller.isCommentsLoading.value) {
+              return const Center(child: Padding(
+                padding: EdgeInsets.all(20.0),
+                child: CircularProgressIndicator(),
+              ));
+            }
+
+            if (controller.comments.isEmpty) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Text(
+                    "No comments yet. Be the first to comment!",
+                    style: text14(color: AppColors.white.withOpacity(0.5)),
+                  ),
+                ),
+              );
+            }
+
+            return ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: controller.comments.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 16),
+              itemBuilder: (context, index) {
+                final comment = controller.comments[index];
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CircleAvatar(
+                      radius: 18,
+                      backgroundColor: AppColors.primary.withOpacity(0.2),
+                      child: ClipOval(
+                        child: CachedNetworkImage(
+                          imageUrl: comment.userImage ?? "",
+                          fit: BoxFit.cover,
+                          width: 36,
+                          height: 36,
+                          placeholder: (context, url) => Center(
+                            child: Text(
+                              comment.userName?[0].toUpperCase() ?? "U",
+                              style: text14(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Center(
+                            child: Text(
+                              comment.userName?[0].toUpperCase() ?? "U",
+                              style: text14(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                comment.userName ?? "User",
+                                style: text14(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                _formatDate(comment.createdAt),
+                                style: text10(color: AppColors.white.withOpacity(0.4)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            comment.comment ?? "",
+                            style: text13(color: AppColors.white.withOpacity(0.8)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return "";
+    try {
+      final date = DateTime.parse(dateStr);
+      return DateFormat("d, MMM, yyyy 'and' HH:mm").format(date);
+    } catch (e) {
+      return "";
+    }
   }
 
   // ================== VIDEO PLAYER WITH LOCK LOGIC ==================
@@ -314,71 +478,6 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                 ),
               ),
 
-            // Logo and Score section
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-              decoration: BoxDecoration(
-                color: AppColors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.white.withOpacity(0.1)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  // Team A
-                  Column(
-                    children: [
-                      _teamLogo(match.teamALogo, size: 50),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: 80,
-                        child: Text(
-                          match.teamA ?? "",
-                          textAlign: TextAlign.center,
-                          style: text12(fontWeight: FontWeight.bold),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // Score
-                  Column(
-                    children: [
-                      Text(
-                        match.score ?? "vs",
-                        style: text24(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // Team B
-                  Column(
-                    children: [
-                      _teamLogo(match.teamBLogo, size: 50),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: 80,
-                        child: Text(
-                          match.teamB ?? "",
-                          textAlign: TextAlign.center,
-                          style: text12(fontWeight: FontWeight.bold),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
             // Series and Watchlist Button
             Row(
               children: [
@@ -405,12 +504,12 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                     children: [
                       Text(
                         homeController.getSeriesName(match.seriesId) ?? match.tournament ?? "Series",
-                        style: text16(fontWeight: FontWeight.bold),
+                        style: text16(fontWeight: FontWeight.bold, color: AppColors.primary),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        match.sport?.toUpperCase() ?? "",
+                        "${match.sport?.toUpperCase()} • ${match.venue ?? 'TBA'}",
                         style: text12(color: AppColors.white.withOpacity(0.5)),
                       ),
                     ],
@@ -441,6 +540,82 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                       },
                     )),
               ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Logo and Score section
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+              decoration: BoxDecoration(
+                color: AppColors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.white.withOpacity(0.1)),
+              ),
+              child: Row(
+                children: [
+                  // Team A
+                  Expanded(
+                    child: Column(
+                      children: [
+                        _teamLogo(match.teamALogo, size: 50),
+                        const SizedBox(height: 8),
+                        Text(
+                          match.teamA ?? "",
+                          textAlign: TextAlign.center,
+                          style: text12(fontWeight: FontWeight.bold),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Score
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      children: [
+                        Text(
+                          match.score ?? "vs",
+                          style: text24(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        if (match.status?.toLowerCase() == 'live')
+                          Container(
+                            margin: const EdgeInsets.only(top: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: Colors.red.withOpacity(0.5)),
+                            ),
+                            child: Text("LIVE", style: text10(color: Colors.red, fontWeight: FontWeight.bold)),
+                          ),
+                      ],
+                    ),
+                  ),
+
+                  // Team B
+                  Expanded(
+                    child: Column(
+                      children: [
+                        _teamLogo(match.teamBLogo, size: 50),
+                        const SizedBox(height: 8),
+                        Text(
+                          match.teamB ?? "",
+                          textAlign: TextAlign.center,
+                          style: text12(fontWeight: FontWeight.bold),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

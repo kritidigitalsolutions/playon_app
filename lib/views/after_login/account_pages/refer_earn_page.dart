@@ -76,99 +76,33 @@ class ReferralScreen extends StatelessWidget {
 
                 const SizedBox(height: 50),
 
-                // Referral Code Display
+                // Reward 1 - Amazon Voucher
                 Obx(() {
-                  if (controller.isReferralLoading.value) {
+                  if (controller.isOfferLoading.value) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  if (controller.referralCode.value.isEmpty) {
-                    return const SizedBox.shrink();
-                  }
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 24),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    decoration: BoxDecoration(
-                      color: AppColors.white.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.white.withValues(alpha: 0.1)),
+                  
+                  final offer = controller.referralOffer.value;
+                  if (offer == null) return const SizedBox.shrink();
+
+                  return _buildRewardCard(
+                    icon: Text(
+                      offer.title?[0] ?? "R",
+                      style: text24(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.black,
+                      ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Your Referral Code",
-                              style: text12(color: AppColors.white70),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              controller.referralCode.value,
-                              style: text20(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.copy, color: AppColors.white),
-                          onPressed: () {
-                            Clipboard.setData(ClipboardData(text: controller.referralCode.value));
-                            Get.snackbar(
-                              "Copied",
-                              "Referral code copied to clipboard",
-                              snackPosition: SnackPosition.BOTTOM,
-                              backgroundColor: Colors.green.withValues(alpha: 0.8),
-                              colorText: Colors.white,
-                              margin: const EdgeInsets.all(16),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
+                    backgroundColor: AppColors.white.withValues(alpha: 0.12),
+                    title: offer.title ?? "Get a reward worth up to",
+                    amount: offer.discountType == 'percent'
+                        ? "${offer.discountValue}% Off"
+                        : "₹${offer.discountValue} Off",
+                    subtitle: "for every successful referral",
                   );
                 }),
 
-                // Reward 1 - Amazon Voucher
-                _buildRewardCard(
-                  icon: Text(
-                    "a",
-                    style: text30(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.black,
-                    ),
-                  ),
-                  backgroundColor: AppColors.white.withValues(alpha: 0.12),
-                  title: "Get an Amazon voucher worth up to",
-                  amount: "₹100",
-                  subtitle: "for every successful referral",
-                ),
-
                 const SizedBox(height: 16),
-
-                // Reward 2 - 50% Discount
-                _buildRewardCard(
-                  icon: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFE11D48), // Red
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        "P",
-                        style: text20(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                  backgroundColor: AppColors.white.withValues(alpha: 0.12),
-                  title: "Your friends enjoy an exclusive",
-                  amount: "50%",
-                  subtitle: "discount on their first match pass",
-                ),
 
                 const SizedBox(height: 60),
 

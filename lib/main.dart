@@ -318,7 +318,16 @@ class _MyHomePageState extends State<MyHomePage> {
         borderRadius: BorderRadius.circular(30),
         onTap: () {
           if (currentIndex == index) return;
-          Get.find<HomeController>().changeIndex(index);
+          final homeController = Get.find<HomeController>();
+
+          // Protected tabs: Series (2), Highlights (3), Schedules (4)
+          if (index == 2 || index == 3 || index == 4) {
+            homeController.handleProtectedAction(() {
+              homeController.changeIndex(index);
+            });
+          } else {
+            homeController.changeIndex(index);
+          }
         },
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),

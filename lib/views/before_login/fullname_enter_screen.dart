@@ -20,6 +20,7 @@ class FullNameScreen extends StatelessWidget {
 
   void _onContinue() {
     if (isValid) {
+      ctr.saveNameLocally();
       Get.toNamed(AppRoutes.sportInterrestScreen);
     } else {
       showCustomSnackbar(
@@ -120,6 +121,16 @@ class FullNameScreen extends StatelessWidget {
                         title: "Next",
                         isLoading: isLoading,
                         onTap: _onContinue,
+                      ),
+                      const SizedBox(height: 16),
+                      Center(
+                        child: TextButton(
+                          onPressed: () => ctr.logout(),
+                          child: Text(
+                            "Logout",
+                            style: text14(color: AppColors.white70),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 40),
                     ],

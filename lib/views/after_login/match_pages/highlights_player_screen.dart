@@ -1,6 +1,8 @@
 import 'dart:ui';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/view_model/after_controller/match_controller/match_controller.dart';
@@ -12,7 +14,9 @@ import 'package:play_on_app/model/response_model/star_player_model.dart' as star
 import 'package:play_on_app/view_model/after_controller/player_controller.dart';
 import '../../../routes/app_routes.dart';
 import '../../../view_model/after_controller/plan_controller.dart';
+import 'package:play_on_app/utils/share_helper.dart';
 import 'package:video_player/video_player.dart';
+import 'package:share_plus/share_plus.dart';
 
 class HighlightsPlayerScreen extends StatefulWidget {
   const HighlightsPlayerScreen({super.key});
@@ -77,9 +81,9 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                     IconButton(
                       onPressed: () {
                         final text =
-                            "${player.playerName} Highlights 🔥\n${player.videoUrl}";
-                        Get.snackbar("Share", text);
-                        // Use share_plus in real
+                            "Check out ${player.playerName} highlights on PlayOn! 🔥\n\n"
+                            "Watch it here: https://playon.app/highlight/${player.sId}";
+                        ShareHelper.shareMatchWithImage(text: text, imageUrl: player.thumbnail);
                       },
                       icon: const Icon(Icons.share, color: Colors.white),
                     ),
@@ -383,9 +387,170 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
               ),
             ),
           ),
+
+          const SizedBox(height: 10),
+
+          // Comments Section
+          _buildCommentsSection(),
         ],
       ),
     );
+  }
+
+  Widget _buildCommentsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              "Comments",
+              style: text18(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(width: 8),
+            Obx(() => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                "${matchDetailsController.comments.length}",
+                style: text12(color: AppColors.primary, fontWeight: FontWeight.bold),
+              ),
+            )),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        // Add Comment Input
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: AppColors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.white.withOpacity(0.1)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: matchDetailsController.commentController,
+                  style: text14(),
+                  decoration: InputDecoration(
+                    hintText: "Add a comment...",
+                    hintStyle: text14(color: AppColors.white.withOpacity(0.4)),
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: matchDetailsController.addComment,
+                icon: const Icon(Icons.send_rounded, color: AppColors.primary),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Comments List
+        Obx(() {
+          if (matchDetailsController.isCommentsLoading.value) {
+            return const Center(child: Padding(
+              padding: EdgeInsets.all(20.0),
+              child: CircularProgressIndicator(),
+            ));
+          }
+
+          if (matchDetailsController.comments.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Text(
+                  "No comments yet. Be the first to comment!",
+                  style: text14(color: AppColors.white.withOpacity(0.5)),
+                ),
+              ),
+            );
+          }
+
+          return ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: matchDetailsController.comments.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 16),
+            itemBuilder: (context, index) {
+              final comment = matchDetailsController.comments[index];
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: AppColors.primary.withOpacity(0.2),
+                    child: ClipOval(
+                      child: CachedNetworkImage(
+                        imageUrl: comment.userImage ?? "",
+                        fit: BoxFit.cover,
+                        width: 36,
+                        height: 36,
+                        placeholder: (context, url) => Center(
+                          child: Text(
+                            comment.userName?[0].toUpperCase() ?? "U",
+                            style: text14(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Center(
+                          child: Text(
+                            comment.userName?[0].toUpperCase() ?? "U",
+                            style: text14(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              comment.userName ?? "User",
+                              style: text14(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _formatDate(comment.createdAt),
+                              style: text10(color: AppColors.white.withOpacity(0.4)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          comment.comment ?? "",
+                          style: text13(color: AppColors.white.withOpacity(0.8)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        }),
+      ],
+    );
+  }
+
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return "";
+    try {
+      final date = DateTime.parse(dateStr);
+      return DateFormat("d, MMM, yyyy 'and' HH:mm").format(date);
+    } catch (e) {
+      return "";
+    }
   }
 
   Widget _chip(String text) {

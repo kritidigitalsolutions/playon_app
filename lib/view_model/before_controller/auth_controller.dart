@@ -52,8 +52,28 @@ class AuthController extends GetxController {
   void onInit() {
     super.onInit();
     getSocialMediaLinks();
+
+    // Load existing user data from Hive if available
+    final user = HiveService.getUser();
+    if (user != null) {
+      if (user.name != null && user.name!.isNotEmpty && nameController.text.isEmpty) {
+        nameController.text = user.name!;
+      }
+      if (user.phone != null && user.phone!.isNotEmpty && mobileController.text.isEmpty) {
+        mobileController.text = user.phone!;
+      }
+    }
+
     if (HiveService.getToken() != null) {
       getUserProfile();
+    }
+  }
+
+  void saveNameLocally() {
+    final user = HiveService.getUser();
+    if (user != null) {
+      user.name = nameController.text.trim();
+      HiveService.saveUser(user);
     }
   }
 
@@ -103,12 +123,21 @@ class AuthController extends GetxController {
       
       final response = await _repository.getUserProfile(token);
       if (response['success'] == true) {
-        userData.value = UserData.fromJson(response['user']);
+        final userDataJson = response['user'];
+        userData.value = UserData.fromJson(userDataJson);
         
+        // Update nameController if it's empty and we just got a name from API
+        if (nameController.text.trim().isEmpty && userData.value?.fullName != null && userData.value!.fullName!.isNotEmpty) {
+          nameController.text = userData.value!.fullName!;
+        }
+
         // Update Hive local storage with fresh data
         final user = HiveService.getUser();
         if (user != null) {
-          user.name = userData.value?.fullName;
+          // Only overwrite name if API provided a non-empty name
+          if (userData.value?.fullName != null && userData.value!.fullName!.isNotEmpty) {
+            user.name = userData.value?.fullName;
+          }
           user.phone = userData.value?.mobile;
           user.favoriteSports = userData.value?.favoriteSports;
           await HiveService.saveUser(user);
@@ -186,30 +215,46 @@ class AuthController extends GetxController {
           name: data.user?.fullName,
           image: data.user?.profilePic ?? data.user?.profileImage,
         );
-        await HiveService.saveUser(userDetail);
-        userData.value = data.user;
         
         // Pre-fill name from Google if available for background sync
         if (data.user?.fullName != null && data.user!.fullName!.isNotEmpty) {
           nameController.text = data.user!.fullName!;
         } else if (googleUser.displayName != null) {
           nameController.text = googleUser.displayName!;
+          // Ensure name is saved to Hive if it was empty from the response
+          if (userDetail.name == null || userDetail.name!.isEmpty) {
+            userDetail.name = googleUser.displayName;
+          }
         }
+
+        await HiveService.saveUser(userDetail);
+        userData.value = data.user;
 
         // Sync FCM token after successful login
         NotificationService.syncTokenToServer();
 
-        if (Get.isRegistered<HomeController>()) {
-          final homeCtr = Get.find<HomeController>();
-          homeCtr.isLogin.value = true;
-          homeCtr.userName.value = nameController.text;
-          homeCtr.fetchMatches();
-        }
-
         if (data.isNewUser == true) {
-          // Directly go to Sport Interest instead of Full Name screen
-          Get.offAllNamed(AppRoutes.sportInterrestScreen);
+          // New user: Do NOT set isLogin = true yet. 
+          // They must complete profile (Sport selection) first.
+          if (Get.isRegistered<HomeController>()) {
+            final homeCtr = Get.find<HomeController>();
+            homeCtr.userName.value = nameController.text;
+            homeCtr.fetchMatches();
+          }
+
+          if (nameController.text.trim().length < 3) {
+            Get.offAllNamed(AppRoutes.fullnameEnter);
+          } else {
+            Get.offAllNamed(AppRoutes.sportInterrestScreen);
+          }
         } else {
+          // Returning user: Set isLogin = true immediately
+          if (Get.isRegistered<HomeController>()) {
+            final homeCtr = Get.find<HomeController>();
+            homeCtr.isLogin.value = true;
+            homeCtr.userName.value = nameController.text;
+            homeCtr.fetchMatches();
+          }
           Get.offAllNamed(AppRoutes.myHomePage);
         }
       } else {
@@ -252,25 +297,37 @@ class AuthController extends GetxController {
           isNewUser: data.isNewUser,
           name: data.user?.fullName,
         );
-        await HiveService.saveUser(userDetail);
-
+        
         // Pre-fill name if available
-        if (data.user?.fullName != null) {
+        if (data.user?.fullName != null && data.user!.fullName!.isNotEmpty) {
           nameController.text = data.user!.fullName!;
         }
+        
+        await HiveService.saveUser(userDetail);
+        userData.value = data.user;
 
         // Sync FCM token after successful login
         NotificationService.syncTokenToServer();
 
-        if (Get.isRegistered<HomeController>()) {
-          final homeCtr = Get.find<HomeController>();
-          homeCtr.isLogin.value = true;
-          homeCtr.userName.value = nameController.text;
-        }
-
         if (data.isNewUser == true) {
-          Get.offAllNamed(AppRoutes.sportInterrestScreen);
+          // New user: Do NOT set isLogin = true yet.
+          if (Get.isRegistered<HomeController>()) {
+            final homeCtr = Get.find<HomeController>();
+            homeCtr.userName.value = nameController.text;
+          }
+
+          if (nameController.text.trim().length < 3) {
+            Get.offAllNamed(AppRoutes.fullnameEnter);
+          } else {
+            Get.offAllNamed(AppRoutes.sportInterrestScreen);
+          }
         } else {
+          // Returning user: Set isLogin = true immediately
+          if (Get.isRegistered<HomeController>()) {
+            final homeCtr = Get.find<HomeController>();
+            homeCtr.isLogin.value = true;
+            homeCtr.userName.value = nameController.text;
+          }
           Get.offAllNamed(AppRoutes.myHomePage);
         }
       }
@@ -293,12 +350,26 @@ class AuthController extends GetxController {
     isLoading.value = true;
     try {
       final token = HiveService.getToken();
-      final response = await _repository.completeProfile({
-        "fullName": nameController.text,
-        "favoriteSports": favoriteSports
-      }, token ?? "");
+      dynamic response;
       
-      if (response['success'] == true) {
+      try {
+        response = await _repository.completeProfile({
+          "fullName": nameController.text,
+          "favoriteSports": favoriteSports
+        }, token ?? "");
+      } catch (e) {
+        // If profile is already completed, fallback to updateProfile
+        if (e.toString().contains("Profile already completed")) {
+          response = await _repository.updateProfile({
+            "fullName": nameController.text,
+            "favoriteSports": favoriteSports
+          }, token ?? "");
+        } else {
+          rethrow;
+        }
+      }
+      
+      if (response != null && response['success'] == true) {
         final user = HiveService.getUser();
         if (user != null) {
           user.name = nameController.text;
@@ -312,6 +383,12 @@ class AuthController extends GetxController {
           homeCtr.userName.value = nameController.text;
         }
         Get.offAllNamed(AppRoutes.myHomePage);
+      } else if (response != null) {
+        showCustomSnackbar(
+          title: "Error", 
+          message: response['message'] ?? "Failed to complete profile", 
+          type: SnackType.error
+        );
       }
     } catch (e) {
       showCustomSnackbar(title: "Error", message: e.toString(), type: SnackType.error);

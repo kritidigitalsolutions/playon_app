@@ -17,6 +17,7 @@ import 'package:play_on_app/model/response_model/player_model.dart';
 import 'package:play_on_app/model/response_model/star_player_model.dart';
 import 'package:play_on_app/model/response_model/podcast_model.dart';
 import 'package:play_on_app/model/response_model/social_media_model.dart';
+import 'package:play_on_app/model/response_model/referral_offer_model.dart';
 import 'package:play_on_app/repo/legal_repository.dart';
 
 import '../../../repo/auth_repository.dart';
@@ -71,12 +72,16 @@ class HomeController extends GetxController {
   var isLogin = false.obs;
   var userName = "".obs;
   var referralCode = "".obs;
+  final referralOffer = Rxn<ReferralOffer>();
   var isReferralLoading = false.obs;
+  var isOfferLoading = false.obs;
 
   @override
   void onInit() {
     super.onInit();
-    isLogin.value = HiveService.isLogin();
+    // Only consider as logged in if they have a token AND have completed profile
+    isLogin.value = HiveService.isLogin() && HiveService.isProfileComplete();
+
     if (isLogin.value) {
       userName.value = HiveService.getUser()?.name ?? "";
     }
@@ -90,6 +95,7 @@ class HomeController extends GetxController {
     fetchPodcasts();
     fetchSocialMedia();
     fetchReferralCode();
+    fetchReferralOffer();
 
     // Setup search listeners
     searchQuery.listen((query) {
@@ -111,6 +117,24 @@ class HomeController extends GetxController {
       debugPrint("Error fetching referral code: $e");
     } finally {
       isReferralLoading.value = false;
+    }
+  }
+
+  Future<void> fetchReferralOffer() async {
+    if (!isLogin.value) return;
+    try {
+      isOfferLoading.value = true;
+      final response = await _authRepository.getReferralOffer();
+      if (response['success'] == true) {
+        final data = ReferralOfferModel.fromJson(response);
+        if (data.offers != null && data.offers!.isNotEmpty) {
+          referralOffer.value = data.offers!.first;
+        }
+      }
+    } catch (e) {
+      debugPrint("Error fetching referral offer: $e");
+    } finally {
+      isOfferLoading.value = false;
     }
   }
 

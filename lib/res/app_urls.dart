@@ -14,6 +14,7 @@ class AppUrls {
   static const String deleteAccount = '$baseUrl/user/delete-account';
   static const String userProfile = '$baseUrl/user/profile';
   static const String referralCode = '$baseUrl/user/referral-code';
+  static const String referralOffer = '$baseUrl/user/referral-offer';
 
   // Match Endpoints
   static const String matches = '$baseUrl/matches';
@@ -71,8 +72,8 @@ class AppUrls {
   static String checkWatchlist(String type, String id) => '$baseUrl/watchlist/check/$type/$id';
 
   // Comment Endpoints
-  static String matchComments(String matchId) => '$baseUrl/matches/$matchId/comments';
-  static String addComment(String matchId) => '$baseUrl/matches/$matchId/comments';
+  static const String comments = '$baseUrl/comments';
+  static String getComments(String itemId) => '$baseUrl/comments/$itemId';
 
   // TV Endpoints
   static const String generateTvCode = '$baseUrl/tv/generate-code';

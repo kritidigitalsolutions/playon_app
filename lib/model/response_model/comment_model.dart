@@ -1,15 +1,17 @@
 class CommentModel {
   bool? success;
-  List<Comment>? data;
+  int? count;
+  List<Comment>? comments;
 
-  CommentModel({this.success, this.data});
+  CommentModel({this.success, this.count, this.comments});
 
   CommentModel.fromJson(Map<String, dynamic> json) {
     success = json['success'];
-    if (json['data'] != null) {
-      data = <Comment>[];
-      json['data'].forEach((v) {
-        data!.add(Comment.fromJson(v));
+    count = json['count'];
+    if (json['comments'] != null) {
+      comments = <Comment>[];
+      json['comments'].forEach((v) {
+        comments!.add(Comment.fromJson(v));
       });
     }
   }
@@ -20,7 +22,7 @@ class Comment {
   String? userId;
   String? userName;
   String? userImage;
-  String? matchId;
+  String? itemId;
   String? comment;
   String? createdAt;
 
@@ -29,17 +31,23 @@ class Comment {
     this.userId,
     this.userName,
     this.userImage,
-    this.matchId,
+    this.itemId,
     this.comment,
     this.createdAt,
   });
 
   Comment.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
-    userId = json['userId'];
-    userName = json['userName'];
-    userImage = json['userImage'];
-    matchId = json['matchId'];
+    if (json['userId'] is Map) {
+      userId = json['userId']['_id'];
+      userName = json['userId']['fullName'];
+      userImage = json['userId']['profilePic'];
+    } else {
+      userId = json['userId'];
+      userName = json['userName'];
+      userImage = json['userImage'];
+    }
+    itemId = json['itemId'];
     comment = json['comment'];
     createdAt = json['createdAt'];
   }

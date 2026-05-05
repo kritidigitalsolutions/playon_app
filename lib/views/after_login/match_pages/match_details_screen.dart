@@ -1,7 +1,9 @@
 import 'dart:ui';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
@@ -13,6 +15,8 @@ import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 
 import '../../../view_model/after_controller/home_contollers/home_controller.dart';
 import '../../../view_model/after_controller/plan_controller.dart';
+import 'package:play_on_app/utils/share_helper.dart';
+import 'package:share_plus/share_plus.dart';
 
 class MatchDetailScreen extends StatelessWidget {
   final MatchDetailsController controller = Get.put(MatchDetailsController());
@@ -39,6 +43,21 @@ class MatchDetailScreen extends StatelessWidget {
                   icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
                   onPressed: () => Get.back(),
                 ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.share_outlined, color: Colors.white),
+                    onPressed: () {
+                      final match = controller.match.value;
+                      if (match != null) {
+                        final String text = 'Check out this match: ${match.teamA} vs ${match.teamB} on PlayOn!\n'
+                            'Tournament: ${match.tournament}\n\n'
+                            'Watch it here: https://playon.app/match/${match.sId}';
+                        ShareHelper.shareMatchWithImage(text: text, imageUrl: match.thumbnail);
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 expandedHeight: 260,
                 pinned: true,
                 backgroundColor: AppColors.secPrimary,
@@ -203,6 +222,47 @@ class MatchDetailScreen extends StatelessWidget {
                                     ),
                                   ),
                                 const SizedBox(height: 20),
+
+                                Builder(builder: (context) {
+                                  final homeController = Get.find<HomeController>();
+                                  final seriesName = homeController.getSeriesName(match.seriesId);
+                                  final seriesLogo = homeController.getSeriesLogo(match.seriesId);
+
+                                  return Row(
+                                    children: [
+                                      if (seriesLogo.isNotEmpty)
+                                        Container(
+                                          height: 24,
+                                          width: 24,
+                                          margin: const EdgeInsets.only(right: 8),
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.white.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: Image.network(
+                                            seriesLogo,
+                                            fit: BoxFit.contain,
+                                            errorBuilder: (_, __, ___) => const Icon(Icons.emoji_events, size: 14, color: AppColors.primary),
+                                          ),
+                                        ),
+                                      Expanded(
+                                        child: Text(
+                                          seriesName.isNotEmpty ? seriesName : (match.tournament ?? ""),
+                                          style: text15(fontWeight: FontWeight.w600, color: AppColors.primary),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }),
+                                const SizedBox(height: 8),
+                                Text(
+                                  "${match.sport?.toUpperCase()} • ${match.venue ?? 'TBA'}",
+                                  style: text12(color: AppColors.white.withOpacity(0.5)),
+                                ),
+                                const SizedBox(height: 20),
                                 
                                 // Team Logo and Score section
                                 Container(
@@ -277,47 +337,6 @@ class MatchDetailScreen extends StatelessWidget {
                                     ],
                                   ),
                                 ),
-
-                                const SizedBox(height: 20),
-                                Builder(builder: (context) {
-                                  final homeController = Get.find<HomeController>();
-                                  final seriesName = homeController.getSeriesName(match.seriesId);
-                                  final seriesLogo = homeController.getSeriesLogo(match.seriesId);
-
-                                  return Row(
-                                    children: [
-                                      if (seriesLogo.isNotEmpty)
-                                        Container(
-                                          height: 24,
-                                          width: 24,
-                                          margin: const EdgeInsets.only(right: 8),
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.white.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                          child: Image.network(
-                                            seriesLogo,
-                                            fit: BoxFit.contain,
-                                            errorBuilder: (_, __, ___) => const Icon(Icons.emoji_events, size: 14, color: AppColors.primary),
-                                          ),
-                                        ),
-                                      Expanded(
-                                        child: Text(
-                                          seriesName.isNotEmpty ? seriesName : (match.tournament ?? ""),
-                                          style: text15(fontWeight: FontWeight.w600, color: AppColors.primary),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                }),
-                                const SizedBox(height: 8),
-                                Text(
-                                  "${match.sport?.toUpperCase()} • ${match.venue ?? 'TBA'}",
-                                  style: text12(color: AppColors.white.withOpacity(0.5)),
-                                ),
                               ],
                             ),
                           ),
@@ -382,12 +401,176 @@ class MatchDetailScreen extends StatelessWidget {
               ),
             ),
 
+            // Comments Section
+            SliverToBoxAdapter(
+              child: _buildCommentsSection(),
+            ),
+
             const SliverToBoxAdapter(child: SizedBox(height: 40)),
           ],
         );
       }),
       ),
     );
+  }
+
+  Widget _buildCommentsSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                "Comments",
+                style: text18(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(width: 8),
+              Obx(() => Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      "${controller.comments.length}",
+                      style: text12(color: AppColors.primary, fontWeight: FontWeight.bold),
+                    ),
+                  )),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Add Comment Input
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: AppColors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.white.withOpacity(0.1)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: controller.commentController,
+                    style: text14(),
+                    decoration: InputDecoration(
+                      hintText: "Add a comment...",
+                      hintStyle: text14(color: AppColors.white.withOpacity(0.4)),
+                      border: InputBorder.none,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: controller.addComment,
+                  icon: const Icon(Icons.send_rounded, color: AppColors.primary),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Comments List
+          Obx(() {
+            if (controller.isCommentsLoading.value) {
+              return const Center(child: Padding(
+                padding: EdgeInsets.all(20.0),
+                child: CircularProgressIndicator(),
+              ));
+            }
+
+            if (controller.comments.isEmpty) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Text(
+                    "No comments yet. Be the first to comment!",
+                    style: text14(color: AppColors.white.withOpacity(0.5)),
+                  ),
+                ),
+              );
+            }
+
+            return ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: controller.comments.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 16),
+              itemBuilder: (context, index) {
+                final comment = controller.comments[index];
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CircleAvatar(
+                      radius: 18,
+                      backgroundColor: AppColors.primary.withOpacity(0.2),
+                      child: ClipOval(
+                        child: CachedNetworkImage(
+                          imageUrl: comment.userImage ?? "",
+                          fit: BoxFit.cover,
+                          width: 36,
+                          height: 36,
+                          placeholder: (context, url) => Center(
+                            child: Text(
+                              comment.userName?[0].toUpperCase() ?? "U",
+                              style: text14(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Center(
+                            child: Text(
+                              comment.userName?[0].toUpperCase() ?? "U",
+                              style: text14(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                comment.userName ?? "User",
+                                style: text14(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                _formatDate(comment.createdAt),
+                                style: text10(color: AppColors.white.withOpacity(0.4)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            comment.comment ?? "",
+                            style: text13(color: AppColors.white.withOpacity(0.8)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return "";
+    try {
+      final date = DateTime.parse(dateStr);
+      return DateFormat("d, MMM, yyyy 'and' HH:mm").format(date);
+    } catch (e) {
+      return "";
+    }
   }
 
   Widget _buildBannerImage(String? url, String? sport) {

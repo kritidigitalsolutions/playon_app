@@ -124,13 +124,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: ctr.isLogin.value ? Icons.person : Icons.login,
                         color: AppColors.white,
                         onTap: () {
-                          if (ctr.isLogin.value) {
+                          ctr.handleProtectedAction(() {
                             Get.toNamed(AppRoutes.profilePage);
-                          } else {
-                            ctr.handleProtectedAction(() {
-                              Get.toNamed(AppRoutes.profilePage);
-                            });
-                          }
+                          });
                         },
                       )),
                       const SizedBox(width: 4), // Reduced from 5
@@ -332,13 +328,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                 "Upcoming Matches",
                                 "See all",
                                 onActionTap: () {
-                                  Get.toNamed(
-                                    AppRoutes.seeAllMatches,
-                                    arguments: {
-                                      'title': "Upcoming Matches",
-                                      'matches': upcomingMatches,
-                                    },
-                                  );
+                                  ctr.handleProtectedAction(() {
+                                    Get.toNamed(
+                                      AppRoutes.seeAllMatches,
+                                      arguments: {
+                                        'title': "Upcoming Matches",
+                                        'matches': upcomingMatches,
+                                      },
+                                    );
+                                  });
                                 },
                               ),
                               const SizedBox(height: 8),
@@ -642,7 +640,9 @@ class _HomeScreenState extends State<HomeScreen> {
               Text("Match Highlights", style: text18(fontWeight: FontWeight.bold)),
               TextButton(
                 onPressed: () {
-                  ctr.changeIndex(3); // Navigate to Highlights tab
+                  ctr.handleProtectedAction(() {
+                    ctr.changeIndex(3); // Navigate to Highlights tab
+                  });
                 },
                 child: Text("See All", style: text14(color: AppColors.primary)),
               ),
@@ -654,97 +654,106 @@ class _HomeScreenState extends State<HomeScreen> {
           itemCount: matches.length,
           itemBuilder: (context, index, realIndex) {
             final match = matches[index];
-            return GestureDetector(
-              onTap: () {
-                Get.toNamed(AppRoutes.matchPlay, arguments: match, parameters: {'mode': 'highlight'});
-              },
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  image: DecorationImage(
-                    image: match.thumbnail != null && match.thumbnail!.isNotEmpty
-                        ? NetworkImage(match.thumbnail!)
-                        : const AssetImage('assets/auth/cri.png') as ImageProvider,
-                    fit: BoxFit.cover,
+            return Obx(() {
+              final canWatch = Get.find<PlanController>().canWatchMatch(match);
+              return GestureDetector(
+                onTap: () {
+                  ctr.handleProtectedAction(() {
+                    Get.toNamed(AppRoutes.matchPlay, arguments: match, parameters: {'mode': 'highlight'});
+                  }, checkAccess: true, hasPermission: canWatch);
+                },
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    image: DecorationImage(
+                      image: match.thumbnail != null && match.thumbnail!.isNotEmpty
+                          ? NetworkImage(match.thumbnail!)
+                          : const AssetImage('assets/auth/cri.png') as ImageProvider,
+                      fit: BoxFit.cover,
+                    ),
                   ),
-                ),
-                child: Stack(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withValues(alpha: 0.8),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Center(
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
+                  child: Stack(
+                    children: [
+                      Container(
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.8),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 40),
-                      ),
-                    ),
-                        Positioned(
-                          bottom: 16,
-                          left: 16,
-                          right: 16,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  if (match.seriesId != null)
-                                  Container(
-                                    margin: const EdgeInsets.only(right: 8),
-                                    height: 20,
-                                    width: 20,
-                                    decoration: const BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: ClipOval(
-                                      child: Image.network(
-                                        ctr.getSeriesLogo(match.seriesId),
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) => const Icon(
-                                          Icons.emoji_events,
-                                          size: 12,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      match.title ?? "${match.teamA} vs ${match.teamB}",
-                                      style: text18(fontWeight: FontWeight.bold, color: Colors.white),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Text(
-                                ctr.getSeriesName(match.seriesId) ?? match.tournament ?? "Match Highlights",
-                                style: text12(color: Colors.white70),
-                              ),
+                          borderRadius: BorderRadius.circular(16),
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.8),
                             ],
                           ),
                         ),
-                  ],
+                      ),
+                      Center(
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.8),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            canWatch ? Icons.play_arrow_rounded : Icons.lock_outline,
+                            color: Colors.white,
+                            size: 40,
+                          ),
+                        ),
+                      ),
+                          Positioned(
+                            bottom: 16,
+                            left: 16,
+                            right: 16,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    if (match.seriesId != null)
+                                    Container(
+                                      margin: const EdgeInsets.only(right: 8),
+                                      height: 20,
+                                      width: 20,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: ClipOval(
+                                        child: Image.network(
+                                          ctr.getSeriesLogo(match.seriesId),
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) => const Icon(
+                                            Icons.emoji_events,
+                                            size: 12,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        match.title ?? "${match.teamA} vs ${match.teamB}",
+                                        style: text18(fontWeight: FontWeight.bold, color: Colors.white),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Text(
+                                  ctr.getSeriesName(match.seriesId) ?? match.tournament ?? "Match Highlights",
+                                  style: text12(color: Colors.white70),
+                                ),
+                              ],
+                            ),
+                          ),
+                    ],
+                  ),
                 ),
-              ),
-            );
+              );
+          });
           },
           options: CarouselOptions(
             height: 180,
@@ -837,13 +846,9 @@ class _HomeScreenState extends State<HomeScreen> {
       final canWatch = Get.find<PlanController>().canWatchMatch(match);
       return GestureDetector(
         onTap: () {
-          if (canWatch) {
+          ctr.handleProtectedAction(() {
             Get.toNamed(AppRoutes.matchPlay, arguments: match);
-          } else {
-            ctr.handleProtectedAction(() {
-              Get.toNamed(AppRoutes.matchPlay, arguments: match);
-            });
-          }
+          }, checkAccess: true, hasPermission: canWatch);
         },
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -948,15 +953,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   text: "Watch Now",
                   icon: canWatch ? Icons.play_arrow : Icons.lock_outline,
                   onPressed: () {
-                    if (canWatch) {
-                      ctr.handleProtectedAction(() {
-                        Get.toNamed(AppRoutes.matchPlay, arguments: match);
-                      });
-                    } else {
-                      ctr.handleProtectedAction(() {
-                        Get.toNamed(AppRoutes.matchPlay, arguments: match);
-                      });
-                    }
+                    ctr.handleProtectedAction(() {
+                      Get.toNamed(AppRoutes.matchPlay, arguments: match);
+                    }, checkAccess: true, hasPermission: canWatch);
                   },
                 ),
               ],
@@ -1140,7 +1139,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader("Trending Series", "View All"),
+        _buildSectionHeader("Trending Series", "View All", onActionTap: () {
+          ctr.handleProtectedAction(() {
+            Get.toNamed(AppRoutes.selectSeries);
+          });
+        }),
         const SizedBox(height: 14),
 
         SizedBox(
@@ -1152,20 +1155,24 @@ class _HomeScreenState extends State<HomeScreen> {
             itemBuilder: (context, index) {
               final item = series[index];
 
-              return TweenAnimationBuilder(
-                duration: Duration(milliseconds: 400 + (index * 100)),
-                tween: Tween<double>(begin: 0.85, end: 1),
-                builder: (context, double value, child) {
-                  return Transform.scale(
-                    scale: value,
-                    child: Opacity(opacity: value, child: child),
-                  );
-                },
-                child: GestureDetector(
-                  onTap: () {
-                    Get.toNamed(AppRoutes.seriesDetail, arguments: item);
+              return Obx(() {
+                final canWatch = Get.find<PlanController>().canWatchSeries(item);
+                return TweenAnimationBuilder(
+                  duration: Duration(milliseconds: 400 + (index * 100)),
+                  tween: Tween<double>(begin: 0.85, end: 1),
+                  builder: (context, double value, child) {
+                    return Transform.scale(
+                      scale: value,
+                      child: Opacity(opacity: value, child: child),
+                    );
                   },
-                  child: Container(
+                  child: GestureDetector(
+                    onTap: () {
+                      ctr.handleProtectedAction(() {
+                        Get.toNamed(AppRoutes.seriesDetail, arguments: item);
+                      }, checkAccess: true, hasPermission: canWatch);
+                    },
+                    child: Container(
                     width: 210,
                     height: 160,
                     margin: const EdgeInsets.only(right: 14),
@@ -1261,6 +1268,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               );
+            });
             },
           ),
         ),
@@ -1277,7 +1285,10 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildSectionHeader(item.title ?? "Series", "View All", onActionTap: () {
-              Get.toNamed(AppRoutes.seriesDetail, arguments: item);
+              final canWatch = Get.find<PlanController>().canWatchSeries(item);
+              ctr.handleProtectedAction(() {
+                Get.toNamed(AppRoutes.seriesDetail, arguments: item);
+              }, checkAccess: true, hasPermission: canWatch);
             }),
             const SizedBox(height: 12),
             if (item.fullMatches != null && item.fullMatches!.isNotEmpty)
@@ -1293,15 +1304,13 @@ class _HomeScreenState extends State<HomeScreen> {
               final canWatch = Get.find<PlanController>().canWatchMatch(match);
               return GestureDetector(
                 onTap: () {
-                  if (match.status?.toLowerCase() == 'upcoming') {
-                    Get.toNamed(AppRoutes.matchDetails, arguments: match);
-                  } else if (canWatch) {
-                    Get.toNamed(AppRoutes.matchPlay, arguments: match);
-                  } else {
-                    ctr.handleProtectedAction(() {
+                  ctr.handleProtectedAction(() {
+                    if (match.status?.toLowerCase() == 'upcoming') {
+                      Get.toNamed(AppRoutes.matchDetails, arguments: match);
+                    } else {
                       Get.toNamed(AppRoutes.matchPlay, arguments: match);
-                    });
-                  }
+                    }
+                  }, checkAccess: true, hasPermission: canWatch);
                 },
                 child: Container(
                   width: 240,
@@ -1341,35 +1350,35 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                             const SizedBox(height: 8),
-                          if (match.seriesId != null)
-                            Container(
-                              margin: const EdgeInsets.only(right: 12),
-                              height: 24,
-                              width: 24,
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                              ),
-                              child: ClipOval(
-                                child: Image.network(
-                                  ctr.getSeriesLogo(match.seriesId),
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => const Icon(
-                                    Icons.emoji_events,
-                                    size: 14,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          Expanded(
-                            child: Text(
-                              match.title ?? "${match.teamA} vs ${match.teamB}",
-                              style: text14(fontWeight: FontWeight.bold, color: Colors.white),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
+                          // if (match.seriesId != null)
+                          //   Container(
+                          //     margin: const EdgeInsets.only(right: 12),
+                          //     height: 24,
+                          //     width: 24,
+                          //     decoration: const BoxDecoration(
+                          //       color: Colors.white,
+                          //       shape: BoxShape.circle,
+                          //     ),
+                          //     child: ClipOval(
+                          //       child: Image.network(
+                          //         ctr.getSeriesLogo(match.seriesId),
+                          //         fit: BoxFit.cover,
+                          //         errorBuilder: (context, error, stackTrace) => const Icon(
+                          //           Icons.emoji_events,
+                          //           size: 14,
+                          //           color: Colors.grey,
+                          //         ),
+                          //       ),
+                          //     ),
+                          //   ),
+                          // Expanded(
+                          //   child: Text(
+                          //     match.title ?? "${match.teamA} vs ${match.teamB}",
+                          //     style: text14(fontWeight: FontWeight.bold, color: Colors.white),
+                          //     maxLines: 1,
+                          //     overflow: TextOverflow.ellipsis,
+                          //   ),
+                          // ),
                             const SizedBox(height: 4),
                             Row(
                               children: [
@@ -1411,7 +1420,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               );
-            });
+          });
                   },
                 ),
               )
@@ -1452,15 +1461,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 final canWatch = Get.find<PlanController>().canWatchHighlight(player);
                 return GestureDetector(
                   onTap: () {
-                    if (canWatch) {
-                      ctr.handleProtectedAction(() {
-                        Get.toNamed(AppRoutes.highlightsPlayer, arguments: player);
-                      });
-                    } else {
-                      ctr.handleProtectedAction(() {
-                        Get.toNamed(AppRoutes.highlightsPlayer, arguments: player);
-                      });
-                    }
+                    ctr.handleProtectedAction(() {
+                      Get.toNamed(AppRoutes.highlightsPlayer, arguments: player);
+                    }, checkAccess: true, hasPermission: canWatch);
                   },
                   child: Container(
                     width: 170,
@@ -1611,7 +1614,9 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader("Latest Podcasts", "Explore", onActionTap: () {
-          Get.toNamed(AppRoutes.podcastList);
+          ctr.handleProtectedAction(() {
+            Get.toNamed(AppRoutes.podcastList);
+          });
         }),
         const SizedBox(height: 14),
         SizedBox(
@@ -1626,13 +1631,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 final canWatch = Get.find<PlanController>().canWatchPodcast(podcast);
                 return GestureDetector(
                   onTap: () {
-                    if (canWatch) {
+                    ctr.handleProtectedAction(() {
                       Get.toNamed(AppRoutes.podcastPlay, arguments: podcast);
-                    } else {
-                      ctr.handleProtectedAction(() {
-                        Get.toNamed(AppRoutes.podcastPlay, arguments: podcast);
-                      });
-                    }
+                    }, checkAccess: true, hasPermission: canWatch);
                   },
                   child: Container(
                     width: 150,
@@ -1737,7 +1738,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 );
-              });
+            });
             },
           ),
         ),
@@ -1815,13 +1816,13 @@ class _HomeScreenState extends State<HomeScreen> {
             final canWatch = Get.find<PlanController>().canWatchMatch(match);
             return GestureDetector(
               onTap: () {
-                if (match.status?.toLowerCase() == 'upcoming') {
-                  Get.toNamed(AppRoutes.matchDetails, arguments: match);
-                } else {
-                  ctr.handleProtectedAction(() {
+                ctr.handleProtectedAction(() {
+                  if (match.status?.toLowerCase() == 'upcoming') {
+                    Get.toNamed(AppRoutes.matchDetails, arguments: match);
+                  } else {
                     Get.toNamed(AppRoutes.matchPlay, arguments: match);
-                  });
-                }
+                  }
+                }, checkAccess: true, hasPermission: canWatch);
               },
               child: Container(
                 width: 160,
@@ -1903,17 +1904,19 @@ class _HomeScreenState extends State<HomeScreen> {
         itemCount: matches.length,
         itemBuilder: (context, index) {
           final match = matches[index];
-          return GestureDetector(
-            onTap: () {
-              if (match.status?.toLowerCase() == 'upcoming') {
-                Get.toNamed(AppRoutes.matchDetails, arguments: match);
-              } else {
+          return Obx(() {
+            final canWatch = Get.find<PlanController>().canWatchMatch(match);
+            return GestureDetector(
+              onTap: () {
                 ctr.handleProtectedAction(() {
-                  Get.toNamed(AppRoutes.matchPlay, arguments: match);
-                });
-              }
-            },
-            child: Container(
+                  if (match.status?.toLowerCase() == 'upcoming') {
+                    Get.toNamed(AppRoutes.matchDetails, arguments: match);
+                  } else {
+                    Get.toNamed(AppRoutes.matchPlay, arguments: match);
+                  }
+                }, checkAccess: true, hasPermission: canWatch);
+              },
+              child: Container(
               width: 180,
               margin: const EdgeInsets.only(right: 12),
               child: Column(
@@ -1972,6 +1975,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           );
+        });
         },
       ),
     );
@@ -1986,13 +1990,15 @@ class _HomeScreenState extends State<HomeScreen> {
         itemCount: matches.length,
         itemBuilder: (context, index) {
           final match = matches[index];
-          return GestureDetector(
-            onTap: () {
-              ctr.handleProtectedAction(() {
-                Get.toNamed(AppRoutes.recapMatch, arguments: match);
-              });
-            },
-            child: Container(
+          return Obx(() {
+            final canWatch = Get.find<PlanController>().canWatchMatch(match);
+            return GestureDetector(
+              onTap: () {
+                ctr.handleProtectedAction(() {
+                  Get.toNamed(AppRoutes.recapMatch, arguments: match);
+                }, checkAccess: true, hasPermission: canWatch);
+              },
+              child: Container(
               width: 180,
               margin: const EdgeInsets.only(right: 12),
               child: Column(
@@ -2071,6 +2077,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           );
+        });
         },
       ),
     );
@@ -2080,133 +2087,143 @@ class _HomeScreenState extends State<HomeScreen> {
     bool isCompleted = match.status?.toLowerCase() == 'finished' ||
         match.status?.toLowerCase() == 'completed';
 
-    return GestureDetector(
-      onTap: () {
-        ctr.handleProtectedAction(() {
-          if (isCompleted) {
-            Get.toNamed(AppRoutes.recapMatch, arguments: match);
-          } else {
-            Get.toNamed(AppRoutes.matchPlay, arguments: match);
-          }
-        });
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Stack(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    image: DecorationImage(
-                      image: match.thumbnail != null && match.thumbnail!.isNotEmpty
-                          ? NetworkImage(match.thumbnail!)
-                          : const AssetImage('assets/auth/cri.png') as ImageProvider,
-                      fit: BoxFit.cover,
+    return Obx(() {
+      final canWatch = Get.find<PlanController>().canWatchMatch(match);
+      return GestureDetector(
+        onTap: () {
+          ctr.handleProtectedAction(() {
+            if (isCompleted) {
+              Get.toNamed(AppRoutes.recapMatch, arguments: match);
+            } else {
+              Get.toNamed(AppRoutes.matchPlay, arguments: match);
+            }
+          }, checkAccess: true, hasPermission: canWatch);
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Stack(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      image: DecorationImage(
+                        image: match.thumbnail != null && match.thumbnail!
+                            .isNotEmpty
+                            ? NetworkImage(match.thumbnail!)
+                            : const AssetImage(
+                            'assets/auth/cri.png') as ImageProvider,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
-                ),
-                if (match.status?.toLowerCase() != 'upcoming')
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.5),
+                  if (match.status?.toLowerCase() != 'upcoming')
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.play_arrow, color: Colors.white,
+                            size: 24),
+                      ),
+                    ),
+                  if (match.status?.toLowerCase() == 'live')
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.error,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text("LIVE", style: text12(
+                            fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                children: [
+                  if (match.seriesId != null)
+                    Container(
+                      margin: const EdgeInsets.only(right: 6),
+                      height: 16,
+                      width: 16,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.play_arrow, color: Colors.white, size: 24),
-                    ),
-                  ),
-                if (match.status?.toLowerCase() == 'live')
-                  Positioned(
-                    top: 8,
-                    left: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.error,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text("LIVE", style: text12(fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Row(
-              children: [
-                if (match.seriesId != null)
-                  Container(
-                    margin: const EdgeInsets.only(right: 6),
-                    height: 16,
-                    width: 16,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: ClipOval(
-                      child: Image.network(
-                        ctr.getSeriesLogo(match.seriesId),
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => const Icon(
-                          Icons.emoji_events,
-                          size: 10,
-                          color: Colors.grey,
+                      child: ClipOval(
+                        child: Image.network(
+                          ctr.getSeriesLogo(match.seriesId),
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                          const Icon(
+                            Icons.emoji_events,
+                            size: 10,
+                            color: Colors.grey,
+                          ),
                         ),
                       ),
                     ),
+                  Expanded(
+                    child: Text(
+                      match.title ?? "${match.teamA} vs ${match.teamB}",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text13(fontWeight: FontWeight.w600),
+                    ),
                   ),
-                Expanded(
-                  child: Text(
-                    match.title ?? "${match.teamA} vs ${match.teamB}",
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: text13(fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Text(
-            ctr.getSeriesName(match.seriesId) ?? match.tournament ?? "",
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: text11(color: AppColors.textSecondary),
-          ),
-        ],
-      ),
-    );
-  }
+            Text(
+              ctr.getSeriesName(match.seriesId) ?? match.tournament ?? "",
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: text11(color: AppColors.textSecondary),
+            ),
+          ],
+        ),
+      );
+    }
 
-  Widget _buildCategoryChip(String label, VoidCallback onTap, {bool isSelected = false}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: 10,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withValues(alpha: 0.3)
-              : AppColors.secPrimary.withValues(alpha: 0.6),
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.white24,
-            width: isSelected ? 1.5 : 1,
-          ),
-        ),
-        child: Text(
-          label,
-          style: text14(
-            color: isSelected ? Colors.white : AppColors.white70,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ),
+      // Widget _buildCategoryChip(String label, VoidCallback onTap, {bool isSelected = false}) {
+      //   return GestureDetector(
+      //     onTap: onTap,
+      //     child: Container(
+      //       padding: const EdgeInsets.symmetric(
+      //         horizontal: 18,
+      //         vertical: 10,
+      //       ),
+      //       decoration: BoxDecoration(
+      //         color: isSelected
+      //             ? AppColors.primary.withValues(alpha: 0.3)
+      //             : AppColors.secPrimary.withValues(alpha: 0.6),
+      //         borderRadius: BorderRadius.circular(30),
+      //         border: Border.all(
+      //           color: isSelected ? AppColors.primary : Colors.white24,
+      //           width: isSelected ? 1.5 : 1,
+      //         ),
+      //       ),
+      //       child: Text(
+      //         label,
+      //         style: text14(
+      //           color: isSelected ? Colors.white : AppColors.white70,
+      //           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      //         ),
+      //       ),
+      //     ),
+      //   );
+      // }
     );
   }
 }

@@ -87,15 +87,27 @@ class _SportsInterestScreenState extends State<SportsInterestScreen> {
                 const SizedBox(height: 20),
 
                 // Save & Continue Button
-                Obx(() => AppButton(
-                  title: ctr.isLoading.value ? "Saving..." : "Save & Continue",
-                  onTap: () {
-                    final selectedSports = sports
-                        .where((s) => s.isSelected)
-                        .map((e) => e.name)
-                        .toList();
-                    ctr.completeProfile(selectedSports);
-                  },
+                Obx(() => Column(
+                  children: [
+                    AppButton(
+                      title: ctr.isLoading.value ? "Saving..." : "Save & Continue",
+                      onTap: () {
+                        final selectedSports = sports
+                            .where((s) => s.isSelected)
+                            .map((e) => e.name)
+                            .toList();
+                        ctr.completeProfile(selectedSports);
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => ctr.logout(),
+                      child: Text(
+                        "Logout",
+                        style: text14(color: AppColors.white70),
+                      ),
+                    ),
+                  ],
                 )),
               ],
             ),

@@ -49,6 +49,7 @@ class MatchDetailsController extends GetxController {
       fetchComments();
     } else if (Get.arguments is star_model.StarPlayer) {
       starPlayer.value = Get.arguments;
+      fetchComments();
     } else if (Get.arguments is String) {
       // Handle deep link ID
       fetchMatchDetailsById(Get.arguments);
@@ -94,13 +95,14 @@ class MatchDetailsController extends GetxController {
   }
 
   Future<void> fetchComments() async {
-    if (match.value?.sId == null) return;
+    final itemId = match.value?.sId ?? starPlayer.value?.sId;
+    if (itemId == null) return;
     isCommentsLoading.value = true;
     try {
-      final res = await _repository.getMatchComments(match.value!.sId!);
+      final res = await _repository.getMatchComments(itemId);
       if (res['success'] == true) {
         final data = comment_model.CommentModel.fromJson(res);
-        comments.assignAll(data.data ?? []);
+        comments.assignAll(data.comments ?? []);
       }
     } catch (e) {
       print("Error fetching comments: $e");
@@ -110,13 +112,14 @@ class MatchDetailsController extends GetxController {
   }
 
   Future<void> addComment() async {
-    if (match.value?.sId == null || commentController.text.trim().isEmpty) return;
+    final itemId = match.value?.sId ?? starPlayer.value?.sId;
+    if (itemId == null || commentController.text.trim().isEmpty) return;
 
     final commentText = commentController.text.trim();
     commentController.clear();
 
     try {
-      final res = await _repository.addComment(match.value!.sId!, commentText);
+      final res = await _repository.addComment(itemId, commentText);
       if (res['success'] == true) {
         fetchComments();
       } else {

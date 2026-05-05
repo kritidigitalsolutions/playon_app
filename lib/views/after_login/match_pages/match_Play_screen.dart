@@ -13,7 +13,10 @@ import 'package:play_on_app/views/after_login/match_pages/full_video_play_screen
 import 'package:video_player/video_player.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
 import 'package:play_on_app/utils/hive_service/hive_service.dart';
+import 'package:play_on_app/utils/share_helper.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
 
 import '../../../view_model/after_controller/home_contollers/home_controller.dart';
 import '../../custom_background.dart/custom_widget.dart';
@@ -61,10 +64,9 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
     final match = videoControllerX.match.value;
     if (match != null) {
       final String text = 'Check out this match: ${match.teamA} vs ${match.teamB} on PlayOn!\n'
-          'Tournament: ${match.tournament}\n'
-          'Watch it here: https://playon.app/match/${match.sId}'
-          '${match.thumbnail != null ? "\n\nThumbnail: ${match.thumbnail}" : ""}';
-      Share.share(text);
+          'Tournament: ${match.tournament}\n\n'
+          'Watch it here: https://playon.app/match/${match.sId}';
+      ShareHelper.shareMatchWithImage(text: text, imageUrl: match.thumbnail);
     }
   }
 
@@ -334,6 +336,56 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                 ),
               ),
 
+            // Series section
+            Row(
+              children: [
+                Obx(() {
+                  final match = videoControllerX.match.value;
+                  final homeController = Get.find<HomeController>();
+                  final seriesLogo = homeController.getSeriesLogo(match?.seriesId);
+
+                  return Container(
+                    height: 35,
+                    width: 35,
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppColors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: seriesLogo.isNotEmpty
+                        ? Image.network(
+                            seriesLogo,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(Icons.emoji_events, color: AppColors.primary, size: 20),
+                          )
+                        : const Icon(Icons.emoji_events, color: AppColors.primary, size: 20),
+                  );
+                }),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Obx(() {
+                    final match = videoControllerX.match.value;
+                    final homeController = Get.find<HomeController>();
+                    final seriesName = homeController.getSeriesName(match?.seriesId);
+                    
+                    return Text(
+                      seriesName.isNotEmpty ? seriesName : (match?.tournament ?? "Series"),
+                      style: text16(color: Colors.white, fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    );
+                  }),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.share_outlined, color: Colors.white70, size: 22),
+                  onPressed: _shareMatch,
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
             // Modern Scoreboard (Logos and Score)
             Builder(builder: (context) {
               final isCricket = match.sport?.toLowerCase() == 'cricket';
@@ -467,56 +519,6 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                 ),
               );
             }),
-
-            const SizedBox(height: 20),
-
-            // Series section (Now at the bottom)
-            Row(
-              children: [
-                Obx(() {
-                  final match = videoControllerX.match.value;
-                  final homeController = Get.find<HomeController>();
-                  final seriesLogo = homeController.getSeriesLogo(match?.seriesId);
-
-                  return Container(
-                    height: 35,
-                    width: 35,
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppColors.white.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: seriesLogo.isNotEmpty
-                        ? Image.network(
-                            seriesLogo,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Icon(Icons.emoji_events, color: AppColors.primary, size: 20),
-                          )
-                        : const Icon(Icons.emoji_events, color: AppColors.primary, size: 20),
-                  );
-                }),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Obx(() {
-                    final match = videoControllerX.match.value;
-                    final homeController = Get.find<HomeController>();
-                    final seriesName = homeController.getSeriesName(match?.seriesId);
-                    
-                    return Text(
-                      seriesName.isNotEmpty ? seriesName : (match?.tournament ?? "Series"),
-                      style: text16(color: Colors.white, fontWeight: FontWeight.bold),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    );
-                  }),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.share_outlined, color: Colors.white70, size: 22),
-                  onPressed: _shareMatch,
-                ),
-              ],
-            ),
           ],
         ),
       );
@@ -1289,110 +1291,157 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Comments',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+          Row(
+            children: [
+              Text(
+                "Comments",
+                style: text18(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(width: 8),
+              Obx(() => Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      "${controller.comments.length}",
+                      style: text12(color: AppColors.primary, fontWeight: FontWeight.bold),
+                    ),
+                  )),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Add Comment Input
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: AppColors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.white.withValues(alpha: 0.1)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: controller.commentController,
+                    style: text14(),
+                    decoration: InputDecoration(
+                      hintText: "Add a comment...",
+                      hintStyle: text14(color: AppColors.white.withValues(alpha: 0.4)),
+                      border: InputBorder.none,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: controller.addComment,
+                  icon: const Icon(Icons.send_rounded, color: AppColors.primary),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),
+
+          // Comments List
           Obx(() {
-            if (controller.isCommentsLoading.value && controller.comments.isEmpty) {
-              return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+            if (controller.isCommentsLoading.value) {
+              return const Center(child: Padding(
+                padding: EdgeInsets.all(20.0),
+                child: CircularProgressIndicator(),
+              ));
             }
 
             if (controller.comments.isEmpty) {
               return Center(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  padding: const EdgeInsets.all(20.0),
                   child: Text(
                     "No comments yet. Be the first to comment!",
-                    style: text14(color: AppColors.white70),
+                    style: text14(color: AppColors.white.withValues(alpha: 0.5)),
                   ),
                 ),
               );
             }
 
-            return ListView.builder(
+            return ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: controller.comments.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
                 final comment = controller.comments[index];
-                return _buildCommentItem(
-                  comment.userName ?? 'User',
-                  comment.comment ?? '',
-                  comment.createdAt ?? '',
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CircleAvatar(
+                      radius: 18,
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+                      child: ClipOval(
+                        child: CachedNetworkImage(
+                          imageUrl: comment.userImage ?? "",
+                          fit: BoxFit.cover,
+                          width: 36,
+                          height: 36,
+                          placeholder: (context, url) => Center(
+                            child: Text(
+                              comment.userName?[0].toUpperCase() ?? "U",
+                              style: text14(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Center(
+                            child: Text(
+                              comment.userName?[0].toUpperCase() ?? "U",
+                              style: text14(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                comment.userName ?? "User",
+                                style: text14(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                _formatDate(comment.createdAt),
+                                style: text10(color: AppColors.white.withValues(alpha: 0.4)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            comment.comment ?? "",
+                            style: text13(color: AppColors.white.withValues(alpha: 0.8)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 );
               },
             );
           }),
-          const SizedBox(height: 20),
-          _buildAddCommentSection(),
         ],
       ),
     );
   }
 
-  Widget _buildCommentItem(String user, String comment, String time) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(user, style: text14(fontWeight: FontWeight.bold)),
-              Text(time, style: text11(color: AppColors.white60)),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(comment, style: text13(color: AppColors.white)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAddCommentSection() {
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: controller.commentController,
-            style: const TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              hintText: 'Add a comment...',
-              hintStyle: const TextStyle(color: Colors.white54),
-              filled: true,
-              fillColor: Colors.white.withOpacity(0.1),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        CircleAvatar(
-          backgroundColor: AppColors.primary,
-          child: IconButton(
-            icon: const Icon(Icons.send, color: Colors.white, size: 20),
-            onPressed: () {
-              controller.addComment();
-            },
-          ),
-        ),
-      ],
-    );
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return "";
+    try {
+      final date = DateTime.parse(dateStr);
+      return DateFormat("d, MMM, yyyy 'and' HH:mm").format(date);
+    } catch (e) {
+      return "";
+    }
   }
 
   Widget _buildMomentCard(
