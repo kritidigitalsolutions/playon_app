@@ -10,7 +10,6 @@ import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/utils/custom_button.dart';
 import 'package:play_on_app/view_model/after_controller/match_controller/match_controller.dart';
-import 'package:play_on_app/view_model/after_controller/watchlist_controller.dart';
 import 'package:play_on_app/views/after_login/match_pages/full_video_play_screen.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
@@ -28,25 +27,11 @@ class RecapMatchScreen extends StatefulWidget {
 class _RecapMatchScreenState extends State<RecapMatchScreen> {
   final videoControllerX = Get.put(VideoControllerX());
   final MatchDetailsController controller = Get.put(MatchDetailsController());
-  final WatchlistController watchlistController = Get.find<WatchlistController>();
   final HomeController homeController = Get.find<HomeController>();
-
-  final RxBool isInWatchlist = false.obs;
-  final RxBool isWatchlistLoading = false.obs;
 
   @override
   void initState() {
     super.initState();
-    _checkWatchlistStatus();
-    // Listen for match changes to ensure watchlist status is accurate
-    ever(videoControllerX.match, (_) => _checkWatchlistStatus());
-  }
-
-  Future<void> _checkWatchlistStatus() async {
-    final match = videoControllerX.match.value;
-    if (match != null && match.sId != null) {
-      isInWatchlist.value = await watchlistController.isBookmarked("match", match.sId!);
-    }
   }
 
   // @override
@@ -116,7 +101,7 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
               Obx(() => Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -132,9 +117,9 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
-              color: AppColors.white.withOpacity(0.05),
+              color: AppColors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.white.withOpacity(0.1)),
+              border: Border.all(color: AppColors.white.withValues(alpha: 0.1)),
             ),
             child: Row(
               children: [
@@ -144,7 +129,7 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                     style: text14(),
                     decoration: InputDecoration(
                       hintText: "Add a comment...",
-                      hintStyle: text14(color: AppColors.white.withOpacity(0.4)),
+                      hintStyle: text14(color: AppColors.white.withValues(alpha: 0.4)),
                       border: InputBorder.none,
                     ),
                   ),
@@ -173,7 +158,7 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                   padding: const EdgeInsets.all(20.0),
                   child: Text(
                     "No comments yet. Be the first to comment!",
-                    style: text14(color: AppColors.white.withOpacity(0.5)),
+                    style: text14(color: AppColors.white.withValues(alpha: 0.5)),
                   ),
                 ),
               );
@@ -191,7 +176,7 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                   children: [
                     CircleAvatar(
                       radius: 18,
-                      backgroundColor: AppColors.primary.withOpacity(0.2),
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.2),
                       child: ClipOval(
                         child: CachedNetworkImage(
                           imageUrl: comment.userImage ?? "",
@@ -227,14 +212,14 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                               const SizedBox(width: 8),
                               Text(
                                 _formatDate(comment.createdAt),
-                                style: text10(color: AppColors.white.withOpacity(0.4)),
+                                style: text10(color: AppColors.white.withValues(alpha: 0.4)),
                               ),
                             ],
                           ),
                           const SizedBox(height: 4),
                           Text(
                             comment.comment ?? "",
-                            style: text13(color: AppColors.white.withOpacity(0.8)),
+                            style: text13(color: AppColors.white.withValues(alpha: 0.8)),
                           ),
                         ],
                       ),
@@ -503,7 +488,7 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        homeController.getSeriesName(match.seriesId) ?? match.tournament ?? "Series",
+                        homeController.getSeriesName(match.seriesId).isNotEmpty ? homeController.getSeriesName(match.seriesId) : (match.tournament ?? "Series"),
                         style: text16(fontWeight: FontWeight.bold, color: AppColors.primary),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -515,30 +500,6 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                     ],
                   ),
                 ),
-                Obx(() => CustomElevatedIconButton(
-                      height: 32,
-                      isLoading: isWatchlistLoading.value,
-                      text: isInWatchlist.value ? "Saved" : "Watchlist",
-                      icon: isInWatchlist.value
-                          ? Icons.bookmark_rounded
-                          : Icons.bookmark_border_rounded,
-                      onPressed: () async {
-                        if (match.sId != null) {
-                          isWatchlistLoading.value = true;
-                          final success = await watchlistController.toggleWatchlist(match.sId!, "match");
-                          if (success) {
-                            await watchlistController.fetchWatchlist();
-                            isInWatchlist.value = watchlistController.watchlistItems.any((e) => e.sId == match.sId);
-                            Get.snackbar(
-                              "Watchlist",
-                              isInWatchlist.value ? "Added to watchlist" : "Removed from watchlist",
-                              snackPosition: SnackPosition.BOTTOM,
-                            );
-                          }
-                          isWatchlistLoading.value = false;
-                        }
-                      },
-                    )),
               ],
             ),
 
@@ -665,10 +626,11 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
   Widget _buildHighlights() {
     return Obx(() {
       final match = videoControllerX.match.value;
-      
-      // If no stats are available, don't show the sections or show placeholders
-      final hasStats = match?.description != null || match?.score != null;
-      
+      final score = controller.scoreboardData.value;
+      final stats = controller.matchStats.value;
+      final performers = controller.topPerformers.value;
+      final events = controller.matchEvents.value;
+
       return Container(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -676,21 +638,146 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
           children: [
             _buildHighlightCard(
               'Match Recap',
-              '${match?.teamA ?? "Team A"}: ${match?.score?.split('-').first.trim() ?? "0"}',
-              '${match?.teamB ?? "Team B"}: ${match?.score?.split('-').last.trim() ?? "0"}',
-              matchSummary: match?.description,
+              '${match?.teamA ?? "Team A"}: ${score?.homeScore ?? match?.score?.split('-').first.trim() ?? "0"}',
+              '${match?.teamB ?? "Team B"}: ${score?.awayScore ?? match?.score?.split('-').last.trim() ?? "0"}',
+              matchSummary: score?.report ?? match?.description,
             ),
-            if (hasStats) ...[
-              const SizedBox(height: 16),
-              _buildMatchStats(match),
-            ],
-            // Only show performers if we have some data or it's a major match
             const SizedBox(height: 16),
-            _buildCurrentPlayersSection(match),
+            
+            // Scoreboard Summary
+            if (score != null) ...[
+               _buildSectionTitle("Scoreboard"),
+               _buildScoreboardSummary(score),
+               const SizedBox(height: 16),
+            ],
+
+            // Stats
+            if (stats != null && stats.stats != null && stats.stats!.isNotEmpty) ...[
+              _buildSectionTitle("Match Stats"),
+              ...stats.stats!.map((s) => _buildStatCard(s)),
+              const SizedBox(height: 16),
+            ],
+
+            // Top Performers
+            if (performers != null && performers.topPerformers != null) ...[
+              _buildSectionTitle("Top Performers"),
+              _buildPerformersSection(performers.topPerformers!),
+              const SizedBox(height: 16),
+            ],
+
+            // Events
+            if (events != null && events.events != null && events.events!.isNotEmpty) ...[
+              _buildSectionTitle("Key Events"),
+              ...events.events!.reversed.take(5).map((e) => _buildEventItem(e)),
+            ],
           ],
         ),
       );
     });
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Text(title, style: text16(fontWeight: FontWeight.bold, color: AppColors.primary)),
+    );
+  }
+
+  Widget _buildScoreboardSummary(dynamic score) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.white.withValues(alpha: 0.1)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _teamInfo(score.homeTeam, score.homeLogo, score.homeScore),
+          Text("VS", style: text14(fontWeight: FontWeight.bold, color: Colors.white24)),
+          _teamInfo(score.awayTeam, score.awayLogo, score.awayScore),
+        ],
+      ),
+    );
+  }
+
+  Widget _teamInfo(String? name, String? logo, String? score) {
+    return Column(
+      children: [
+        _teamLogo(logo, size: 35),
+        const SizedBox(height: 4),
+        Text(name ?? "", style: text11(fontWeight: FontWeight.bold)),
+        Text(score ?? "0", style: text13(color: AppColors.primary, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(dynamic stat) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.white.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text("Inning ${stat.inningNumber}: ${stat.team}", style: text12()),
+          Text("${stat.totalRuns}/${stat.totalWickets}", style: text13(fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPerformersSection(dynamic top) {
+    final batsman = top.batsmen?.first;
+    final bowler = top.bowlers?.first;
+    
+    return Row(
+      children: [
+        if (batsman != null)
+          Expanded(child: _buildSimplePerformer(batsman.name, "Runs: ${batsman.runs}")),
+        if (bowler != null)
+          Expanded(child: _buildSimplePerformer(bowler.name, "Wkts: ${bowler.wickets}")),
+      ],
+    );
+  }
+
+  Widget _buildSimplePerformer(String? name, String? stat) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: AppColors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          Text(name ?? "", style: text12(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text(stat ?? "", style: text11(color: AppColors.primary)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEventItem(dynamic e) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: AppColors.white.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Text("${e.overs} ov", style: text10(color: AppColors.white60)),
+          const SizedBox(width: 10),
+          Expanded(child: Text(e.text ?? "", style: text12())),
+        ],
+      ),
+    );
   }
 
   Widget _buildHighlightCard(String title, String team1, String team2, {String? matchSummary}) {
@@ -773,257 +860,6 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildMatchStats(model.Match? match) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.white.withValues(alpha: 0.11),
-                AppColors.white.withValues(alpha: 0.06),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.white.withValues(alpha: 0.35)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Match Stats",
-                style: text18(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                "Full Time Score",
-                style: text16(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    match?.teamA ?? "Team A",
-                    style: text14(fontWeight: FontWeight.w600),
-                  ),
-                  Text(
-                    match?.score ?? "0 - 0",
-                    style: text18(fontWeight: FontWeight.bold, color: AppColors.primary),
-                  ),
-                  Text(
-                    match?.teamB ?? "Team B",
-                    style: text14(fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              _buildStatRow(
-                label: "Possession",
-                team1: match?.teamA ?? "Team A",
-                team1Value: "54%",
-                team2: match?.teamB ?? "Team B",
-                team2Value: "46%",
-              ),
-              const SizedBox(height: 20),
-              _buildStatRow(
-                label: "Shots on Target",
-                team1: match?.teamA ?? "Team A",
-                team1Value: "7",
-                team2: match?.teamB ?? "Team B",
-                team2Value: "5",
-              ),
-              const SizedBox(height: 20),
-              _buildStatRow(
-                label: "Total Attempts",
-                team1: match?.teamA ?? "Team A",
-                team1Value: "14",
-                team2: match?.teamB ?? "Team B",
-                team2Value: "11",
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCurrentPlayersSection(model.Match? match) {
-    // If it's a real match, we might want to hide these placeholders if we don't have real data
-    // For now, I'll keep them but make them slightly more generic if no data exists
-    final hasPerformers = match?.tournament?.contains("World Cup") ?? false;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.white.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.white.withValues(alpha: 0.18),
-              width: 1.3,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Top Performers',
-                style: text18(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildPlayerRow(
-                      'Match Status',
-                      match?.status ?? 'Completed',
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildPlayerRow(
-                      'Venue',
-                      'International Stadium',
-                    ),
-                  ),
-                ],
-              ),
-              if (hasPerformers) ...[
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildPlayerRow(
-                        'Featured',
-                        "High intensity match with multiple goal attempts.",
-                      ),
-                    ),
-                  ],
-                ),
-              ]
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Helper method for clean stat rows
-  Widget _buildStatRow({
-    required String label,
-    required String team1,
-    required String team1Value,
-    required String team2,
-    required String team2Value,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Colors.white70,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            // Team 1
-            Expanded(
-              flex: 5,
-              child: Text(
-                team1,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            Expanded(
-              flex: 2,
-              child: Text(
-                team1Value,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            const Expanded(
-              flex: 1,
-              child: Text(
-                "|",
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white54),
-              ),
-            ),
-            // Team 2
-            Expanded(
-              flex: 5,
-              child: Text(
-                team2,
-                textAlign: TextAlign.right,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            Expanded(
-              flex: 2,
-              child: Text(
-                team2Value,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPlayerRow(String role, String player) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          role,
-          style: text13(color: AppColors.white, fontWeight: FontWeight.w500),
-        ),
-        SizedBox(height: 5),
-        Text(
-          player,
-          style: text13(color: AppColors.white70, fontWeight: FontWeight.w400),
-        ),
-      ],
     );
   }
 }

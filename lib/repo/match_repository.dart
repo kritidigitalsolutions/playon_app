@@ -195,4 +195,71 @@ class MatchRepository {
       rethrow;
     }
   }
+
+  Future<dynamic> getScoreboard(String matchId) async {
+    try {
+      final response = await _apiServices.getApi(AppUrls.scoreboard(matchId));
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<dynamic> getMatchPlayers(String matchId) async {
+    try {
+      final response = await _apiServices.getApi(AppUrls.matchPlayers(matchId));
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<dynamic> getMatchStats(String matchId) async {
+    try {
+      final response = await _apiServices.getApi(AppUrls.matchStats(matchId));
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<dynamic> getMatchTopPerformers(String matchId) async {
+    try {
+      final response = await _apiServices.getApi(AppUrls.matchTopPerformers(matchId));
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<dynamic> getMatchEvents(String matchId) async {
+    try {
+      final response = await _apiServices.getApi(AppUrls.matchEvents(matchId));
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<dynamic> getLiveStreams() async {
+    try {
+      final response = await _apiServices.getApi(AppUrls.liveStreams);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<dynamic> getHighlights({String? matchId}) async {
+    try {
+      String url = AppUrls.highlights;
+      if (matchId != null) {
+        url += "?matchId=$matchId";
+      }
+      final response = await _apiServices.getApi(url);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

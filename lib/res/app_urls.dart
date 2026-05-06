@@ -1,6 +1,6 @@
 class AppUrls {
-  // static const String baseUrl = 'http://192.168.1.3:8000/api';
-  static const String baseUrl = 'https://play-on-weld.vercel.app/api';
+  static const String baseUrl = 'http://192.168.1.9:8000/api';
+  // static const String baseUrl = 'https://play-on-weld.vercel.app/api';
 
   // Auth Endpoints
   static const String sendOtp = '$baseUrl/auth/send-otp';
@@ -81,4 +81,14 @@ class AppUrls {
   // Highlight Endpoints
   static String matchHighlights(String matchId) => '$baseUrl/scores/$matchId/highlights';
   static String liveScore(String matchId) => '$baseUrl/scores/$matchId';
+  static String scoreboard(String matchId) => '$baseUrl/scores/$matchId/scoreboard';
+  static String matchPlayers(String matchId) => '$baseUrl/scores/$matchId/players';
+  static String matchStats(String matchId) => '$baseUrl/scores/$matchId/stats';
+  static String matchTopPerformers(String matchId) => '$baseUrl/scores/$matchId/top-performers';
+  static String matchEvents(String matchId) => '$baseUrl/scores/$matchId/events';
+  
+  static const String highlights = '$baseUrl/highlights';
+
+  // Stream Endpoints
+  static const String liveStreams = '$baseUrl/streams/live';
 }

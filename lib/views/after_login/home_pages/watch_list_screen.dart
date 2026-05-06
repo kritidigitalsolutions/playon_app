@@ -85,10 +85,10 @@ class CreateWatchlistScreen extends StatelessWidget {
                                   return GestureDetector(
                                     onTap: () {
                                       if (canWatch) {
-                                        Get.toNamed(AppRoutes.recapMatch, arguments: match);
+                                        Get.toNamed(AppRoutes.matchPlay, arguments: match);
                                       } else {
                                         homeController.handleProtectedAction(() {
-                                          Get.toNamed(AppRoutes.recapMatch, arguments: match);
+                                          Get.toNamed(AppRoutes.matchPlay, arguments: match);
                                         });
                                       }
                                     },

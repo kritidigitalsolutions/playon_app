@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:play_on_app/model/response_model/highlight_model.dart';
+import 'package:play_on_app/model/response_model/highlight_model.dart' as highlight_model;
 import 'package:play_on_app/model/response_model/comment_model.dart' as comment_model;
 import 'package:play_on_app/model/response_model/star_player_model.dart' as star_model;
 import 'package:play_on_app/repo/match_repository.dart';
@@ -11,6 +11,8 @@ import 'package:play_on_app/model/response_model/match_model.dart' as model;
 import 'package:play_on_app/view_model/after_controller/plan_controller.dart';
 import 'package:play_on_app/data/network/notification_service.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
+import 'package:play_on_app/model/response_model/score_model.dart' as score_model;
+import 'package:play_on_app/model/response_model/match_extra_details_model.dart';
 
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
@@ -22,12 +24,21 @@ class MatchDetailsController extends GetxController {
   var isReminderOn = false.obs;
   var isLock = true.obs;
 
-  var highlights = <HighlightItem>[].obs;
+  var highlights = <highlight_model.HighlightItem>[].obs;
   var isHighlightsLoading = false.obs;
 
   var comments = <comment_model.Comment>[].obs;
   var isCommentsLoading = false.obs;
   final commentController = TextEditingController();
+
+  // New Scoreboard and details observables
+  final scoreboardData = Rxn<score_model.ScoreData>();
+  final matchPlayers = Rxn<MatchPlayersData>();
+  final matchStats = Rxn<MatchStatsData>();
+  final topPerformers = Rxn<TopPerformersData>();
+  final matchEvents = Rxn<MatchEventsData>();
+  
+  var isScoreLoading = false.obs;
 
   final MatchRepository _repository = MatchRepository();
   final planController = Get.put(PlanController());
@@ -50,6 +61,8 @@ class MatchDetailsController extends GetxController {
       _checkReminderStatus();
       fetchHighlights();
       fetchComments();
+      // Even if we have a match object, fetch full details to ensure we have all info (logos, series, etc.)
+      fetchMatchDetailsById(match.value!.sId!);
     } else if (Get.arguments is star_model.StarPlayer) {
       starPlayer.value = Get.arguments;
       fetchComments();
@@ -59,6 +72,74 @@ class MatchDetailsController extends GetxController {
     }
 
     checkAccess();
+  }
+
+  Future<void> fetchAllMatchDetails() async {
+    if (match.value?.sId == null) return;
+    
+    fetchScoreboard();
+    fetchMatchPlayers();
+    fetchMatchStats();
+    fetchTopPerformers();
+    fetchMatchEvents();
+  }
+
+  Future<void> fetchScoreboard() async {
+    try {
+      isScoreLoading.value = true;
+      final res = await _repository.getScoreboard(match.value!.sId!);
+      if (res['success'] == true) {
+        scoreboardData.value = score_model.ScoreData.fromJson(res['data']);
+      }
+    } catch (e) {
+      print("Error fetching scoreboard: $e");
+    } finally {
+      isScoreLoading.value = false;
+    }
+  }
+
+  Future<void> fetchMatchPlayers() async {
+    try {
+      final res = await _repository.getMatchPlayers(match.value!.sId!);
+      if (res['success'] == true) {
+        matchPlayers.value = MatchPlayersData.fromJson(res['data']);
+      }
+    } catch (e) {
+      print("Error fetching match players: $e");
+    }
+  }
+
+  Future<void> fetchMatchStats() async {
+    try {
+      final res = await _repository.getMatchStats(match.value!.sId!);
+      if (res['success'] == true) {
+        matchStats.value = MatchStatsData.fromJson(res['data']);
+      }
+    } catch (e) {
+      print("Error fetching match stats: $e");
+    }
+  }
+
+  Future<void> fetchTopPerformers() async {
+    try {
+      final res = await _repository.getMatchTopPerformers(match.value!.sId!);
+      if (res['success'] == true) {
+        topPerformers.value = TopPerformersData.fromJson(res['data']);
+      }
+    } catch (e) {
+      print("Error fetching top performers: $e");
+    }
+  }
+
+  Future<void> fetchMatchEvents() async {
+    try {
+      final res = await _repository.getMatchEvents(match.value!.sId!);
+      if (res['success'] == true) {
+        matchEvents.value = MatchEventsData.fromJson(res['data']);
+      }
+    } catch (e) {
+      print("Error fetching match events: $e");
+    }
   }
 
   Future<void> fetchMatchDetailsById(String id) async {
@@ -74,6 +155,7 @@ class MatchDetailsController extends GetxController {
         _checkReminderStatus();
         fetchHighlights();
         fetchComments();
+        fetchAllMatchDetails();
         checkAccess();
       }
     } catch (e) {
@@ -85,10 +167,10 @@ class MatchDetailsController extends GetxController {
     if (match.value?.sId == null) return;
     isHighlightsLoading.value = true;
     try {
-      final res = await _repository.getMatchHighlights(match.value!.sId!);
+      final res = await _repository.getHighlights(matchId: match.value!.sId!);
       if (res['success'] == true) {
-        final data = HighlightModel.fromJson(res);
-        highlights.assignAll(data.data?.highlights ?? []);
+        final data = highlight_model.HighlightModel.fromJson(res);
+        highlights.assignAll(data.highlights ?? []);
       }
     } catch (e) {
       print("Error fetching highlights: $e");
@@ -290,13 +372,17 @@ class VideoControllerX extends GetxController {
   void onInit() {
     super.onInit();
     
+    bool isHighlightMode = Get.parameters['mode'] == 'highlight';
+
     if (Get.arguments is model.Match) {
       match.value = Get.arguments;
-      fetchMatchDetails(match.value!.sId!);
+      final status = match.value?.status?.toLowerCase();
+      bool isFinished = status == 'finished' || status == 'completed' || isHighlightMode;
+      fetchMatchDetails(match.value!.sId!, isHighlight: isFinished);
     } else if (Get.arguments is star_model.StarPlayer) {
       starPlayer.value = Get.arguments;
     } else if (Get.arguments is String) {
-      fetchMatchDetails(Get.arguments);
+      fetchMatchDetails(Get.arguments, isHighlight: isHighlightMode);
     }
 
     // Stop playback if access is revoked
@@ -323,44 +409,71 @@ class VideoControllerX extends GetxController {
   Future<void> fetchMatchDetails(String matchId, {bool isHighlight = false}) async {
     isLoading.value = true;
     try {
+      // 1. If it's a finished match, try to play the first highlight automatically from the new highlights API
       if (isHighlight) {
-        final res = await _matchRepo.getMatchHighlights(matchId);
-        if (res['success'] == true) {
-          final data = HighlightModel.fromJson(res);
-          if (data.data?.highlights != null && data.data!.highlights!.isNotEmpty) {
-            final videoUrl = data.data!.highlights!.first.videoUrl;
-            if (videoUrl != null) {
-              initializeVideo(videoUrl, isHighlight: true);
-              return;
+        final res = await _matchRepo.getHighlights(matchId: matchId);
+        if (res['success'] == true && res['highlights'] != null) {
+          final List highlightsList = res['highlights'];
+          if (highlightsList.isNotEmpty) {
+            final firstHighlight = highlightsList.first;
+            if (firstHighlight['videoUrl'] != null) {
+              initializeVideo(firstHighlight['videoUrl'], isHighlight: true);
+              // Do not return here, continue to fetch match details for UI info
             }
           }
         }
       }
 
+      // 2. If it's a live match, fetch from the live streams API
+      if (match.value?.status?.toLowerCase() == 'live') {
+        final streamsRes = await _matchRepo.getLiveStreams();
+        if (streamsRes['success'] == true && streamsRes['streams'] != null) {
+          final List streams = streamsRes['streams'];
+          final stream = streams.firstWhereOrNull((s) {
+            final mData = s['matchId'];
+            if (mData is Map) return mData['_id'] == matchId;
+            return mData == matchId;
+          });
+
+          if (stream != null && stream['streamUrl'] != null) {
+            print("Playing live stream: ${stream['streamUrl']}");
+            initializeVideo(
+              stream['streamUrl'],
+              streamType: stream['streamType'],
+            );
+            // Do not return here, continue to fetch match details for UI info
+          }
+        }
+      }
+
+      // 3. Fetch official watchMatch API for full match object (teams, logos, status etc)
       final response = await _matchRepo.watchMatch(matchId);
       matchData.value = model.WatchMatchResponse.fromJson(response);
 
-      // Fetch live score immediately
+      // Fetch live score in background
       if (Get.isRegistered<HomeController>()) {
         Get.find<HomeController>().fetchLiveScore(matchId);
       }
       
-      // Update match if API returns more detailed info
       if (matchData.value?.match != null) {
         final newMatch = matchData.value!.match!;
-        // Preserve isSeriesPremium flag which might have been set by HomeController
         newMatch.isSeriesPremium = match.value?.isSeriesPremium;
         match.value = newMatch;
       }
       
-      if (matchData.value?.stream?.streamUrl != null) {
+      // If we haven't initialized video yet (e.g. not a highlight/live stream found above), 
+      // or if we just want to ensure the primary stream is used if available.
+      if (!isInitialized.value && matchData.value?.stream?.streamUrl != null) {
         initializeVideo(
           matchData.value!.stream!.streamUrl!,
           streamType: matchData.value!.stream!.streamType,
         );
       }
     } catch (e) {
-      Get.snackbar("Error", "Failed to load match details");
+      print("Error in fetchMatchDetails: $e");
+      if (!isInitialized.value) {
+        Get.snackbar("Error", "Failed to load match video");
+      }
     } finally {
       isLoading.value = false;
     }
@@ -387,7 +500,21 @@ class VideoControllerX extends GetxController {
 
     if (isYoutubeUrl) {
       isYoutube.value = true;
-      final videoId = YoutubePlayer.convertUrlToId(url);
+      String? videoId = YoutubePlayer.convertUrlToId(url);
+      
+      // Better ID extraction for various YouTube URL formats
+      if (videoId == null) {
+        final regExp = RegExp(
+          r'^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*',
+          caseSensitive: false,
+          multiLine: false,
+        );
+        final match = regExp.firstMatch(url);
+        if (match != null && match.group(7)!.length == 11) {
+          videoId = match.group(7);
+        }
+      }
+
       if (videoId != null) {
         youtubeController = YoutubePlayerController(
           initialVideoId: videoId,
@@ -400,6 +527,7 @@ class VideoControllerX extends GetxController {
         isInitialized.value = true;
         isPlaying.value = true;
       } else {
+        print("Failed to extract YouTube ID from: $url");
         Get.snackbar("Error", "Invalid YouTube URL");
       }
     } else {
@@ -409,17 +537,6 @@ class VideoControllerX extends GetxController {
           isInitialized.value = true;
           videoController?.play();
           isPlaying.value = true;
-
-          // If it's a highlight, stop after a few seconds (Auto-play preview)
-          if (isHighlight) {
-            Future.delayed(const Duration(seconds: 10), () {
-              if (videoController != null && videoController!.value.isPlaying) {
-                videoController?.pause();
-                isPlaying.value = false;
-                showControls.value = true;
-              }
-            });
-          }
         }).catchError((error) {
           print("Video Player Error: $error");
           Get.snackbar("Playback Error", "Failed to play stream");

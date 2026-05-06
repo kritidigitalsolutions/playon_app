@@ -20,9 +20,8 @@ import 'package:play_on_app/model/response_model/podcast_model.dart';
 import 'package:play_on_app/model/response_model/social_media_model.dart';
 import 'package:play_on_app/model/response_model/referral_offer_model.dart';
 import 'package:play_on_app/model/response_model/score_model.dart';
+import 'package:play_on_app/model/response_model/highlight_model.dart' as highlight_model;
 import 'package:play_on_app/repo/legal_repository.dart';
-
-import '../../../repo/auth_repository.dart';
 
 class HomeController extends GetxController {
   final MatchRepository _matchRepository = MatchRepository();
@@ -57,6 +56,9 @@ class HomeController extends GetxController {
 
   var podcastList = <Podcast>[].obs;
   var isPodcastLoading = false.obs;
+
+  var highlightList = <highlight_model.HighlightItem>[].obs;
+  var isHighlightsLoading = false.obs;
 
   var channelCategories = <ChannelCategory>[].obs;
   var isCategoryLoading = false.obs;
@@ -99,6 +101,7 @@ class HomeController extends GetxController {
     fetchSeries();
     fetchStarPlayers();
     fetchPodcasts();
+    fetchHighlights();
     fetchSocialMedia();
     fetchReferralCode();
     fetchReferralOffer();
@@ -218,6 +221,21 @@ class HomeController extends GetxController {
       print("Error fetching star players: $e");
     } finally {
       isPlayersLoading.value = false;
+    }
+  }
+
+  Future<void> fetchHighlights() async {
+    isHighlightsLoading.value = true;
+    try {
+      final res = await _matchRepository.getHighlights();
+      if (res['success'] == true) {
+        final data = highlight_model.HighlightModel.fromJson(res);
+        highlightList.assignAll(data.highlights ?? []);
+      }
+    } catch (e) {
+      print("Error fetching highlights: $e");
+    } finally {
+      isHighlightsLoading.value = false;
     }
   }
 
@@ -543,7 +561,7 @@ class HomeController extends GetxController {
         ),
       ),
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.7),
+      barrierColor: Colors.black.withValues(alpha: 0.7),
       isScrollControlled: false,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),

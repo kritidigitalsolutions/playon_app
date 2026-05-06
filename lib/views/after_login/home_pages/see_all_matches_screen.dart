@@ -63,17 +63,15 @@ class SeeAllMatchesScreen extends StatelessWidget {
       return GestureDetector(
         onTap: () {
           if (canWatch) {
-            if (match.status?.toLowerCase() == 'finished' ||
-                match.status?.toLowerCase() == 'completed') {
-              Get.toNamed(AppRoutes.recapMatch, arguments: match);
+            if (match.status?.toLowerCase() == 'upcoming') {
+              Get.toNamed(AppRoutes.matchDetails, arguments: match);
             } else {
               Get.toNamed(AppRoutes.matchPlay, arguments: match);
             }
           } else {
             ctr.handleProtectedAction(() {
-              if (match.status?.toLowerCase() == 'finished' ||
-                  match.status?.toLowerCase() == 'completed') {
-                Get.toNamed(AppRoutes.recapMatch, arguments: match);
+              if (match.status?.toLowerCase() == 'upcoming') {
+                Get.toNamed(AppRoutes.matchDetails, arguments: match);
               } else {
                 Get.toNamed(AppRoutes.matchPlay, arguments: match);
               }

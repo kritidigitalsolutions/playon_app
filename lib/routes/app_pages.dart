@@ -147,9 +147,7 @@ class AppPages {
     // match details
     GetPage(name: AppRoutes.matchDetails, page: () => MatchDetailScreen()),
     GetPage(name: AppRoutes.matchPlay, page: () => MatchPlayScreen()),
-    GetPage(name: AppRoutes.recapMatch, page: () => RecapMatchScreen()),
     GetPage(name: AppRoutes.highlightsPlayer, page: () => HighlightsPlayerScreen()),
-    GetPage(name: AppRoutes.watchlist, page: () => CreateWatchlistScreen()),
     GetPage(
       name: AppRoutes.seeAllMatches,
       page: () {

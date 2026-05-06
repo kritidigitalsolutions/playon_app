@@ -265,78 +265,97 @@ class MatchDetailScreen extends StatelessWidget {
                                 const SizedBox(height: 20),
                                 
                                 // Team Logo and Score section
-                                Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.white.withOpacity(0.05),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: AppColors.white.withOpacity(0.1)),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                    children: [
-                                      // Team A
-                                      Column(
-                                        children: [
-                                          _teamLogo(match.teamALogo, size: 50),
-                                          const SizedBox(height: 8),
-                                          SizedBox(
-                                            width: 80,
-                                            child: Text(
-                                              match.teamA ?? "",
-                                              textAlign: TextAlign.center,
-                                              style: text12(fontWeight: FontWeight.bold),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
+                                Obx(() {
+                                  final score = controller.scoreboardData.value;
+                                  final displayScore = score?.homeScore != null 
+                                    ? "${score!.homeScore} - ${score.awayScore}"
+                                    : (match.score ?? "vs");
+                                  
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.white.withValues(alpha: 0.05),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(color: AppColors.white.withValues(alpha: 0.1)),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                          children: [
+                                            // Team A
+                                            Column(
+                                              children: [
+                                                _teamLogo(score?.homeLogo ?? match.teamALogo, size: 50),
+                                                const SizedBox(height: 8),
+                                                SizedBox(
+                                                  width: 80,
+                                                  child: Text(
+                                                    score?.homeTeam ?? match.teamA ?? "",
+                                                    textAlign: TextAlign.center,
+                                                    style: text12(fontWeight: FontWeight.bold),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                      
-                                      // Score
-                                      Column(
-                                        children: [
-                                          Text(
-                                            match.score ?? "vs",
-                                            style: text24(
-                                              fontWeight: FontWeight.bold,
-                                              color: AppColors.primary,
+                                            
+                                            // Score
+                                            Column(
+                                              children: [
+                                                Text(
+                                                  displayScore,
+                                                  style: text24(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: AppColors.primary,
+                                                  ),
+                                                ),
+                                                if (controller.isLive.value)
+                                                  Container(
+                                                    margin: const EdgeInsets.only(top: 4),
+                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.red.withValues(alpha: 0.1),
+                                                      borderRadius: BorderRadius.circular(4),
+                                                      border: Border.all(color: Colors.red.withValues(alpha: 0.5)),
+                                                    ),
+                                                    child: Text("LIVE", style: text10(color: Colors.red, fontWeight: FontWeight.bold)),
+                                                  ),
+                                              ],
                                             ),
-                                          ),
-                                          if (controller.isLive.value)
-                                            Container(
-                                              margin: const EdgeInsets.only(top: 4),
-                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                              decoration: BoxDecoration(
-                                                color: Colors.red.withOpacity(0.1),
-                                                borderRadius: BorderRadius.circular(4),
-                                                border: Border.all(color: Colors.red.withOpacity(0.5)),
-                                              ),
-                                              child: Text("LIVE", style: text10(color: Colors.red, fontWeight: FontWeight.bold)),
-                                            ),
-                                        ],
-                                      ),
 
-                                      // Team B
-                                      Column(
-                                        children: [
-                                          _teamLogo(match.teamBLogo, size: 50),
-                                          const SizedBox(height: 8),
-                                          SizedBox(
-                                            width: 80,
-                                            child: Text(
-                                              match.teamB ?? "",
-                                              textAlign: TextAlign.center,
-                                              style: text12(fontWeight: FontWeight.bold),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
+                                            // Team B
+                                            Column(
+                                              children: [
+                                                _teamLogo(score?.awayLogo ?? match.teamBLogo, size: 50),
+                                                const SizedBox(height: 8),
+                                                SizedBox(
+                                                  width: 80,
+                                                  child: Text(
+                                                    score?.awayTeam ?? match.teamB ?? "",
+                                                    textAlign: TextAlign.center,
+                                                    style: text12(fontWeight: FontWeight.bold),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
+                                          ],
+                                        ),
+                                        if (score?.report != null) ...[
+                                          const SizedBox(height: 12),
+                                          Text(
+                                            score!.report!,
+                                            textAlign: TextAlign.center,
+                                            style: text12(color: AppColors.primary, fontWeight: FontWeight.w500),
                                           ),
                                         ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                                      ],
+                                    ),
+                                  );
+                                }),
                               ],
                             ),
                           ),
@@ -369,29 +388,6 @@ class MatchDetailScreen extends StatelessWidget {
                   ),
                 ),
               ),
-
-              // Players to Watch (Example - you can make this dynamic if API supports it)
-              if (match.sport?.toLowerCase() == 'cricket')
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Players to Watch",
-                          style: text16(fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          "Kohli • Rohit • Joe Root • Ben Stokes",
-                          style: text14(color: AppColors.white70),
-                        ),
-                        const SizedBox(height: 24),
-                      ],
-                    ),
-                  ),
-                ),
 
             // Dynamic Ad Banners
             const SliverToBoxAdapter(
@@ -615,10 +611,10 @@ class MatchDetailScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         shape: BoxShape.circle,
-        border: Border.all(color: AppColors.primary.withOpacity(0.5), width: 1.5),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.2),
+            color: AppColors.primary.withValues(alpha: 0.2),
             blurRadius: 10,
             spreadRadius: 2,
           ),
@@ -627,11 +623,12 @@ class MatchDetailScreen extends StatelessWidget {
       child: ClipOval(
         child: Padding(
           padding: const EdgeInsets.all(2),
-          child: url != null && url.isNotEmpty
-              ? Image.network(
-                  url,
+          child: (url != null && url.isNotEmpty)
+              ? CachedNetworkImage(
+                  imageUrl: url,
                   fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => Icon(
+                  placeholder: (context, url) => const CircularProgressIndicator(strokeWidth: 2),
+                  errorWidget: (context, url, error) => Icon(
                     Icons.shield,
                     color: Colors.grey.shade400,
                     size: size * 0.5,
