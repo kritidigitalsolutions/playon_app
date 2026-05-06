@@ -10,6 +10,9 @@ import 'package:video_player/video_player.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
 import 'package:play_on_app/view_model/after_controller/plan_controller.dart';
 import 'package:play_on_app/data/network/notification_service.dart';
+import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
+
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class MatchDetailsController extends GetxController {
   final match = Rxn<model.Match>();
@@ -145,11 +148,11 @@ class MatchDetailsController extends GetxController {
     if (match.value != null) {
       // Lock only if (isPremium is true OR isSeriesPremium is true) AND (user has no active plan)
       // Otherwise (if not premium OR if user has a plan), it stays unlocked.
-      isLock.value = (match.value?.isPremium == true || match.value?.isSeriesPremium == true) && 
+      isLock.value = (match.value?.isPremium == true || match.value?.isSeriesPremium == true) &&
                      !planController.canWatchMatch(match.value);
     } else if (starPlayer.value != null) {
       // For star player highlights
-      isLock.value = (starPlayer.value?.isPremium == true) && 
+      isLock.value = (starPlayer.value?.isPremium == true) &&
                      !planController.canWatchHighlight(starPlayer.value);
     }
   }
@@ -272,10 +275,12 @@ class MatchDetailsController extends GetxController {
 class VideoControllerX extends GetxController {
   final _matchRepo = MatchRepository();
   VideoPlayerController? videoController;
+  YoutubePlayerController? youtubeController;
 
   final match = Rxn<model.Match>();
   final starPlayer = Rxn<star_model.StarPlayer>();
   var isInitialized = false.obs;
+  var isYoutube = false.obs;
   var isPlaying = false.obs;
   var showControls = true.obs;
   var matchData = Rxn<model.WatchMatchResponse>();
@@ -334,6 +339,11 @@ class VideoControllerX extends GetxController {
 
       final response = await _matchRepo.watchMatch(matchId);
       matchData.value = model.WatchMatchResponse.fromJson(response);
+
+      // Fetch live score immediately
+      if (Get.isRegistered<HomeController>()) {
+        Get.find<HomeController>().fetchLiveScore(matchId);
+      }
       
       // Update match if API returns more detailed info
       if (matchData.value?.match != null) {
@@ -344,7 +354,10 @@ class VideoControllerX extends GetxController {
       }
       
       if (matchData.value?.stream?.streamUrl != null) {
-        initializeVideo(matchData.value!.stream!.streamUrl!);
+        initializeVideo(
+          matchData.value!.stream!.streamUrl!,
+          streamType: matchData.value!.stream!.streamType,
+        );
       }
     } catch (e) {
       Get.snackbar("Error", "Failed to load match details");
@@ -353,48 +366,97 @@ class VideoControllerX extends GetxController {
     }
   }
 
-  void initializeVideo(String url, {bool isHighlight = false}) {
+  void initializeVideo(String url, {bool isHighlight = false, String? streamType}) {
     // Don't initialize if it's currently locked
     if (Get.isRegistered<MatchDetailsController>() && Get.find<MatchDetailsController>().isLock.value) {
       return;
     }
 
-    videoController = VideoPlayerController.networkUrl(Uri.parse(url))
-      ..initialize().then((_) {
-        isInitialized.value = true;
-        videoController?.play();
-        isPlaying.value = true;
+    print("Initializing Video: $url (Type: $streamType)");
 
-        // If it's a highlight, stop after 10 seconds (Auto-play preview)
-        if (isHighlight) {
-          Future.delayed(const Duration(seconds: 5), () {
-            if (videoController != null && videoController!.value.isPlaying) {
-              videoController?.pause();
-              isPlaying.value = false;
-              showControls.value = true; // Show controls so user can resume if they want
-            }
-          });
-        }
-      });
+    // Reset previous controllers
+    videoController?.dispose();
+    youtubeController?.dispose();
+    videoController = null;
+    youtubeController = null;
+    isInitialized.value = false;
+    isYoutube.value = false;
+
+    // Detect YouTube
+    bool isYoutubeUrl = url.contains('youtube.com') || url.contains('youtu.be') || streamType?.toLowerCase() == 'youtube';
+
+    if (isYoutubeUrl) {
+      isYoutube.value = true;
+      final videoId = YoutubePlayer.convertUrlToId(url);
+      if (videoId != null) {
+        youtubeController = YoutubePlayerController(
+          initialVideoId: videoId,
+          flags: YoutubePlayerFlags(
+            autoPlay: true,
+            mute: false,
+            isLive: match.value?.status?.toLowerCase() == 'live',
+          ),
+        );
+        isInitialized.value = true;
+        isPlaying.value = true;
+      } else {
+        Get.snackbar("Error", "Invalid YouTube URL");
+      }
+    } else {
+      isYoutube.value = false;
+      videoController = VideoPlayerController.networkUrl(Uri.parse(url))
+        ..initialize().then((_) {
+          isInitialized.value = true;
+          videoController?.play();
+          isPlaying.value = true;
+
+          // If it's a highlight, stop after a few seconds (Auto-play preview)
+          if (isHighlight) {
+            Future.delayed(const Duration(seconds: 10), () {
+              if (videoController != null && videoController!.value.isPlaying) {
+                videoController?.pause();
+                isPlaying.value = false;
+                showControls.value = true;
+              }
+            });
+          }
+        }).catchError((error) {
+          print("Video Player Error: $error");
+          Get.snackbar("Playback Error", "Failed to play stream");
+        });
+    }
 
     // Auto hide controls after 3 sec
-    ever(isPlaying, (_) {
+    _setupAutoHideControls();
+  }
+
+  void _setupAutoHideControls() {
+    Future.delayed(const Duration(seconds: 3), () {
       if (isPlaying.value) {
-        Future.delayed(const Duration(seconds: 3), () {
-          showControls.value = false;
-        });
+        showControls.value = false;
       }
     });
   }
 
   void togglePlay() {
-    if (videoController == null) return;
-    if (videoController!.value.isPlaying) {
-      videoController!.pause();
-      isPlaying.value = false;
+    if (isYoutube.value) {
+      if (youtubeController == null) return;
+      if (youtubeController!.value.isPlaying) {
+        youtubeController!.pause();
+        isPlaying.value = false;
+      } else {
+        youtubeController!.play();
+        isPlaying.value = true;
+      }
     } else {
-      videoController!.play();
-      isPlaying.value = true;
+      if (videoController == null) return;
+      if (videoController!.value.isPlaying) {
+        videoController!.pause();
+        isPlaying.value = false;
+      } else {
+        videoController!.play();
+        isPlaying.value = true;
+      }
     }
     showControls.value = true;
   }
@@ -406,6 +468,7 @@ class VideoControllerX extends GetxController {
   @override
   void onClose() {
     videoController?.dispose();
+    youtubeController?.dispose();
     super.onClose();
   }
 }

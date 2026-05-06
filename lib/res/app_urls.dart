@@ -80,4 +80,5 @@ class AppUrls {
 
   // Highlight Endpoints
   static String matchHighlights(String matchId) => '$baseUrl/scores/$matchId/highlights';
+  static String liveScore(String matchId) => '$baseUrl/scores/$matchId';
 }

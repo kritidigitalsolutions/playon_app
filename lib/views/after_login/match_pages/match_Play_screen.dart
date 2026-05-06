@@ -17,6 +17,7 @@ import 'package:play_on_app/utils/share_helper.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 import '../../../view_model/after_controller/home_contollers/home_controller.dart';
 import '../../custom_background.dart/custom_widget.dart';
@@ -140,16 +141,31 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
               if (videoControllerX.isLoading.value) {
                 return const Center(child: CircularProgressIndicator());
               }
-              if (!videoControllerX.isInitialized.value || videoControllerX.videoController == null) {
+              if (!videoControllerX.isInitialized.value || (videoControllerX.videoController == null && videoControllerX.youtubeController == null)) {
                 return const Center(child: Text("Loading stream...", style: TextStyle(color: Colors.white)));
               }
 
-              return AspectRatio(
-                aspectRatio: videoControllerX.videoController!.value.aspectRatio,
-                child: Center(
-                  child: VideoPlayer(videoControllerX.videoController!),
-                ),
-              );
+              if (videoControllerX.isYoutube.value && videoControllerX.youtubeController != null) {
+                return YoutubePlayer(
+                  controller: videoControllerX.youtubeController!,
+                  showVideoProgressIndicator: true,
+                  progressIndicatorColor: Colors.red,
+                  onReady: () {
+                    videoControllerX.isInitialized.value = true;
+                  },
+                );
+              }
+
+              if (videoControllerX.videoController != null && videoControllerX.videoController!.value.isInitialized) {
+                return AspectRatio(
+                  aspectRatio: videoControllerX.videoController!.value.aspectRatio,
+                  child: Center(
+                    child: VideoPlayer(videoControllerX.videoController!),
+                  ),
+                );
+              }
+
+              return const Center(child: CircularProgressIndicator());
             }),
 
             /// 🔴 LIVE BADGE
@@ -254,17 +270,19 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    child: videoControllerX.videoController != null 
-                      ? VideoProgressIndicator(
-                          videoControllerX.videoController!,
-                          allowScrubbing: true,
-                          colors: VideoProgressColors(
-                            playedColor: Colors.red,
-                            backgroundColor: Colors.white24,
-                            bufferedColor: Colors.white38,
-                          ),
-                        )
-                      : const SizedBox(),
+                    child: videoControllerX.isYoutube.value 
+                      ? const SizedBox() // YouTube player has its own progress bar
+                      : (videoControllerX.videoController != null 
+                        ? VideoProgressIndicator(
+                            videoControllerX.videoController!,
+                            allowScrubbing: true,
+                            colors: VideoProgressColors(
+                              playedColor: Colors.red,
+                              backgroundColor: Colors.white24,
+                              bufferedColor: Colors.white38,
+                            ),
+                          )
+                        : const SizedBox()),
                   ),
 
                   /// ⚙️ RIGHT SIDE BUTTONS
@@ -273,11 +291,14 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                     bottom: 15,
                     child: Column(
                       children: [
-                        Icon(Icons.volume_up, color: Colors.white),
-                        SizedBox(height: 15),
+                        const Icon(Icons.volume_up, color: Colors.white),
+                        const SizedBox(height: 15),
                         GestureDetector(
                           onTap: () {
-                            if (videoControllerX.videoController != null) {
+                            if (videoControllerX.isYoutube.value) {
+                               // YouTube player handles its own fullscreen or we can implement it
+                               videoControllerX.youtubeController?.toggleFullScreenMode();
+                            } else if (videoControllerX.videoController != null) {
                               Get.to(
                                 () => FullScreenVideoPage(
                                   controller: videoControllerX.videoController!,
@@ -387,136 +408,173 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
             const SizedBox(height: 16),
 
             // Modern Scoreboard (Logos and Score)
-            Builder(builder: (context) {
+            Obx(() {
+              final homeController = Get.find<HomeController>();
+              final liveScore = match.sId != null ? homeController.liveScores[match.sId] : null;
+
               final isCricket = match.sport?.toLowerCase() == 'cricket';
-              final scores = match.score?.split('-') ?? ["0", "0"];
-              final teamAScore = scores[0].trim();
-              final teamBScore = scores.length > 1 ? scores[1].trim() : "0";
+              
+              // Use live scores if available, otherwise fall back to static score
+              String teamAScore = "0";
+              String teamBScore = "0";
+              String mainScore = match.score ?? "0 - 0";
+              String? matchReport = liveScore?.report;
 
-              return Container(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  color: AppColors.white.withValues(alpha: 0.03),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.white.withValues(alpha: 0.05)),
-                ),
-                child: Row(
-                  children: [
-                    // Team A
-                    Expanded(
-                      child: Column(
-                        children: [
-                          _teamLogo(match.teamALogo, size: 55),
-                          const SizedBox(height: 10),
-                          Text(
-                            match.teamA ?? "",
-                            textAlign: TextAlign.center,
-                            style: text13(fontWeight: FontWeight.bold),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (isCricket) ...[
-                            const SizedBox(height: 6),
-                            Text(
-                              teamAScore,
-                              style: text15(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
+              if (liveScore != null) {
+                teamAScore = liveScore.homeScore ?? "0";
+                teamBScore = liveScore.awayScore ?? "0";
+                mainScore = "$teamAScore - $teamBScore";
+              } else {
+                final scores = match.score?.split('-') ?? ["0", "0"];
+                teamAScore = scores[0].trim();
+                teamBScore = scores.length > 1 ? scores[1].trim() : "0";
+              }
+
+              return Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.white.withValues(alpha: 0.03),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.white.withValues(alpha: 0.05)),
                     ),
-
-                    // Score & Status (Middle Section)
-                    Expanded(
-                      flex: 1,
-                      child: Column(
-                        children: [
-                          if (!isCricket)
-                            Text(
-                              match.score ?? "0 - 0",
-                              style: text24(fontWeight: FontWeight.bold, color: AppColors.primary),
-                            )
-                          else
-                            Text(
-                              "VS",
-                              style: text18(
-                                fontWeight: FontWeight.w900,
-                                color: AppColors.white.withValues(alpha: 0.15),
+                    child: Row(
+                      children: [
+                        // Team A
+                        Expanded(
+                          child: Column(
+                            children: [
+                              _teamLogo(match.teamALogo, size: 55),
+                              const SizedBox(height: 10),
+                              Text(
+                                match.teamA ?? "",
+                                textAlign: TextAlign.center,
+                                style: text13(fontWeight: FontWeight.bold),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          const SizedBox(height: 12),
-                          if (match.status?.toLowerCase() == 'live')
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.red.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.red.withOpacity(0.5)),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 5,
-                                    height: 5,
-                                    decoration: const BoxDecoration(
-                                      color: Colors.red,
-                                      shape: BoxShape.circle,
-                                    ),
+                              if (isCricket) ...[
+                                const SizedBox(height: 6),
+                                Text(
+                                  teamAScore,
+                                  style: text15(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary,
                                   ),
-                                  const SizedBox(width: 6),
-                                  Text("LIVE",
-                                      style: text10(fontWeight: FontWeight.bold, color: Colors.red)),
-                                ],
-                              ),
-                            )
-                          else
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.05),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                match.status?.toUpperCase() ?? "",
-                                style: text10(color: Colors.white60, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-
-                    // Team B
-                    Expanded(
-                      child: Column(
-                        children: [
-                          _teamLogo(match.teamBLogo, size: 55),
-                          const SizedBox(height: 10),
-                          Text(
-                            match.teamB ?? "",
-                            textAlign: TextAlign.center,
-                            style: text13(fontWeight: FontWeight.bold),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ],
                           ),
-                          if (isCricket) ...[
-                            const SizedBox(height: 6),
-                            Text(
-                              teamBScore,
-                              style: text15(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
+                        ),
+
+                        // Score & Status (Middle Section)
+                        Expanded(
+                          flex: 1,
+                          child: Column(
+                            children: [
+                              if (!isCricket)
+                                Text(
+                                  mainScore,
+                                  style: text24(fontWeight: FontWeight.bold, color: AppColors.primary),
+                                )
+                              else
+                                Text(
+                                  "VS",
+                                  style: text18(
+                                    fontWeight: FontWeight.w900,
+                                    color: AppColors.white.withValues(alpha: 0.15),
+                                  ),
+                                ),
+                              const SizedBox(height: 12),
+                              if (match.status?.toLowerCase() == 'live')
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: Colors.red.withOpacity(0.5)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        width: 5,
+                                        height: 5,
+                                        decoration: const BoxDecoration(
+                                          color: Colors.red,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text("LIVE",
+                                          style: text10(fontWeight: FontWeight.bold, color: Colors.red)),
+                                    ],
+                                  ),
+                                )
+                              else
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.05),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    match.status?.toUpperCase() ?? "",
+                                    style: text10(color: Colors.white60, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+
+                        // Team B
+                        Expanded(
+                          child: Column(
+                            children: [
+                              _teamLogo(match.teamBLogo, size: 55),
+                              const SizedBox(height: 10),
+                              Text(
+                                match.teamB ?? "",
+                                textAlign: TextAlign.center,
+                                style: text13(fontWeight: FontWeight.bold),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          ],
-                        ],
+                              if (isCricket) ...[
+                                const SizedBox(height: 6),
+                                Text(
+                                  teamBScore,
+                                  style: text15(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (matchReport != null && matchReport.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                      ),
+                      child: Text(
+                        matchReport,
+                        textAlign: TextAlign.center,
+                        style: text13(color: AppColors.primary, fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],
-                ),
+                ],
               );
             }),
           ],

@@ -186,4 +186,13 @@ class MatchRepository {
       rethrow;
     }
   }
+
+  Future<dynamic> getLiveScore(String matchId) async {
+    try {
+      final response = await _apiServices.getApi(AppUrls.liveScore(matchId));
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

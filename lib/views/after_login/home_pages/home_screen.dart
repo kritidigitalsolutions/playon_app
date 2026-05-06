@@ -15,6 +15,7 @@ import 'package:play_on_app/model/response_model/match_model.dart' as model;
 import 'package:play_on_app/model/response_model/series_model.dart' as series_model;
 import 'package:play_on_app/model/response_model/star_player_model.dart' as star_player_model;
 import 'package:play_on_app/model/response_model/podcast_model.dart' as podcast_model;
+import 'package:play_on_app/model/response_model/score_model.dart' as score_model;
 import 'package:play_on_app/view_model/after_controller/player_controller.dart';
 
 import '../../../view_model/after_controller/home_contollers/home_controller.dart';
@@ -934,21 +935,42 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 12),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "${match.teamA} vs ${match.teamB}",
-                        style: text18(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        "Score: ${match.score ?? '0-0'}",
-                        style: text14(color: AppColors.white70),
-                      ),
-                    ],
-                  ),
+                  child: Obx(() {
+                    final realScore = ctr.liveScores[match.sId];
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          realScore?.title ?? "${match.teamA} vs ${match.teamB}",
+                          style: text18(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 6),
+                        if (realScore != null) ...[
+                          Text(
+                            "${realScore.homeTeam}: ${realScore.homeScore ?? '0'}",
+                            style: text14(color: AppColors.white70),
+                          ),
+                          Text(
+                            "${realScore.awayTeam}: ${realScore.awayScore ?? '0'}",
+                            style: text14(color: AppColors.white70),
+                          ),
+                          if (realScore.report != null)
+                            Text(
+                              realScore.report!,
+                              style: text12(color: AppColors.primary, fontWeight: FontWeight.bold),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ] else ...[
+                          Text(
+                            "Score: ${match.score ?? '0-0'}",
+                            style: text14(color: AppColors.white70),
+                          ),
+                        ],
+                      ],
+                    );
+                  }),
                 ),
                 CustomElevatedIconButton(
                   height: 40,

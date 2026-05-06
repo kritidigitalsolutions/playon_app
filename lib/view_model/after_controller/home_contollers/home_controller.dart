@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:play_on_app/res/app_colors.dart';
@@ -18,6 +19,7 @@ import 'package:play_on_app/model/response_model/star_player_model.dart';
 import 'package:play_on_app/model/response_model/podcast_model.dart';
 import 'package:play_on_app/model/response_model/social_media_model.dart';
 import 'package:play_on_app/model/response_model/referral_offer_model.dart';
+import 'package:play_on_app/model/response_model/score_model.dart';
 import 'package:play_on_app/repo/legal_repository.dart';
 
 import '../../../repo/auth_repository.dart';
@@ -64,6 +66,10 @@ class HomeController extends GetxController {
 
   var searchQuery = "".obs;
 
+  var liveScores = <String, ScoreData>{}.obs;
+
+  Timer? _scoreTimer;
+
   final RxInt selectedTabIndex = 0.obs;
   final RxString selectedCategory = "".obs;
 
@@ -96,6 +102,7 @@ class HomeController extends GetxController {
     fetchSocialMedia();
     fetchReferralCode();
     fetchReferralOffer();
+    _startScoreTimer();
 
     // Setup search listeners
     searchQuery.listen((query) {
@@ -394,6 +401,13 @@ class HomeController extends GetxController {
       if (liveRes['success'] == true) {
         final data = MatchModel.fromJson(liveRes);
         liveMatches.assignAll(data.matches ?? []);
+        
+        // Fetch real-time scores for live matches
+        for (var match in liveMatches) {
+          if (match.sId != null) {
+            fetchLiveScore(match.sId!);
+          }
+        }
       }
 
       // Always fetch all matches for the dashboard
@@ -416,6 +430,20 @@ class HomeController extends GetxController {
 
   var isSilentLoading = false.obs;
 
+  Future<void> fetchLiveScore(String matchId) async {
+    try {
+      final res = await _matchRepository.getLiveScore(matchId);
+      if (res['success'] == true) {
+        final scoreModel = ScoreModel.fromJson(res);
+        if (scoreModel.data != null) {
+          liveScores[matchId] = scoreModel.data!;
+        }
+      }
+    } catch (e) {
+      debugPrint("Error fetching live score for $matchId: $e");
+    }
+  }
+
   // var isLogin = false.obs;
 
   void toggleLogin() {
@@ -437,6 +465,25 @@ class HomeController extends GetxController {
     } else {
       _showLoginBottomSheet();
     }
+  }
+
+  void _startScoreTimer() {
+    _scoreTimer?.cancel();
+    _scoreTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (liveMatches.isNotEmpty) {
+        for (var match in liveMatches) {
+          if (match.sId != null) {
+            fetchLiveScore(match.sId!);
+          }
+        }
+      }
+    });
+  }
+
+  @override
+  void onClose() {
+    _scoreTimer?.cancel();
+    super.onClose();
   }
 
   void _showLoginBottomSheet() {

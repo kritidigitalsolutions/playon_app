@@ -7,6 +7,7 @@ import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 import 'package:play_on_app/routes/app_routes.dart';
+import 'package:play_on_app/views/custom_background.dart/ad_banner_widget.dart';
 
 class SeriesDetailScreen extends StatefulWidget {
   const SeriesDetailScreen({super.key});
@@ -84,6 +85,24 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
+                        if (series.tournamentLogo != null && series.tournamentLogo!.isNotEmpty) ...[
+                          Container(
+                            height: 45,
+                            width: 45,
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white24),
+                            ),
+                            child: Image.network(
+                              series.tournamentLogo!,
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) => const Icon(Icons.emoji_events, color: Colors.white, size: 20),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
                         Text(series.title ?? "",
                             style: text18(
                                 color: Colors.white,
@@ -106,6 +125,9 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
               indicatorColor: AppColors.primary,
               labelColor: AppColors.primary,
               unselectedLabelColor: Colors.white,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              labelPadding: const EdgeInsets.symmetric(horizontal: 20),
               tabs: const [
                 Tab(text: "Home"),
                 Tab(text: "Upcoming"),
@@ -143,6 +165,8 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        const AdBannerWidget(padding: EdgeInsets.zero, height: 140),
+        const SizedBox(height: 16),
         if (live.isNotEmpty) _buildHorizontalSection("Live Matches", live),
         if (upcoming.isNotEmpty) _buildHorizontalSection("Upcoming Matches", upcoming),
         if (completed.isNotEmpty) _buildHorizontalSection("Recent Results", completed),
@@ -202,6 +226,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
 
   /// ================= SECTION =================
   Widget _buildHorizontalSection(String title, List<match_model.Match> matches) {
+    final screenWidth = MediaQuery.of(context).size.width;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -214,7 +239,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: matches.length,
-            itemBuilder: (_, i) => _homeMatchCard(matches[i]),
+            itemBuilder: (_, i) => _homeMatchCard(matches[i], screenWidth),
           ),
         ),
         const SizedBox(height: 20),
@@ -222,7 +247,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
     );
   }
 
-  Widget _homeMatchCard(match_model.Match match) {
+  Widget _homeMatchCard(match_model.Match match, double screenWidth) {
     return GestureDetector(
       onTap: () {
         if (match.status == 'upcoming') {
@@ -232,7 +257,8 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
         }
       },
       child: Container(
-        width: 280,
+        width: screenWidth * 0.75, // Responsive width
+        constraints: const BoxConstraints(maxWidth: 320),
         margin: const EdgeInsets.only(right: 16),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.05),
@@ -243,12 +269,35 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             /// Match Banner
-            _buildMatchImage(
-              match.banner ?? match.thumbnail,
-              match.sport,
-              height: 140,
-              width: double.infinity,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            Stack(
+              children: [
+                _buildMatchImage(
+                  match.banner ?? match.thumbnail,
+                  match.sport,
+                  height: 140,
+                  width: double.infinity,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                ),
+                if (series.tournamentLogo != null && series.tournamentLogo!.isNotEmpty)
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: Container(
+                      height: 25,
+                      width: 25,
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Image.network(
+                        series.tournamentLogo!,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Icon(Icons.emoji_events, color: Colors.white, size: 12),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             Padding(
               padding: const EdgeInsets.all(12),
