@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:collection/collection.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:play_on_app/model/response_model/highlight_model.dart' as highlight_model;
 import 'package:play_on_app/model/response_model/comment_model.dart' as comment_model;
@@ -151,6 +152,20 @@ class MatchDetailsController extends GetxController {
         } else if (res['data'] != null) {
           match.value = model.Match.fromJson(res['data']);
         }
+
+        // Sync with video controller to ensure UI consistency across all components
+        if (Get.isRegistered<VideoControllerX>()) {
+          final videoCtr = Get.find<VideoControllerX>();
+          if (match.value != null) {
+            // Preserve isSeriesPremium if it was already set
+            final oldMatch = videoCtr.match.value;
+            if (oldMatch?.sId == match.value?.sId) {
+              match.value?.isSeriesPremium = oldMatch?.isSeriesPremium;
+            }
+            videoCtr.match.value = match.value;
+          }
+        }
+
         _initializeMatchStatus();
         _checkReminderStatus();
         fetchHighlights();

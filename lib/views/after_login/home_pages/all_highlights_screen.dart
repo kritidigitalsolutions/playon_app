@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:collection/collection.dart';
 import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
@@ -103,7 +104,9 @@ class AllHighlightsScreen extends StatelessWidget {
   Widget _buildHighlightCard(highlight_model.HighlightItem highlight) {
     final homeController = Get.find<HomeController>();
     // Try to find the full match from HomeController to get logos/series
-    final fullMatch = homeController.allMatches.firstWhereOrNull((m) => m.sId == highlight.matchId?.sId);
+    final fullMatch = homeController.allMatches.firstWhereOrNull((m) => m.sId == highlight.matchId?.sId)
+        ?? homeController.liveMatches.firstWhereOrNull((m) => m.sId == highlight.matchId?.sId)
+        ?? homeController.seriesList.expand((s) => s.fullMatches ?? <model.Match>[]).firstWhereOrNull((m) => m.sId == highlight.matchId?.sId);
     
     // Create a match object for access checking
     final matchArg = fullMatch ?? (highlight.matchId != null ? model.Match(
@@ -121,8 +124,8 @@ class AllHighlightsScreen extends StatelessWidget {
       return GestureDetector(
         onTap: () {
           if (highlight.matchId?.sId != null) {
-            // Pass the ID string to ensure all details are fetched on MatchPlay page
-            Get.toNamed("${AppRoutes.matchPlay}?mode=highlight", arguments: highlight.matchId!.sId);
+            // Pass the Match object instead of just ID string
+            Get.toNamed("${AppRoutes.matchPlay}?mode=highlight", arguments: matchArg);
           }
         },
         child: Container(

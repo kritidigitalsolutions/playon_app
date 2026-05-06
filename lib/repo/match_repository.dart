@@ -157,14 +157,14 @@ class MatchRepository {
     }
   }
 
-  Future<dynamic> getMatchHighlights(String matchId) async {
-    try {
-      final response = await _apiServices.getApi(AppUrls.matchHighlights(matchId));
-      return response;
-    } catch (e) {
-      rethrow;
-    }
-  }
+  // Future<dynamic> getMatchHighlights(String matchId) async {
+  //   try {
+  //     final response = await _apiServices.getApi(AppUrls.matchHighlights(matchId));
+  //     return response;
+  //   } catch (e) {
+  //     rethrow;
+  //   }
+  // }
 
   Future<dynamic> getMatchComments(String itemId) async {
     try {

@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
@@ -304,7 +305,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           String dashboardSport = (ctr.selectedTabIndex.value != 0
                               ? ctr.sportsList[ctr.selectedTabIndex.value]
                               : "");
-                          var seriesList = ctr.seriesList.toList();
+                          var seriesList = ctr.seriesList.where((s) => s.isHomeScreen == true).toList();
                           
                           if (dashboardSport.isNotEmpty) {
                             seriesList = seriesList
@@ -639,7 +640,11 @@ class _HomeScreenState extends State<HomeScreen> {
           itemBuilder: (context, index, realIndex) {
             final highlight = highlights[index];
             return Obx(() {
-              final match = highlight.matchId != null ? model.Match(
+              // Try to find full match details from HomeController
+              final fullMatch = ctr.allMatches.firstWhereOrNull((m) => m.sId == highlight.matchId?.sId)
+                  ?? ctr.liveMatches.firstWhereOrNull((m) => m.sId == highlight.matchId?.sId);
+
+              final match = fullMatch ?? (highlight.matchId != null ? model.Match(
                 sId: highlight.matchId!.sId,
                 isPremium: highlight.isPremium,
                 status: highlight.matchId!.status,
@@ -647,15 +652,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 teamB: highlight.matchId!.teamB,
                 tournament: highlight.matchId!.tournament,
                 sport: highlight.matchId!.sport,
-              ) : null;
+              ) : null);
               
               final canWatch = Get.find<PlanController>().canWatchMatch(match);
               return GestureDetector(
                 onTap: () {
                   if (highlight.matchId?.sId != null) {
                     ctr.handleProtectedAction(() {
-                      // Pass match ID string to ensure full fetch on MatchPlayScreen
-                      Get.toNamed("${AppRoutes.matchPlay}?mode=highlight", arguments: highlight.matchId!.sId);
+                      // Pass match object to ensure full UI info on MatchPlayScreen
+                      Get.toNamed("${AppRoutes.matchPlay}?mode=highlight", arguments: match);
                     }, checkAccess: true, hasPermission: canWatch);
                   }
                 },

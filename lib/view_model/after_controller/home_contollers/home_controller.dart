@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:collection/collection.dart';
 import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
@@ -75,7 +76,7 @@ class HomeController extends GetxController {
   final RxInt selectedTabIndex = 0.obs;
   final RxString selectedCategory = "".obs;
 
-  var sportsList = <String>["Home"].obs;
+  var sportsList = <String>["HOME"].obs;
 
   var isLogin = false.obs;
   var userName = "".obs;
@@ -172,11 +173,10 @@ class HomeController extends GetxController {
         final data = SeriesModel.fromJson(res);
         var fetchedSeries = data.series ?? [];
         
-        // Filter by isHomeScreen: true
-        fetchedSeries = fetchedSeries.where((s) => s.isHomeScreen == true).toList();
+        seriesList.assignAll(fetchedSeries);
 
-        // Fetch full match details for each series
-        for (var series in fetchedSeries) {
+        // Fetch full match details for each series (only for those on home screen to save resources, or all if preferred)
+        for (var series in fetchedSeries.where((s) => s.isHomeScreen == true)) {
           if (series.matches != null && series.matches!.isNotEmpty) {
             try {
               final matchFutures = series.matches!
@@ -199,8 +199,6 @@ class HomeController extends GetxController {
             }
           }
         }
-
-        seriesList.assignAll(fetchedSeries);
       }
     } catch (e) {
       print("Error fetching series: $e");
@@ -273,7 +271,7 @@ class HomeController extends GetxController {
     try {
       final res = await _matchRepository.getSports();
       if (res['success'] == true && res['sports'] != null) {
-        List<String> s = ["Home"];
+        List<String> s = ["HOME"];
         for (var item in res['sports']) {
           if (item['name'] != null) {
             s.add(item['name']);

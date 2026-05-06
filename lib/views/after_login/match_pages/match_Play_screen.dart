@@ -55,14 +55,8 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
     }
 
     // Check if we should start in highlight mode
-
     if (Get.parameters['mode'] == 'highlight') {
       _selectedTabIndex = 0;
-      if (videoControllerX.match.value != null) {
-        final mId = videoControllerX.match.value!.sId!;
-        videoControllerX.fetchMatchDetails(mId, isHighlight: true);
-        controller.fetchMatchDetailsById(mId); // Ensure other details are fetched
-      }
     }
   }
 
@@ -330,18 +324,30 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
 
   Widget _buildMatchInfo() {
     return Obx(() {
-      final match = videoControllerX.match.value;
-      if (match == null) return const SizedBox();
+      final match = controller.match.value ?? videoControllerX.match.value;
+      if (match == null) {
+        return const Center(
+          child: Padding(
+            padding: EdgeInsets.all(40.0),
+            child: CircularProgressIndicator(),
+          ),
+        );
+      }
 
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Match Title
+            // Match Title - More prominent like MatchDetailScreen
             Text(
               "${match.teamA ?? ""} vs ${match.teamB ?? ""}",
-              style: text20(fontWeight: FontWeight.bold),
+              style: text24(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              "${match.sport?.toUpperCase() ?? ""} • ${match.venue ?? 'TBA'}",
+              style: text12(color: Colors.white54),
             ),
             const SizedBox(height: 16),
 
@@ -368,7 +374,8 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                 Obx(() {
                   final match = videoControllerX.match.value;
                   final homeController = Get.find<HomeController>();
-                  final seriesLogo = homeController.getSeriesLogo(match?.seriesId);
+                  final seriesId = match?.seriesId;
+                  final seriesLogo = homeController.getSeriesLogo(seriesId);
 
                   return Container(
                     height: 35,
@@ -379,10 +386,10 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: seriesLogo.isNotEmpty
-                        ? Image.network(
-                            seriesLogo,
+                        ? CachedNetworkImage(
+                            imageUrl: seriesLogo,
                             fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) =>
+                            errorWidget: (context, url, error) =>
                                 const Icon(Icons.emoji_events, color: AppColors.primary, size: 20),
                           )
                         : const Icon(Icons.emoji_events, color: AppColors.primary, size: 20),
