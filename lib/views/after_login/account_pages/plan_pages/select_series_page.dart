@@ -134,7 +134,7 @@ class _SelectSeriesPageState extends State<SelectSeriesPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(series.title ?? "", style: text16(fontWeight: FontWeight.bold)),
+                              Text(series.title ?? "", style: text16(fontWeight: FontWeight.bold), maxLines: 3, overflow: TextOverflow.ellipsis),
                               if (series.startDate != null)
                                 Text(
                                   "${formatDate(series.startDate!)}"

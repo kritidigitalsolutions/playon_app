@@ -7,6 +7,7 @@ import 'package:play_on_app/views/after_login/match_pages/full_video_play_screen
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 import 'package:video_player/video_player.dart';
 import '../../../routes/app_routes.dart';
+import '../../custom_background.dart/custum_date.dart';
 
 class PodcastPlayScreen extends StatelessWidget {
   const PodcastPlayScreen({super.key});
@@ -32,7 +33,7 @@ class PodcastPlayScreen extends StatelessWidget {
                     ),
                     Expanded(
                       child: Text(
-                        "Podcast Player",
+                        "Podcast",
                         style: text18(fontWeight: FontWeight.bold),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -90,6 +91,240 @@ class PodcastPlayScreen extends StatelessWidget {
                             podcast.description ?? "No description available for this podcast.",
                             style: text14(color: AppColors.white70),
                           ),
+                          const SizedBox(height: 28),
+
+                          /// COMMENTS HEADER
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Comments",
+                                style: text18(fontWeight: FontWeight.bold),
+                              ),
+                              Obx(() => Text(
+                                "${controller.comments.length}",
+                                style: text13(color: AppColors.white60),
+                              )),
+                            ],
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          /// ADD COMMENT BOX
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.08),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: controller.commentController,
+                                    style: text14(),
+                                    decoration: InputDecoration(
+                                      hintText: "Add a comment...",
+                                      hintStyle: text14(
+                                        color: AppColors.white.withOpacity(0.4),
+                                      ),
+                                      border: InputBorder.none,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: controller.addComment,
+                                  icon: const Icon(
+                                    Icons.send_rounded,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 22),
+
+                          /// COMMENTS LIST
+                          Obx(() {
+                            if (controller.isCommentsLoading.value) {
+                              return const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(20),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
+
+                            if (controller.comments.isEmpty) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 25),
+                                child: Center(
+                                  child: Text(
+                                    "No comments yet",
+                                    style: text14(color: Colors.white54),
+                                  ),
+                                ),
+                              );
+                            }
+
+                            return ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: controller.comments.length,
+                              separatorBuilder: (_, __) => const SizedBox(height: 18),
+                              itemBuilder: (_, index) {
+                                final comment = controller.comments[index];
+
+                                return Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 18,
+                                      backgroundColor:
+                                      AppColors.primary.withOpacity(0.2),
+
+                                      backgroundImage:
+                                      (comment.userImage != null &&
+                                          comment.userImage!.isNotEmpty)
+                                          ? NetworkImage(comment.userImage!)
+                                          : null,
+
+                                      child: (comment.userImage == null ||
+                                          comment.userImage!.isEmpty)
+                                          ? Text(
+                                        comment.userName?[0]
+                                            .toUpperCase() ??
+                                            "U",
+                                        style: text14(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      )
+                                          : null,
+                                    ),
+
+                                    const SizedBox(width: 12),
+
+                                    Expanded(
+                                      child: Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(alpha: 0.04),
+                                          borderRadius: BorderRadius.circular(14),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    comment.userName ?? "User",
+                                                    style: text14(
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+
+                                                /// DELETE BUTTON
+                                                Obx(() {
+                                                  final isDeleting =
+                                                      controller.deletingCommentId.value ==
+                                                          comment.sId;
+
+                                                  return GestureDetector(
+                                                    onTap: isDeleting
+                                                        ? null
+                                                        : () {
+                                                      Get.dialog(
+                                                        AlertDialog(
+                                                          backgroundColor: Colors.black,
+                                                          title: const Text(
+                                                            "Delete Comment",
+                                                            style: TextStyle(
+                                                              color: Colors.white,
+                                                            ),
+                                                          ),
+                                                          content: const Text(
+                                                            "Are you sure you want to delete this comment?",
+                                                            style: TextStyle(
+                                                              color: Colors.white70,
+                                                            ),
+                                                          ),
+                                                          actions: [
+                                                            TextButton(
+                                                              onPressed: () => Get.back(),
+                                                              child: const Text("Cancel"),
+                                                            ),
+                                                            TextButton(
+                                                              onPressed: () {
+                                                                Get.back();
+
+                                                                controller.deleteComment(
+                                                                  comment.sId ?? "",
+                                                                );
+                                                              },
+                                                              child: const Text(
+                                                                "Delete",
+                                                                style: TextStyle(
+                                                                  color: Colors.red,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      );
+                                                    },
+                                                    child: isDeleting
+                                                        ? const SizedBox(
+                                                      height: 16,
+                                                      width: 16,
+                                                      child: CircularProgressIndicator(
+                                                        strokeWidth: 2,
+                                                      ),
+                                                    )
+                                                        : const Icon(
+                                                      Icons.delete_outline,
+                                                      color: Colors.redAccent,
+                                                      size: 18,
+                                                    ),
+                                                  );
+                                                }),
+
+                                                const SizedBox(width: 10),
+
+                                                Text(
+                                                  controller.formatDate(
+                                                    comment.createdAt,
+                                                  ),
+                                                  style: text10(
+                                                    color: Colors.white38,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+
+                                            const SizedBox(height: 6),
+
+                                            Text(
+                                              comment.comment ?? "",
+                                              style: text13(
+                                                color: Colors.white70,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          }),
                         ],
                       );
                     }),

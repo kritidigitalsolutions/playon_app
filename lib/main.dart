@@ -23,12 +23,14 @@ import 'package:play_on_app/views/after_login/home_pages/all_highlights_screen.d
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 void main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
+    WakelockPlus.enable();
     
     // 1. Firebase Initialization with Timeout
     try {

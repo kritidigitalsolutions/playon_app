@@ -55,6 +55,12 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
         ),
         body: Column(
           children: [
+            /// WHITE DIVIDER LINE
+            Container(
+              height: 1,
+              width: double.infinity,
+              color: Colors.white,
+            ),
 
             /// 🔥 Banner
             SizedBox(
@@ -106,7 +112,9 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
                         Text(series.title ?? "",
                             style: text18(
                                 color: Colors.white,
-                                fontWeight: FontWeight.bold)),
+                                fontWeight: FontWeight.bold),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis),
                         const SizedBox(height: 4),
                         Text(
                           "${_formatDate(series.startDate)} - ${_formatDate(series.endDate)}",
@@ -235,7 +243,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
                 color: Colors.white, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
         SizedBox(
-          height: 230,
+          height: 250,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: matches.length,
@@ -307,7 +315,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
                   Text(
                     "${match.teamA} vs ${match.teamB}",
                     style: text16(fontWeight: FontWeight.bold),
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 6),
@@ -366,12 +374,18 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
         child: Row(
           children: [
             /// Thumbnail
-            _buildMatchImage(
-              match.thumbnail ?? match.banner,
-              match.sport,
-              width: 110,
-              height: 75,
-              borderRadius: BorderRadius.circular(8),
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.white, width: 1.5),
+              ),
+              child: _buildMatchImage(
+                match.thumbnail ?? match.banner,
+                match.sport,
+                width: 110,
+                height: 75,
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -386,7 +400,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
                   Text(
                     "${match.teamA} vs ${match.teamB}",
                     style: text14(fontWeight: FontWeight.bold),
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),

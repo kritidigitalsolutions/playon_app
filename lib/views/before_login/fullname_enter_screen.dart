@@ -21,7 +21,8 @@ class FullNameScreen extends StatelessWidget {
   void _onContinue() {
     if (isValid) {
       ctr.saveNameLocally();
-      Get.toNamed(AppRoutes.sportInterrestScreen);
+      // Complete profile with empty sports to skip that screen
+      ctr.completeProfile([]);
     } else {
       showCustomSnackbar(
         title: "Invalid Name",

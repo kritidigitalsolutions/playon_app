@@ -78,9 +78,12 @@ class MatchDetailScreen extends StatelessWidget {
                           children: [
                             Text(
                               "${match.teamA}  ${match.teamB}",
+                              textAlign: TextAlign.center,
                               style: text30(
                                 fontWeight: FontWeight.bold,
                               ).copyWith(letterSpacing: 4),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                             Builder(builder: (context) {
                               final homeController = Get.find<HomeController>();
@@ -101,9 +104,14 @@ class MatchDetailScreen extends StatelessWidget {
                                         errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                                       ),
                                     ),
-                                  Text(
-                                    seriesName.isNotEmpty ? seriesName : (match.tournament ?? ""),
-                                    style: text16(color: AppColors.textSecondary),
+                                  Expanded(
+                                    child: Text(
+                                      seriesName.isNotEmpty ? seriesName : (match.tournament ?? ""),
+                                      textAlign: TextAlign.center,
+                                      style: text16(color: AppColors.textSecondary),
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
                                 ],
                               );
@@ -212,6 +220,8 @@ class MatchDetailScreen extends StatelessWidget {
                                 Text(
                                   "${match.teamA} vs ${match.teamB}",
                                   style: text20(fontWeight: FontWeight.bold),
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 if (match.description != null && match.description!.isNotEmpty)
                                   Padding(
@@ -250,7 +260,7 @@ class MatchDetailScreen extends StatelessWidget {
                                         child: Text(
                                           seriesName.isNotEmpty ? seriesName : (match.tournament ?? ""),
                                           style: text15(fontWeight: FontWeight.w600, color: AppColors.primary),
-                                          maxLines: 1,
+                                          maxLines: 3,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
@@ -294,7 +304,7 @@ class MatchDetailScreen extends StatelessWidget {
                                                     score?.homeTeam ?? match.teamA ?? "",
                                                     textAlign: TextAlign.center,
                                                     style: text12(fontWeight: FontWeight.bold),
-                                                    maxLines: 1,
+                                                    maxLines: 2,
                                                     overflow: TextOverflow.ellipsis,
                                                   ),
                                                 ),
@@ -336,7 +346,7 @@ class MatchDetailScreen extends StatelessWidget {
                                                     score?.awayTeam ?? match.teamB ?? "",
                                                     textAlign: TextAlign.center,
                                                     style: text12(fontWeight: FontWeight.bold),
-                                                    maxLines: 1,
+                                                    maxLines: 2,
                                                     overflow: TextOverflow.ellipsis,
                                                   ),
                                                 ),

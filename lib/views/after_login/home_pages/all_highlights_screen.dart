@@ -4,16 +4,23 @@ import 'package:collection/collection.dart';
 import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
-import 'package:play_on_app/views/custom_background.dart/ad_banner_widget.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 import 'package:play_on_app/model/response_model/highlight_model.dart' as highlight_model;
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
+import 'package:play_on_app/model/response_model/series_model.dart' as series_model;
 import 'package:play_on_app/routes/app_routes.dart';
 import '../../../view_model/after_controller/plan_controller.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-class AllHighlightsScreen extends StatelessWidget {
+class AllHighlightsScreen extends StatefulWidget {
   const AllHighlightsScreen({super.key});
+
+  @override
+  State<AllHighlightsScreen> createState() => _AllHighlightsScreenState();
+}
+
+class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
+  series_model.Series? selectedSeries;
 
   @override
   Widget build(BuildContext context) {
@@ -27,13 +34,31 @@ class AllHighlightsScreen extends StatelessWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  "All Highlights",
-                  style: text20(fontWeight: FontWeight.bold),
+                child: Row(
+                  children: [
+                    if (selectedSeries != null)
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                        onPressed: () {
+                          setState(() {
+                            selectedSeries = null;
+                          });
+                        },
+                      ),
+                    Expanded(
+                      child: Text(
+                        selectedSeries == null ? "All Series" : (selectedSeries!.title ?? "Highlights"),
+                        style: text20(fontWeight: FontWeight.bold),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
-              // Sport filter
+              // Sport filter - Only show when no series is selected
+              if (selectedSeries == null)
               Obx(() => SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -67,37 +92,137 @@ class AllHighlightsScreen extends StatelessWidget {
 
               Expanded(
                 child: Obx(() {
-                  if (controller.isHighlightsLoading.value) {
+                  if (controller.isSeriesLoading.value || controller.isHighlightsLoading.value) {
                     return const Center(child: CircularProgressIndicator());
                   }
 
-                  final selectedSport = controller.selectedTabIndex.value == 0 
-                      ? "" 
-                      : controller.sportsList[controller.selectedTabIndex.value].toLowerCase();
-
-                  final highlights = controller.highlightList.where((h) {
-                    final matchesSport = selectedSport.isEmpty || h.matchId?.sport?.toLowerCase() == selectedSport;
-                    return matchesSport;
-                  }).toList();
-
-                  if (highlights.isEmpty) {
-                    return Center(child: Text("No highlights available", style: text14(color: Colors.white70)));
+                  if (selectedSeries == null) {
+                    return _buildSeriesList(controller);
+                  } else {
+                    return _buildHighlightsList(controller);
                   }
-
-                  return ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: highlights.length,
-                    itemBuilder: (context, index) {
-                      final highlight = highlights[index];
-                      return _buildHighlightCard(highlight);
-                    },
-                  );
                 }),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSeriesList(HomeController controller) {
+    final selectedSport = controller.selectedTabIndex.value == 0 
+        ? "" 
+        : controller.sportsList[controller.selectedTabIndex.value].toLowerCase();
+
+    final filteredSeries = controller.seriesList.where((s) {
+      return selectedSport.isEmpty || s.sport?.toLowerCase() == selectedSport;
+    }).toList();
+
+    if (filteredSeries.isEmpty) {
+      return Center(child: Text("No series available", style: text14(color: Colors.white70)));
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: filteredSeries.length,
+      itemBuilder: (context, index) {
+        final series = filteredSeries[index];
+        return _buildSeriesCard(series);
+      },
+    );
+  }
+
+  Widget _buildSeriesCard(series_model.Series series) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedSeries = series;
+        });
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (series.banner != null)
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                child: CachedNetworkImage(
+                  imageUrl: series.banner!,
+                  height: 150,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorWidget: (context, url, error) => Container(
+                    height: 150,
+                    color: Colors.grey.withValues(alpha: 0.2),
+                    child: const Icon(Icons.image, color: Colors.white24),
+                  ),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          series.title ?? "",
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: text16(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios, color: Colors.white38, size: 16),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "${series.sport?.toUpperCase()} • ${series.tourCountry ?? 'Global'}",
+                    style: text13(color: AppColors.white60),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHighlightsList(HomeController controller) {
+    // Filter highlights that belong to the selected series
+    // We check if the highlight's matchId exists in the selected series' matches
+    final seriesMatchIds = selectedSeries?.matches?.map((m) => m.sId).toSet() ?? {};
+    
+    // Also try to find from fullMatches if available
+    if (selectedSeries?.fullMatches != null) {
+      seriesMatchIds.addAll(selectedSeries!.fullMatches!.map((m) => m.sId).whereType<String>());
+    }
+
+    final highlights = controller.highlightList.where((h) {
+      return seriesMatchIds.contains(h.matchId?.sId);
+    }).toList();
+
+    if (highlights.isEmpty) {
+      return Center(child: Text("No highlights available for this series", style: text14(color: Colors.white70)));
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: highlights.length,
+      itemBuilder: (context, index) {
+        final highlight = highlights[index];
+        return _buildHighlightCard(highlight);
+      },
     );
   }
 
@@ -207,12 +332,12 @@ class AllHighlightsScreen extends StatelessWidget {
                               if (fullMatch != null) ...[
                                 _teamMiniLogo(fullMatch.teamALogo),
                                 const SizedBox(width: 4),
-                                Text(fullMatch.teamA ?? "", style: text12(color: Colors.white70)),
+                                Flexible(child: Text(fullMatch.teamA ?? "", style: text12(color: Colors.white70), maxLines: 2, overflow: TextOverflow.ellipsis)),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(horizontal: 6),
                                   child: Text("vs", style: text10(color: Colors.white38)),
                                 ),
-                                Text(fullMatch.teamB ?? "", style: text12(color: Colors.white70)),
+                                Flexible(child: Text(fullMatch.teamB ?? "", style: text12(color: Colors.white70), maxLines: 2, overflow: TextOverflow.ellipsis)),
                                 const SizedBox(width: 4),
                                 _teamMiniLogo(fullMatch.teamBLogo),
                               ] else if (highlight.matchId != null) ...[
@@ -245,23 +370,32 @@ class AllHighlightsScreen extends StatelessWidget {
     final name = homeController.getSeriesName(seriesId);
     final logo = homeController.getSeriesLogo(seriesId);
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (logo.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(right: 6),
-            child: CachedNetworkImage(
-              imageUrl: logo,
-              height: 18,
-              width: 18,
-              fit: BoxFit.contain,
-              errorWidget: (_, __, ___) => const Icon(Icons.emoji_events, size: 14, color: AppColors.primary),
+    return Flexible(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (logo.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: CachedNetworkImage(
+                imageUrl: logo,
+                height: 18,
+                width: 18,
+                fit: BoxFit.contain,
+                errorWidget: (_, __, ___) => const Icon(Icons.emoji_events, size: 14, color: AppColors.primary),
+              ),
             ),
-          ),
-        if (name.isNotEmpty)
-          Text(name, style: text12(color: AppColors.primary, fontWeight: FontWeight.w500)),
-      ],
+          if (name.isNotEmpty)
+            Flexible(
+              child: Text(
+                name, 
+                style: text12(color: AppColors.primary, fontWeight: FontWeight.w500),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+        ],
+      ),
     );
   }
 

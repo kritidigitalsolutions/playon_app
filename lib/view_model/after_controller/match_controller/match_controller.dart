@@ -24,6 +24,7 @@ class MatchDetailsController extends GetxController {
   var remainingTime = "".obs;
   var isReminderOn = false.obs;
   var isLock = true.obs;
+  final deletingCommentId = ''.obs;
 
   var highlights = <highlight_model.HighlightItem>[].obs;
   var isHighlightsLoading = false.obs;
@@ -227,6 +228,34 @@ class MatchDetailsController extends GetxController {
       }
     } catch (e) {
       Get.snackbar("Error", "Failed to add comment");
+    }
+  }
+  Future<void> deleteComment(String commentId) async {
+    try {
+      deletingCommentId.value = commentId;
+
+      final res = await _repository.deleteComment(commentId);
+
+      if (res['success'] == true) {
+        comments.removeWhere((e) => e.sId == commentId);
+
+        Get.snackbar(
+          "Success",
+          "Comment deleted successfully",
+        );
+      } else {
+        Get.snackbar(
+          "Error",
+          res['message'] ?? "Failed to delete comment",
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "Failed to delete comment",
+      );
+    } finally {
+      deletingCommentId.value = '';
     }
   }
 

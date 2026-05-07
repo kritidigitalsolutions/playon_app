@@ -515,14 +515,94 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                       children: [
                         Row(
                           children: [
-                            Text(
-                              comment.userName ?? "User",
-                              style: text14(fontWeight: FontWeight.bold),
+                            Expanded(
+                              child: Text(
+                                comment.userName ?? "User",
+                                style: text14(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
+
+                            /// DELETE COMMENT
+                            Obx(() {
+                              final isDeleting =
+                                  matchDetailsController
+                                      .deletingCommentId.value ==
+                                      comment.sId;
+
+                              return GestureDetector(
+                                onTap: isDeleting
+                                    ? null
+                                    : () {
+                                  Get.dialog(
+                                    AlertDialog(
+                                      backgroundColor: Colors.black,
+                                      title: const Text(
+                                        "Delete Comment",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      content: const Text(
+                                        "Are you sure you want to delete this comment?",
+                                        style: TextStyle(
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Get.back(),
+                                          child: const Text(
+                                            "Cancel",
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            Get.back();
+
+                                            matchDetailsController
+                                                .deleteComment(
+                                              comment.sId ?? "",
+                                            );
+                                          },
+                                          child: const Text(
+                                            "Delete",
+                                            style: TextStyle(
+                                              color: Colors.red,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                                child: isDeleting
+                                    ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child:
+                                  CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                                    : const Icon(
+                                  Icons
+                                      .delete_outline_rounded,
+                                  color: Colors.redAccent,
+                                  size: 18,
+                                ),
+                              );
+                            }),
+
                             const SizedBox(width: 8),
+
                             Text(
                               _formatDate(comment.createdAt),
-                              style: text10(color: AppColors.white.withOpacity(0.4)),
+                              style: text10(
+                                color: AppColors.white
+                                    .withOpacity(0.4),
+                              ),
                             ),
                           ],
                         ),

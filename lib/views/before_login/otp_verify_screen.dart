@@ -99,6 +99,33 @@ class OtpVerifyScreen extends StatelessWidget {
 
                     const SizedBox(height: 40),
 
+                    // Referral Code Field (Optional) - Only show for new users
+                    Obx(() => ctr.isNewUser.value 
+                      ? Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: AppColors.white24,
+                              width: 1.2,
+                            ),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: TextField(
+                            controller: ctr.referralController,
+                            style: text16(),
+                            decoration: InputDecoration(
+                              hintText: "Referral Code (Optional)",
+                              hintStyle: text16(color: Colors.grey),
+                              border: InputBorder.none,
+                              icon: Icon(Icons.card_giftcard, color: AppColors.primary, size: 20),
+                            ),
+                          ),
+                        )
+                      : const SizedBox.shrink()),
+
+                    Obx(() => SizedBox(height: ctr.isNewUser.value ? 40 : 0)),
+
                     Obx(() => AppButton(
                       radius: 8,
                       title: "Verify OTP",

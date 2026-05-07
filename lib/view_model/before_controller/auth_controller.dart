@@ -26,6 +26,7 @@ class AuthController extends GetxController {
   var mobileController = TextEditingController();
   var otpController = TextEditingController();
   var nameController = TextEditingController();
+  var referralController = TextEditingController();
   
   var sentOtp = "".obs;
   var isNewUser = false.obs;
@@ -245,7 +246,7 @@ class AuthController extends GetxController {
           if (nameController.text.trim().length < 3) {
             Get.offAllNamed(AppRoutes.fullnameEnter);
           } else {
-            Get.offAllNamed(AppRoutes.sportInterrestScreen);
+            Get.offAllNamed(AppRoutes.myHomePage);
           }
         } else {
           // Returning user: Set isLogin = true immediately
@@ -287,7 +288,8 @@ class AuthController extends GetxController {
     try {
       final response = await _repository.verifyOtp({
         "mobile": mobileController.text,
-        "otp": otpController.text
+        "otp": otpController.text,
+        "referralCode": referralController.text.trim()
       });
       final data = VerifyOtpResponseModel.fromJson(response);
       if (data.success == true) {
@@ -319,7 +321,7 @@ class AuthController extends GetxController {
           if (nameController.text.trim().length < 3) {
             Get.offAllNamed(AppRoutes.fullnameEnter);
           } else {
-            Get.offAllNamed(AppRoutes.sportInterrestScreen);
+            Get.offAllNamed(AppRoutes.myHomePage);
           }
         } else {
           // Returning user: Set isLogin = true immediately
@@ -343,10 +345,10 @@ class AuthController extends GetxController {
       showCustomSnackbar(title: "Error", message: "Enter full name", type: SnackType.error);
       return;
     }
-    if (favoriteSports.isEmpty) {
-      showCustomSnackbar(title: "Error", message: "Select at least one sport", type: SnackType.error);
-      return;
-    }
+    // if (favoriteSports.isEmpty) {
+    //   showCustomSnackbar(title: "Error", message: "Select at least one sport", type: SnackType.error);
+    //   return;
+    // }
     isLoading.value = true;
     try {
       final token = HiveService.getToken();

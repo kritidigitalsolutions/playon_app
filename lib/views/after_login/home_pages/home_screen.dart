@@ -714,7 +714,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             Text(
                               highlight.title ?? "Highlights",
                               style: text18(fontWeight: FontWeight.bold, color: Colors.white),
-                              maxLines: 1,
+                              maxLines: 3,
                               overflow: TextOverflow.ellipsis,
                             ),
                             if (highlight.matchId != null)
@@ -903,9 +903,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     if (match.isPremium != false && !canWatch)
                       const Icon(Icons.lock, color: AppColors.white70, size: 18),
                     const SizedBox(width: 8),
-                    Text(
-                      ctr.getSeriesName(match.seriesId).isNotEmpty ? ctr.getSeriesName(match.seriesId) : (match.tournament ?? "LIVE MATCH"),
-                      style: text13(color: AppColors.white70),
+                    Expanded(
+                      child: Text(
+                        ctr.getSeriesName(match.seriesId).isNotEmpty ? ctr.getSeriesName(match.seriesId) : (match.tournament ?? "LIVE MATCH"),
+                        style: text13(color: AppColors.white70),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.end,
+                      ),
                     ),
                   ],
                 ),
@@ -920,6 +925,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         Text(
                           realScore?.title ?? "${match.teamA} vs ${match.teamB}",
                           style: text18(fontWeight: FontWeight.bold),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 6),
                         if (realScore != null) ...[
@@ -1260,7 +1267,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
                             ),
-                            maxLines: 2,
+                            maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -1786,7 +1793,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: text20(fontWeight: FontWeight.bold)),
+          Expanded(child: Text(title, style: text20(fontWeight: FontWeight.bold), maxLines: 3, overflow: TextOverflow.ellipsis)),
           if (action.isNotEmpty)
             GestureDetector(
               onTap: onActionTap,
@@ -1875,7 +1882,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     Text(
                       match.title ?? "Upcoming Match",
-                      maxLines: 1,
+                      maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                       style: text13(
                         fontWeight: FontWeight.w400,
@@ -2060,7 +2067,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Expanded(
                           child: Text(
                             match.title ?? "Match Highlights",
-                            maxLines: 1,
+                            maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                             style: text13(fontWeight: FontWeight.w600),
                           ),
@@ -2070,7 +2077,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   Text(
                     ctr.getSeriesName(match.seriesId) ?? match.tournament ?? "",
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: text11(color: AppColors.textSecondary),
                   ),
@@ -2178,7 +2185,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Expanded(
                     child: Text(
                       match.title ?? "${match.teamA} vs ${match.teamB}",
-                      maxLines: 1,
+                      maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                       style: text13(fontWeight: FontWeight.w600),
                     ),
@@ -2188,7 +2195,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             Text(
               ctr.getSeriesName(match.seriesId) ?? match.tournament ?? "",
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: text11(color: AppColors.textSecondary),
             ),

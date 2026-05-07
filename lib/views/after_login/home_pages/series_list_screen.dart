@@ -142,6 +142,8 @@ class SeriesListScreen extends StatelessWidget {
                       Expanded(
                         child: Text(
                           series.title ?? "",
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
                           style: text16(fontWeight: FontWeight.bold),
                         ),
                       ),

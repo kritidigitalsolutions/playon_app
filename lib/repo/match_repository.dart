@@ -187,6 +187,19 @@ class MatchRepository {
     }
   }
 
+  Future<dynamic> deleteComment(String commentId) async {
+    try {
+      final response = await _apiServices.deleteApi(
+        AppUrls.deleteComment(commentId),{}
+      );
+
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+
   Future<dynamic> getLiveScore(String matchId) async {
     try {
       final response = await _apiServices.getApi(AppUrls.liveScore(matchId));

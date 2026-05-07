@@ -343,6 +343,8 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
             Text(
               "${match.teamA ?? ""} vs ${match.teamB ?? ""}",
               style: text24(fontWeight: FontWeight.bold),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
             Text(
@@ -405,7 +407,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                     return Text(
                       seriesName.isNotEmpty ? seriesName : (match?.tournament ?? "Series"),
                       style: text16(color: Colors.white, fontWeight: FontWeight.bold),
-                      maxLines: 1,
+                      maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                     );
                   }),
@@ -467,7 +469,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                                 homeTeam ?? "",
                                 textAlign: TextAlign.center,
                                 style: text13(fontWeight: FontWeight.bold),
-                                maxLines: 1,
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               if (isCricket) ...[
@@ -554,7 +556,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                                 awayTeam ?? "",
                                 textAlign: TextAlign.center,
                                 style: text13(fontWeight: FontWeight.bold),
-                                maxLines: 1,
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               if (isCricket) ...[
@@ -1605,14 +1607,88 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                         children: [
                           Row(
                             children: [
-                              Text(
-                                comment.userName ?? "User",
-                                style: text14(fontWeight: FontWeight.bold),
+                              Expanded(
+                                child: Text(
+                                  comment.userName ?? "User",
+                                  style: text14(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
+
+                              /// DELETE BUTTON
+                              // if (comment.userId == HiveService.userId)
+                                Obx(() {
+                                  final isDeleting =
+                                      controller.deletingCommentId.value ==
+                                          comment.sId;
+
+                                  return GestureDetector(
+                                    onTap: isDeleting
+                                        ? null
+                                        : () {
+                                      Get.dialog(
+                                        AlertDialog(
+                                          backgroundColor: Colors.black,
+                                          title: const Text(
+                                            "Delete Comment",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          content: const Text(
+                                            "Are you sure you want to delete this comment?",
+                                            style: TextStyle(
+                                              color: Colors.white70,
+                                            ),
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Get.back(),
+                                              child: const Text("Cancel"),
+                                            ),
+                                            TextButton(
+                                              onPressed: () {
+                                                Get.back();
+
+                                                controller.deleteComment(
+                                                  comment.sId ?? "",
+                                                );
+                                              },
+                                              child: const Text(
+                                                "Delete",
+                                                style: TextStyle(
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                    child: isDeleting
+                                        ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                        : const Icon(
+                                      Icons.delete_outline_rounded,
+                                      color: Colors.redAccent,
+                                      size: 18,
+                                    ),
+                                  );
+                                }),
+
                               const SizedBox(width: 8),
+
                               Text(
                                 _formatDate(comment.createdAt),
-                                style: text10(color: AppColors.white.withValues(alpha: 0.4)),
+                                style: text10(
+                                  color: AppColors.white.withValues(alpha: 0.4),
+                                ),
                               ),
                             ],
                           ),
@@ -1769,6 +1845,6 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
-    return false;
+    return true;
   }
 }
