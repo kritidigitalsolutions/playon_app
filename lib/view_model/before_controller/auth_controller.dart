@@ -135,6 +135,7 @@ class AuthController extends GetxController {
         // Update Hive local storage with fresh data
         final user = HiveService.getUser();
         if (user != null) {
+          user.sId = userData.value?.id;
           // Only overwrite name if API provided a non-empty name
           if (userData.value?.fullName != null && userData.value!.fullName!.isNotEmpty) {
             user.name = userData.value?.fullName;
@@ -209,6 +210,7 @@ class AuthController extends GetxController {
       final data = VerifyOtpResponseModel.fromJson(response);
       if (data.success == true) {
         final userDetail = UserDetails(
+          sId: data.user?.id,
           token: data.token,
           email: data.user?.email,
           phone: data.user?.mobile,
@@ -294,6 +296,7 @@ class AuthController extends GetxController {
       final data = VerifyOtpResponseModel.fromJson(response);
       if (data.success == true) {
         final userDetail = UserDetails(
+          sId: data.user?.id,
           token: data.token,
           phone: mobileController.text,
           isNewUser: data.isNewUser,
@@ -449,6 +452,7 @@ class AuthController extends GetxController {
         // Update Hive local storage
         final user = HiveService.getUser();
         if (user != null) {
+          user.sId = userData.value?.id;
           user.name = userData.value?.fullName;
           user.phone = userData.value?.mobile;
           user.email = userData.value?.email;

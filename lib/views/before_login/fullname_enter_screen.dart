@@ -124,15 +124,15 @@ class FullNameScreen extends StatelessWidget {
                         onTap: _onContinue,
                       ),
                       const SizedBox(height: 16),
-                      Center(
-                        child: TextButton(
-                          onPressed: () => ctr.logout(),
-                          child: Text(
-                            "Logout",
-                            style: text14(color: AppColors.white70),
-                          ),
-                        ),
-                      ),
+                      // Center(
+                      //   child: TextButton(
+                      //     onPressed: () => ctr.logout(),
+                      //     child: Text(
+                      //       "Logout",
+                      //       style: text14(color: AppColors.white70),
+                      //     ),
+                      //   ),
+                      // ),
                       const SizedBox(height: 40),
                     ],
                   ),

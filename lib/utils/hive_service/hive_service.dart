@@ -19,6 +19,10 @@ class HiveService {
     return _box.get(userKey)?.token;
   }
 
+  static String? get userId {
+    return _box.get(userKey)?.sId;
+  }
+
   static Future<void> logout() async {
     await _box.clear();
   }

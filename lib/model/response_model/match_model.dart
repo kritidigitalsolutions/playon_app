@@ -29,6 +29,7 @@ class Match {
   String? teamB;
   String? teamALogo;
   String? teamBLogo;
+  String? videoUrl;
   String? tournament;
   String? venue;
   String? matchDate;
@@ -55,6 +56,7 @@ class Match {
       this.teamB,
       this.teamALogo,
       this.teamBLogo,
+      this.videoUrl,
       this.tournament,
       this.venue,
       this.matchDate,
@@ -81,6 +83,7 @@ class Match {
     teamB = json['teamB'];
     teamALogo = json['teamALogo'];
     teamBLogo = json['teamBLogo'];
+    videoUrl = json['videoUrl'];
     tournament = json['tournament'];
     venue = json['venue'];
     matchDate = json['matchDate'];

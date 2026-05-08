@@ -5,6 +5,7 @@ import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
+import 'package:play_on_app/views/widgets/admob_banner_widget.dart';
 import 'package:play_on_app/model/response_model/highlight_model.dart' as highlight_model;
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
 import 'package:play_on_app/model/response_model/series_model.dart' as series_model;
@@ -43,6 +44,7 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
                           setState(() {
                             selectedSeries = null;
                           });
+                          controller.fetchHighlights(); // Fetch global highlights again
                         },
                       ),
                     Expanded(
@@ -88,6 +90,8 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
                 ),
               )),
 
+              const SizedBox(height: 8),
+              const AdMobBannerWidget(position: "all_highlights_top"),
               const SizedBox(height: 16),
 
               Expanded(
@@ -128,17 +132,20 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
       itemCount: filteredSeries.length,
       itemBuilder: (context, index) {
         final series = filteredSeries[index];
-        return _buildSeriesCard(series);
+        return _buildSeriesCard(controller, series);
       },
     );
   }
 
-  Widget _buildSeriesCard(series_model.Series series) {
+  Widget _buildSeriesCard(HomeController controller, series_model.Series series) {
     return GestureDetector(
       onTap: () {
         setState(() {
           selectedSeries = series;
         });
+        if (series.sId != null) {
+          controller.fetchHighlights(seriesId: series.sId);
+        }
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
@@ -199,18 +206,7 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
   }
 
   Widget _buildHighlightsList(HomeController controller) {
-    // Filter highlights that belong to the selected series
-    // We check if the highlight's matchId exists in the selected series' matches
-    final seriesMatchIds = selectedSeries?.matches?.map((m) => m.sId).toSet() ?? {};
-    
-    // Also try to find from fullMatches if available
-    if (selectedSeries?.fullMatches != null) {
-      seriesMatchIds.addAll(selectedSeries!.fullMatches!.map((m) => m.sId).whereType<String>());
-    }
-
-    final highlights = controller.highlightList.where((h) {
-      return seriesMatchIds.contains(h.matchId?.sId);
-    }).toList();
+    final highlights = controller.highlightList.toList();
 
     if (highlights.isEmpty) {
       return Center(child: Text("No highlights available for this series", style: text14(color: Colors.white70)));
@@ -233,7 +229,7 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
         ?? homeController.liveMatches.firstWhereOrNull((m) => m.sId == highlight.matchId?.sId)
         ?? homeController.seriesList.expand((s) => s.fullMatches ?? <model.Match>[]).firstWhereOrNull((m) => m.sId == highlight.matchId?.sId);
     
-    // Create a match object for access checking
+    // Create a match object for access checking and UI display
     final matchArg = fullMatch ?? (highlight.matchId != null ? model.Match(
       sId: highlight.matchId!.sId,
       isPremium: highlight.isPremium,
@@ -242,7 +238,20 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
       teamB: highlight.matchId!.teamB,
       tournament: highlight.matchId!.tournament,
       sport: highlight.matchId!.sport,
-    ) : null);
+      videoUrl: highlight.videoUrl, // Ensure video URL is passed
+      thumbnail: highlight.thumbnail,
+      title: highlight.title,
+    ) : (highlight.seriesId != null ? model.Match(
+      sId: highlight.sId, // Use highlight ID
+      isPremium: highlight.isPremium,
+      tournament: highlight.seriesId!.title,
+      sport: highlight.seriesId!.sport,
+      teamA: highlight.seriesId!.title, // Fallback title
+      teamB: "Highlights",
+      videoUrl: highlight.videoUrl,
+      thumbnail: highlight.thumbnail,
+      title: highlight.title,
+    ) : null));
 
     return Obx(() {
       final canWatch = Get.find<PlanController>().canWatchMatch(matchArg);
@@ -341,9 +350,18 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
                                 const SizedBox(width: 4),
                                 _teamMiniLogo(fullMatch.teamBLogo),
                               ] else if (highlight.matchId != null) ...[
-                                Expanded(
+                                Flexible(
                                   child: Text(
                                     "${highlight.matchId!.teamA} vs ${highlight.matchId!.teamB}",
+                                    style: text12(color: Colors.white70),
+                                    textAlign: TextAlign.end,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ] else if (highlight.seriesId != null) ...[
+                                Flexible(
+                                  child: Text(
+                                    highlight.seriesId!.title ?? "Series Highlights",
                                     style: text12(color: Colors.white70),
                                     textAlign: TextAlign.end,
                                     overflow: TextOverflow.ellipsis,

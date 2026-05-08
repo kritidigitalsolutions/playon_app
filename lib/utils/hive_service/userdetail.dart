@@ -26,6 +26,9 @@ class UserDetails extends HiveObject {
   @HiveField(7)
   bool? isNewUser;
 
+  @HiveField(8)
+  String? sId;
+
   UserDetails({
     this.name,
     this.email,
@@ -35,5 +38,6 @@ class UserDetails extends HiveObject {
     this.createdAt,
     this.favoriteSports,
     this.isNewUser,
+    this.sId,
   });
 }

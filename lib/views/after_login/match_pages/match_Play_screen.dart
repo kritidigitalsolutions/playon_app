@@ -10,6 +10,7 @@ import 'package:play_on_app/utils/custom_button.dart';
 import 'package:play_on_app/views/custom_background.dart/ad_banner_widget.dart';
 import 'package:play_on_app/view_model/after_controller/match_controller/match_controller.dart';
 import 'package:play_on_app/views/after_login/match_pages/full_video_play_screen.dart';
+import 'package:play_on_app/views/widgets/admob_banner_widget.dart';
 import 'package:video_player/video_player.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
 import 'package:play_on_app/model/response_model/highlight_model.dart' as highlight_model;
@@ -92,7 +93,12 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                       const SliverToBoxAdapter(
                         child: Padding(
                           padding: EdgeInsets.symmetric(vertical: 8),
-                          child: AdBannerWidget(),
+                          child: Column(
+                            children: [
+                              AdBannerWidget(),
+                              AdMobBannerWidget(position: "match_play_top"),
+                            ],
+                          ),
                         ),
                       ),
                       SliverPersistentHeader(
@@ -380,8 +386,8 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                   final seriesLogo = homeController.getSeriesLogo(seriesId);
 
                   return Container(
-                    height: 35,
-                    width: 35,
+                    height: 50,
+                    width: 50,
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
                       color: AppColors.white.withValues(alpha: 0.1),
@@ -1617,7 +1623,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                               ),
 
                               /// DELETE BUTTON
-                              // if (comment.userId == HiveService.userId)
+                               if (comment.userId == HiveService.userId)
                                 Obx(() {
                                   final isDeleting =
                                       controller.deletingCommentId.value ==

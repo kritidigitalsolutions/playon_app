@@ -24,6 +24,7 @@ class HighlightModel {
 class HighlightItem {
   String? sId;
   MatchId? matchId;
+  SeriesId? seriesId;
   String? title;
   String? description;
   String? category;
@@ -40,6 +41,7 @@ class HighlightItem {
   HighlightItem(
       {this.sId,
       this.matchId,
+      this.seriesId,
       this.title,
       this.description,
       this.category,
@@ -56,18 +58,39 @@ class HighlightItem {
   HighlightItem.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
     matchId = json['matchId'] != null ? MatchId.fromJson(json['matchId']) : null;
+    seriesId = json['seriesId'] != null ? SeriesId.fromJson(json['seriesId']) : null;
     title = json['title'];
     description = json['description'];
     category = json['category'];
     sourceType = json['sourceType'];
     videoUrl = json['videoUrl'];
     thumbnail = json['thumbnail'];
-    duration = json['duration'];
+    duration = json['duration']?.toString();
     tags = json['tags']?.cast<String>();
     isPremium = json['isPremium'];
     order = json['order'];
     createdAt = json['createdAt'];
     updatedAt = json['updatedAt'];
+  }
+}
+
+class SeriesId {
+  String? sId;
+  String? title;
+  String? sport;
+  String? banner;
+  String? tournamentLogo;
+  String? status;
+
+  SeriesId({this.sId, this.title, this.sport, this.banner, this.tournamentLogo, this.status});
+
+  SeriesId.fromJson(Map<String, dynamic> json) {
+    sId = json['_id'];
+    title = json['title'];
+    sport = json['sport'];
+    banner = json['banner'];
+    tournamentLogo = json['tournamentLogo'];
+    status = json['status'];
   }
 }
 

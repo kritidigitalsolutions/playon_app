@@ -20,6 +20,7 @@ import 'package:play_on_app/model/response_model/star_player_model.dart';
 import 'package:play_on_app/model/response_model/podcast_model.dart';
 import 'package:play_on_app/model/response_model/social_media_model.dart';
 import 'package:play_on_app/model/response_model/referral_offer_model.dart';
+import 'package:play_on_app/model/response_model/referral_voucher_model.dart';
 import 'package:play_on_app/model/response_model/score_model.dart';
 import 'package:play_on_app/model/response_model/highlight_model.dart' as highlight_model;
 import 'package:play_on_app/repo/legal_repository.dart';
@@ -82,8 +83,10 @@ class HomeController extends GetxController {
   var userName = "".obs;
   var referralCode = "".obs;
   final referralOffer = Rxn<ReferralOffer>();
+  var referralVouchers = <Voucher>[].obs;
   var isReferralLoading = false.obs;
   var isOfferLoading = false.obs;
+  var isVoucherLoading = false.obs;
 
   @override
   void onInit() {
@@ -106,6 +109,7 @@ class HomeController extends GetxController {
     fetchSocialMedia();
     fetchReferralCode();
     fetchReferralOffer();
+    fetchReferralVouchers();
     _startScoreTimer();
 
     // Setup search listeners
@@ -146,6 +150,22 @@ class HomeController extends GetxController {
       debugPrint("Error fetching referral offer: $e");
     } finally {
       isOfferLoading.value = false;
+    }
+  }
+
+  Future<void> fetchReferralVouchers() async {
+    if (!isLogin.value) return;
+    try {
+      isVoucherLoading.value = true;
+      final response = await _authRepository.getReferralVouchers();
+      if (response['success'] == true) {
+        final data = ReferralVoucherModel.fromJson(response);
+        referralVouchers.assignAll(data.vouchers ?? []);
+      }
+    } catch (e) {
+      debugPrint("Error fetching referral vouchers: $e");
+    } finally {
+      isVoucherLoading.value = false;
     }
   }
 
@@ -222,10 +242,10 @@ class HomeController extends GetxController {
     }
   }
 
-  Future<void> fetchHighlights() async {
+  Future<void> fetchHighlights({String? seriesId}) async {
     isHighlightsLoading.value = true;
     try {
-      final res = await _matchRepository.getHighlights();
+      final res = await _matchRepository.getHighlights(seriesId: seriesId);
       if (res['success'] == true) {
         final data = highlight_model.HighlightModel.fromJson(res);
         highlightList.assignAll(data.highlights ?? []);

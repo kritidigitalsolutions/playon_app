@@ -1,6 +1,6 @@
 class AppUrls {
-  static const String baseUrl = 'http://192.168.1.9:8000/api';
-  // static const String baseUrl = 'https://play-on-weld.vercel.app/api';
+  // static const String baseUrl = 'http://192.168.1.9:8000/api';
+  static const String baseUrl = 'https://play-on-weld.vercel.app/api';
 
   // Auth Endpoints
   static const String sendOtp = '$baseUrl/auth/send-otp';
@@ -15,6 +15,7 @@ class AppUrls {
   static const String userProfile = '$baseUrl/user/profile';
   static const String referralCode = '$baseUrl/user/referral-code';
   static const String referralOffer = '$baseUrl/user/referral-offer';
+  static const String referralVoucher = '$baseUrl/user/referral-voucher';
 
   // Match Endpoints
   static const String matches = '$baseUrl/matches';
@@ -54,6 +55,7 @@ class AppUrls {
 
   // Banner Ads
   static const String bannerAds = '$baseUrl/banner-ads';
+  static const String adPlacements = '$baseUrl/admob-placements';
   static const String notifications = '$baseUrl/notifications';
   static const String fcmToken = '$baseUrl/notifications/fcm-token';
   static const String readAllNotifications = '$baseUrl/notifications/read-all';

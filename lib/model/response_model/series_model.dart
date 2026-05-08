@@ -44,6 +44,7 @@ class Series {
   bool? isHomeScreen;
   List<SeriesMatch>? matches;
   List<Match>? fullMatches;
+  List<Team>? teams;
   int? totalMatches;
   String? matchScheduledDate;
   String? matchStatus;
@@ -73,6 +74,7 @@ class Series {
       this.isHomeScreen,
       this.matches,
       this.fullMatches,
+      this.teams,
       this.totalMatches,
       this.matchScheduledDate,
       this.matchStatus});
@@ -106,9 +108,56 @@ class Series {
         matches!.add(SeriesMatch.fromJson(v));
       });
     }
+    if (json['teams'] != null) {
+      teams = <Team>[];
+      json['teams'].forEach((v) {
+        teams!.add(Team.fromJson(v));
+      });
+    }
     totalMatches = json['totalMatches'];
     matchScheduledDate = json['matchScheduledDate'];
     matchStatus = json['matchStatus'];
+  }
+}
+
+class Team {
+  String? sId;
+  String? name;
+  String? slug;
+  String? sport;
+  String? logo;
+  String? shortName;
+  String? country;
+  bool? isActive;
+  int? sortOrder;
+  String? createdAt;
+  String? updatedAt;
+
+  Team(
+      {this.sId,
+      this.name,
+      this.slug,
+      this.sport,
+      this.logo,
+      this.shortName,
+      this.country,
+      this.isActive,
+      this.sortOrder,
+      this.createdAt,
+      this.updatedAt});
+
+  Team.fromJson(Map<String, dynamic> json) {
+    sId = json['_id'];
+    name = json['name'];
+    slug = json['slug'];
+    sport = json['sport'];
+    logo = json['logo'];
+    shortName = json['shortName'];
+    country = json['country'];
+    isActive = json['isActive'];
+    sortOrder = json['sortOrder'];
+    createdAt = json['createdAt'];
+    updatedAt = json['updatedAt'];
   }
 }
 

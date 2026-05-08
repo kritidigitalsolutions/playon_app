@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
+import 'package:play_on_app/utils/hive_service/hive_service.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/podcast_play_controller.dart';
 import 'package:play_on_app/views/after_login/match_pages/full_video_play_screen.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
+import 'package:play_on_app/views/widgets/admob_banner_widget.dart';
 import 'package:video_player/video_player.dart';
 import '../../../routes/app_routes.dart';
 import '../../custom_background.dart/custum_date.dart';
@@ -91,6 +93,8 @@ class PodcastPlayScreen extends StatelessWidget {
                             podcast.description ?? "No description available for this podcast.",
                             style: text14(color: AppColors.white70),
                           ),
+                          const SizedBox(height: 16),
+                          const AdMobBannerWidget(position: "podcast_play_top"),
                           const SizedBox(height: 28),
 
                           /// COMMENTS HEADER
@@ -231,6 +235,7 @@ class PodcastPlayScreen extends StatelessWidget {
                                                 ),
 
                                                 /// DELETE BUTTON
+                                                if (comment.userId == HiveService.userId)
                                                 Obx(() {
                                                   final isDeleting =
                                                       controller.deletingCommentId.value ==

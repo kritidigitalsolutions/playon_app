@@ -39,26 +39,50 @@ class AccessPlansScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 6),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            "Choose how you want to watch,\nfull access or just a match",
-                            style: text15(color: AppColors.textSecondary),
+                          Expanded(
+                            child: Text(
+                              "Choose how you want to watch,\nfull access or just a match",
+                              style: text15(color: AppColors.textSecondary),
+                            ),
                           ),
+
+                          const SizedBox(width: 12),
+
                           GestureDetector(
                             onTap: () => Get.toNamed(AppRoutes.purchasedItems),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 8,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                                border: Border.all(
+                                  color: AppColors.primary.withValues(alpha: 0.3),
+                                ),
                               ),
                               child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.inventory_2_outlined, size: 16, color: AppColors.textPrimary),
-                                  const SizedBox(width: 8),
-                                  Text("My Passes", style: text12(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+                                  const Icon(
+                                    Icons.inventory_2_outlined,
+                                    size: 16,
+                                    color: AppColors.textPrimary,
+                                  ),
+
+                                  const SizedBox(width: 6),
+
+                                  Text(
+                                    "My Passes",
+                                    overflow: TextOverflow.ellipsis,
+                                    style: text12(
+                                      color: AppColors.textPrimary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),

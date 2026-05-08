@@ -8,10 +8,12 @@ import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/utils/custom_button.dart';
+import 'package:play_on_app/utils/hive_service/hive_service.dart';
 
 import 'package:play_on_app/views/custom_background.dart/ad_banner_widget.dart';
 import 'package:play_on_app/view_model/after_controller/match_controller/match_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
+import 'package:play_on_app/views/widgets/admob_banner_widget.dart';
 
 import '../../../view_model/after_controller/home_contollers/home_controller.dart';
 import '../../../view_model/after_controller/plan_controller.dart';
@@ -76,46 +78,46 @@ class MatchDetailScreen extends StatelessWidget {
                         right: 0,
                         child: Column(
                           children: [
-                            Text(
-                              "${match.teamA}  ${match.teamB}",
-                              textAlign: TextAlign.center,
-                              style: text30(
-                                fontWeight: FontWeight.bold,
-                              ).copyWith(letterSpacing: 4),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Builder(builder: (context) {
-                              final homeController = Get.find<HomeController>();
-                              final seriesName = homeController.getSeriesName(match.seriesId);
-                              final seriesLogo = homeController.getSeriesLogo(match.seriesId);
-
-                              return Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  if (seriesLogo.isNotEmpty)
-                                    Padding(
-                                      padding: const EdgeInsets.only(right: 8.0),
-                                      child: Image.network(
-                                        seriesLogo,
-                                        height: 18,
-                                        width: 18,
-                                        fit: BoxFit.contain,
-                                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                                      ),
-                                    ),
-                                  Expanded(
-                                    child: Text(
-                                      seriesName.isNotEmpty ? seriesName : (match.tournament ?? ""),
-                                      textAlign: TextAlign.center,
-                                      style: text16(color: AppColors.textSecondary),
-                                      maxLines: 3,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              );
-                            }),
+                            // Text(
+                            //   "${match.teamA}  ${match.teamB}",
+                            //   textAlign: TextAlign.center,
+                            //   style: text30(
+                            //     fontWeight: FontWeight.bold,
+                            //   ).copyWith(letterSpacing: 4),
+                            //   maxLines: 2,
+                            //   overflow: TextOverflow.ellipsis,
+                            // ),
+                            // Builder(builder: (context) {
+                            //   final homeController = Get.find<HomeController>();
+                            //   final seriesName = homeController.getSeriesName(match.seriesId);
+                            //   final seriesLogo = homeController.getSeriesLogo(match.seriesId);
+                            //
+                            //   return Row(
+                            //     mainAxisAlignment: MainAxisAlignment.center,
+                            //     children: [
+                            //       if (seriesLogo.isNotEmpty)
+                            //         Padding(
+                            //           padding: const EdgeInsets.only(right: 8.0),
+                            //           child: Image.network(
+                            //             seriesLogo,
+                            //             height: 18,
+                            //             width: 18,
+                            //             fit: BoxFit.contain,
+                            //             errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                            //           ),
+                            //         ),
+                            //       Expanded(
+                            //         child: Text(
+                            //           seriesName.isNotEmpty ? seriesName : (match.tournament ?? ""),
+                            //           textAlign: TextAlign.center,
+                            //           style: text16(color: AppColors.textSecondary),
+                            //           maxLines: 3,
+                            //           overflow: TextOverflow.ellipsis,
+                            //         ),
+                            //       ),
+                            //     ],
+                            //   );
+                            // }),
                           ],
                         ),
                       ),
@@ -231,6 +233,31 @@ class MatchDetailScreen extends StatelessWidget {
                                       style: text14(color: AppColors.white70),
                                     ),
                                   ),
+                                const SizedBox(height: 8),
+                                RichText(
+                                  text: TextSpan(
+                                    children: [
+                                      TextSpan(
+                                        text: controller.isLive.value ? "🔴 LIVE • " : "Live At • ",
+                                        style: text16(
+                                          color: Colors.redAccent,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      TextSpan(
+                                        text: match.matchDate != null
+                                            ? DateFormat('dd MMM yyyy • hh:mm a')
+                                            .format(DateTime.parse(match.matchDate!))
+                                            : (controller.isLive.value ? 'Now' : 'TBA'),
+                                        style: text16(
+                                          color: AppColors.white.withOpacity(0.7),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
                                 const SizedBox(height: 20),
 
                                 Builder(builder: (context) {
@@ -242,8 +269,8 @@ class MatchDetailScreen extends StatelessWidget {
                                     children: [
                                       if (seriesLogo.isNotEmpty)
                                         Container(
-                                          height: 24,
-                                          width: 24,
+                                          height: 50,
+                                          width: 50,
                                           margin: const EdgeInsets.only(right: 8),
                                           padding: const EdgeInsets.all(4),
                                           decoration: BoxDecoration(
@@ -401,9 +428,14 @@ class MatchDetailScreen extends StatelessWidget {
 
             // Dynamic Ad Banners
             const SliverToBoxAdapter(
-              child: AdBannerWidget(
-                height: 180,
-                padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  AdBannerWidget(
+                    height: 180,
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                  AdMobBannerWidget(position: "match_detail_top"),
+                ],
               ),
             ),
 
@@ -540,11 +572,81 @@ class MatchDetailScreen extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              Text(
-                                comment.userName ?? "User",
-                                style: text14(fontWeight: FontWeight.bold),
+                              Expanded(
+                                child: Text(
+                                  comment.userName ?? "User",
+                                  style: text14(fontWeight: FontWeight.bold),
+                                ),
                               ),
+
+                              /// DELETE BUTTON
+                              if (comment.userId == HiveService.userId)
+                                Obx(() {
+                                  final isDeleting =
+                                      controller.deletingCommentId.value ==
+                                          comment.sId;
+
+                                  return GestureDetector(
+                                    onTap: isDeleting
+                                        ? null
+                                        : () {
+                                      Get.dialog(
+                                        AlertDialog(
+                                          backgroundColor: Colors.black,
+                                          title: const Text(
+                                            "Delete Comment",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          content: const Text(
+                                            "Are you sure you want to delete this comment?",
+                                            style: TextStyle(
+                                              color: Colors.white70,
+                                            ),
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Get.back(),
+                                              child: const Text("Cancel"),
+                                            ),
+                                            TextButton(
+                                              onPressed: () {
+                                                Get.back();
+
+                                                controller.deleteComment(
+                                                  comment.sId ?? "",
+                                                );
+                                              },
+                                              child: const Text(
+                                                "Delete",
+                                                style: TextStyle(
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                    child: isDeleting
+                                        ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                        : const Icon(
+                                      Icons.delete_outline_rounded,
+                                      color: Colors.redAccent,
+                                      size: 18,
+                                    ),
+                                  );
+                                }),
+
                               const SizedBox(width: 8),
+
                               Text(
                                 _formatDate(comment.createdAt),
                                 style: text10(color: AppColors.white.withOpacity(0.4)),

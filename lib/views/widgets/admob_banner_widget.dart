@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:play_on_app/view_model/after_controller/ad_controller.dart';
 
 class AdMobBannerWidget extends StatefulWidget {
-  const AdMobBannerWidget({super.key});
+  final String position;
+  const AdMobBannerWidget({super.key, required this.position});
 
   @override
   State<AdMobBannerWidget> createState() => _AdMobBannerWidgetState();
@@ -13,10 +15,7 @@ class AdMobBannerWidget extends StatefulWidget {
 class _AdMobBannerWidgetState extends State<AdMobBannerWidget> {
   BannerAd? _bannerAd;
   bool _isLoaded = false;
-
-  final String adUnitId = kDebugMode
-      ? 'ca-app-pub-3940256099942544/6300978111' 
-      : 'ca-app-pub-9899829518030319/7512419851';
+  final AdController adController = Get.find<AdController>();
 
   @override
   void initState() {
@@ -25,6 +24,20 @@ class _AdMobBannerWidgetState extends State<AdMobBannerWidget> {
   }
 
   void _loadAd() {
+    final placement = adController.getAdPlacementByPosition(widget.position);
+    
+    String? adUnitId;
+    
+    if (kDebugMode) {
+      adUnitId = 'ca-app-pub-3940256099942544/6300978111';
+    } else {
+      adUnitId = placement?.adUnitId;
+    }
+
+    if (adUnitId == null) {
+      return;
+    }
+
     _bannerAd = BannerAd(
       adUnitId: adUnitId,
       request: const AdRequest(),

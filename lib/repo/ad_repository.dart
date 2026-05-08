@@ -12,4 +12,13 @@ class AdRepository {
       rethrow;
     }
   }
+
+  Future<dynamic> getAdPlacements() async {
+    try {
+      final response = await _apiService.getApi(AppUrls.adPlacements);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

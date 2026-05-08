@@ -4,6 +4,7 @@ import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
+import 'package:play_on_app/views/widgets/admob_banner_widget.dart';
 import 'package:play_on_app/model/response_model/series_model.dart';
 import 'package:play_on_app/routes/app_routes.dart';
 
@@ -58,6 +59,8 @@ class SeriesListScreen extends StatelessWidget {
                 ),
               )),
 
+              const SizedBox(height: 8),
+              const AdMobBannerWidget(position: "series_list_top"),
               const SizedBox(height: 16),
 
               Expanded(

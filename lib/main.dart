@@ -300,12 +300,13 @@ class _MyHomePageState extends State<MyHomePage> {
               ],
             ),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _navItem(Icons.home, 'Home', 0, currentIndex),
                 _navItem(Icons.live_tv, 'Live TV', 1, currentIndex),
                 _navItem(Icons.list_alt, 'Series', 2, currentIndex),
                 _navItem(Icons.video_library, 'Highlights', 3, currentIndex),
-                _navItem(Icons.calendar_today, 'Schedules', 4, currentIndex),
+                _navItem(Icons.calendar_today, 'Events', 4, currentIndex),
               ],
             ),
           ),
@@ -314,7 +315,12 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Widget _navItem(IconData icon, String label, int index, int currentIndex) {
+  Widget _navItem(
+      IconData icon,
+      String label,
+      int index,
+      int currentIndex,
+      ) {
     final isSelected = currentIndex == index;
 
     return Expanded(
@@ -322,9 +328,9 @@ class _MyHomePageState extends State<MyHomePage> {
         borderRadius: BorderRadius.circular(30),
         onTap: () {
           if (currentIndex == index) return;
+
           final homeController = Get.find<HomeController>();
 
-          // Protected tabs: Series (2), Highlights (3), Schedules (4)
           if (index == 2 || index == 3 || index == 4) {
             homeController.handleProtectedAction(() {
               homeController.changeIndex(index);
@@ -334,38 +340,36 @@ class _MyHomePageState extends State<MyHomePage> {
           }
         },
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 icon,
-                size: isSelected ? 20 : 18,
+                size: isSelected ? 22 : 20,
                 color: isSelected
                     ? AppColors.button
                     : Colors.white.withOpacity(0.85),
               ),
+
               const SizedBox(height: 4),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: text11(
-                  color: isSelected
-                      ? AppColors.button
-                      : AppColors.white.withOpacity(0.75),
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: text10(
+                    color: isSelected
+                        ? AppColors.button
+                        : AppColors.white.withOpacity(0.75),
+                    fontWeight:
+                    isSelected ? FontWeight.w600 : FontWeight.w500,
+                  ),
                 ),
               ),
-              // if (isSelected)
-              //   Container(
-              //     height: 2,
-              //     width: 30, // 👈 control width here
-              //     margin: const EdgeInsets.only(bottom: 4),
-              //     decoration: BoxDecoration(
-              //       color: AppColors.button,
-              //       borderRadius: BorderRadius.circular(10),
-              //     ),
-              //   ),
             ],
           ),
         ),

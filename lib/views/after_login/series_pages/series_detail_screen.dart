@@ -25,7 +25,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
   void initState() {
     super.initState();
     series = Get.arguments as Series;
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -141,6 +141,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
                 Tab(text: "Upcoming"),
                 Tab(text: "Highlights"),
                 Tab(text: "Points"),
+                Tab(text: "Teams"),
               ],
             ),
 
@@ -152,6 +153,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
                   _buildUpcomingTab(),
                   _buildHighlightsTab(),
                   _buildPointsTab(),
+                  _buildTeamsTab(),
                 ],
               ),
             ),
@@ -229,6 +231,92 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
     return Center(
       child: Text("Point Table Coming Soon",
           style: text14(color: Colors.white60)),
+    );
+  }
+
+  Widget _buildTeamsTab() {
+    final teams = series.teams ?? [];
+
+    if (teams.isEmpty) {
+      return Center(
+        child: Text("No teams available",
+            style: text14(color: Colors.white60)),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: teams.length,
+      itemBuilder: (_, i) {
+        final team = teams[i];
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white10),
+          ),
+          child: Row(
+            children: [
+              Container(
+                height: 50,
+                width: 50,
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: team.logo != null && team.logo!.isNotEmpty
+                    ? Image.network(
+                        team.logo!,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Icon(
+                            Icons.shield,
+                            color: Colors.white38,
+                            size: 25),
+                      )
+                    : const Icon(Icons.shield,
+                        color: Colors.white38, size: 25),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      team.name ?? "",
+                      style: text16(fontWeight: FontWeight.bold),
+                    ),
+                    if (team.country != null && team.country!.isNotEmpty)
+                      Text(
+                        team.country!,
+                        style: text12(color: Colors.white60),
+                      ),
+                  ],
+                ),
+              ),
+              // if (team.shortName != null && team.shortName!.isNotEmpty)
+              //   Container(
+              //     padding: const EdgeInsets.symmetric(
+              //         horizontal: 8, vertical: 4),
+              //     decoration: BoxDecoration(
+              //       color: AppColors.primary.withValues(alpha: 0.1),
+              //       borderRadius: BorderRadius.circular(6),
+              //       border: Border.all(
+              //           color: AppColors.primary.withValues(alpha: 0.3)),
+              //     ),
+              //     child: Text(
+              //       team.shortName!,
+              //       style: text12(
+              //           color: AppColors.primary,
+              //           fontWeight: FontWeight.bold),
+              //     ),
+              //   ),
+            ],
+          ),
+        );
+      },
     );
   }
 

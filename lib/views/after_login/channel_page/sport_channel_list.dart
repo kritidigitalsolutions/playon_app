@@ -8,16 +8,9 @@ import 'package:play_on_app/utils/custom_button.dart';
 import 'dart:ui';
 
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
-
-import 'package:flutter/material.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:get/get.dart';
 import 'package:play_on_app/model/response_model/channel_model.dart' as model;
-import 'package:play_on_app/res/app_colors.dart';
-import 'package:play_on_app/routes/app_routes.dart';
-import 'package:play_on_app/utils/app_text_style.dart';
-import 'package:play_on_app/utils/custom_button.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
+import 'package:play_on_app/views/widgets/admob_banner_widget.dart';
 import 'dart:ui';
 
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
@@ -150,6 +143,8 @@ class _SportChannelListState extends State<SportChannelList> {
             ),
 
             const SizedBox(height: 20),
+
+            const AdMobBannerWidget(position: "livetv_top"),
 
             // Channels List
             Expanded(

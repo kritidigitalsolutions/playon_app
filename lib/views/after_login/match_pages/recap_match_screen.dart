@@ -9,9 +9,11 @@ import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/utils/custom_button.dart';
+import 'package:play_on_app/utils/hive_service/hive_service.dart';
 import 'package:play_on_app/view_model/after_controller/match_controller/match_controller.dart';
 import 'package:play_on_app/views/after_login/match_pages/full_video_play_screen.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
+import 'package:play_on_app/views/widgets/admob_banner_widget.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
 import 'package:video_player/video_player.dart';
 
@@ -71,6 +73,8 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
 
                 // Match Info Section
                 _buildMatchInfo(),
+
+                const AdMobBannerWidget(position: "recap_top"),
 
                 // Tab Section
                 _buildHighlights(),
@@ -205,11 +209,81 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                         children: [
                           Row(
                             children: [
-                              Text(
-                                comment.userName ?? "User",
-                                style: text14(fontWeight: FontWeight.bold),
+                              Expanded(
+                                child: Text(
+                                  comment.userName ?? "User",
+                                  style: text14(fontWeight: FontWeight.bold),
+                                ),
                               ),
+
+                              /// DELETE BUTTON
+                              if (comment.userId == HiveService.userId)
+                                Obx(() {
+                                  final isDeleting =
+                                      controller.deletingCommentId.value ==
+                                          comment.sId;
+
+                                  return GestureDetector(
+                                    onTap: isDeleting
+                                        ? null
+                                        : () {
+                                      Get.dialog(
+                                        AlertDialog(
+                                          backgroundColor: Colors.black,
+                                          title: const Text(
+                                            "Delete Comment",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          content: const Text(
+                                            "Are you sure you want to delete this comment?",
+                                            style: TextStyle(
+                                              color: Colors.white70,
+                                            ),
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Get.back(),
+                                              child: const Text("Cancel"),
+                                            ),
+                                            TextButton(
+                                              onPressed: () {
+                                                Get.back();
+
+                                                controller.deleteComment(
+                                                  comment.sId ?? "",
+                                                );
+                                              },
+                                              child: const Text(
+                                                "Delete",
+                                                style: TextStyle(
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                    child: isDeleting
+                                        ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                        : const Icon(
+                                      Icons.delete_outline_rounded,
+                                      color: Colors.redAccent,
+                                      size: 18,
+                                    ),
+                                  );
+                                }),
+
                               const SizedBox(width: 8),
+
                               Text(
                                 _formatDate(comment.createdAt),
                                 style: text10(color: AppColors.white.withValues(alpha: 0.4)),

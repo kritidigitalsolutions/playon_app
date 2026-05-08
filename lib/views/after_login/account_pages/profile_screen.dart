@@ -16,6 +16,8 @@ import 'package:play_on_app/view_model/after_controller/player_controller.dart';
 import 'package:play_on_app/view_model/after_controller/series_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 
+import '../../../view_model/after_controller/plan_controller.dart';
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -27,6 +29,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final AuthController _authController = Get.put(AuthController());
   final PlayerController _playerController = Get.put(PlayerController());
   final SeriesController _seriesController = Get.put(SeriesController());
+  final PlanController _planController = Get.put(PlanController());
   String? _profileImagePath;
   final ImagePicker _picker = ImagePicker();
 

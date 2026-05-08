@@ -263,11 +263,18 @@ class MatchRepository {
     }
   }
 
-  Future<dynamic> getHighlights({String? matchId}) async {
+  Future<dynamic> getHighlights({String? matchId, String? seriesId}) async {
     try {
       String url = AppUrls.highlights;
+      List<String> queryParams = [];
       if (matchId != null) {
-        url += "?matchId=$matchId";
+        queryParams.add("matchId=$matchId");
+      }
+      if (seriesId != null) {
+        queryParams.add("seriesId=$seriesId");
+      }
+      if (queryParams.isNotEmpty) {
+        url += "?${queryParams.join("&")}";
       }
       final response = await _apiServices.getApi(url);
       return response;

@@ -5,10 +5,12 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
+import 'package:play_on_app/utils/hive_service/hive_service.dart';
 import 'package:play_on_app/view_model/after_controller/match_controller/match_controller.dart';
 import 'package:play_on_app/views/after_login/match_pages/full_video_play_screen.dart';
 import 'package:play_on_app/utils/custom_button.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
+import 'package:play_on_app/views/widgets/admob_banner_widget.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
 import 'package:play_on_app/model/response_model/star_player_model.dart' as star_model;
 import 'package:play_on_app/view_model/after_controller/player_controller.dart';
@@ -326,7 +328,9 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
 
           const SizedBox(height: 20),
 
-          /// 🎯 Title
+          const AdMobBannerWidget(position: "highlight_play_top"),
+
+          const SizedBox(height: 10),
           Text(
             player.title ?? "",
             style: text18(
@@ -525,6 +529,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                             ),
 
                             /// DELETE COMMENT
+                            if (comment.userId == HiveService.userId)
                             Obx(() {
                               final isDeleting =
                                   matchDetailsController
