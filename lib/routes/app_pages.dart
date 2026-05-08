@@ -45,12 +45,12 @@ class AppPages {
     GetPage(
       name: AppRoutes.login,
       page: () => LoginScreen(),
-      binding: AuthBinding(),
+      bindings: [AuthBinding(), HomeBinding()],
     ),
     GetPage(
       name: AppRoutes.otpVerify,
       page: () => OtpVerifyScreen(),
-      binding: AuthBinding(),
+      bindings: [AuthBinding(), HomeBinding()],
     ),
     GetPage(
       name: AppRoutes.fullnameEnter,

@@ -206,10 +206,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
             Expanded(
               child: Obx(() {
-                if (ctr.isLoading.value && ctr.allMatches.isEmpty && ctr.liveMatches.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
                 return RefreshIndicator(
                   onRefresh: () async {
                     await ctr.fetchMatches(
@@ -235,8 +231,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(height: 16),
                       ],
 
+                      if (ctr.isLoading.value && ctr.allMatches.isEmpty && ctr.liveMatches.isEmpty)
+                        const SizedBox(
+                          height: 300,
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+
                       // Live Matches Carousel
-                      if (ctr.searchQuery.value.isEmpty) ...[
+                      if (ctr.searchQuery.value.isEmpty && !ctr.isLoading.value) ...[
                         Builder(builder: (context) {
                           var displayLiveMatches = ctr.filteredLiveMatches.toList();
 
@@ -526,6 +528,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       // }),
 
                       const SizedBox(height: 20),
+                      const AdMobBannerWidget(position: 'home_bottom'),
+                      const SizedBox(height: 20),
                       _buildFooter(),
                     ],
                   ),
@@ -671,7 +675,7 @@ class _HomeScreenState extends State<HomeScreen> {
               final canWatch = Get.find<PlanController>().canWatchMatch(match);
               return GestureDetector(
                 onTap: () {
-                  if (highlight.matchId?.sId != null) {
+                  if (match != null) {
                     ctr.handleProtectedAction(() {
                       // Pass match object to ensure full UI info on MatchPlayScreen
                       Get.toNamed("${AppRoutes.matchPlay}?mode=highlight", arguments: match);

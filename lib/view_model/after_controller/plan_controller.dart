@@ -7,6 +7,7 @@ import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:play_on_app/model/response_model/series_model.dart' as series_model;
 import 'package:play_on_app/model/response_model/star_player_model.dart' as star_player_model;
 import 'package:play_on_app/model/response_model/podcast_model.dart' as podcast_model;
+import 'package:play_on_app/model/response_model/channel_model.dart' as channel_model;
 import 'package:play_on_app/view_model/before_controller/auth_controller.dart';
 
 import '../../data/api_responce_data.dart';
@@ -119,6 +120,17 @@ class PlanController extends GetxController {
 
     if (podcast == null) return false;
     if (podcast.isPremium == false) return true;
+    if (hasAccess.value) return true;
+
+    return false;
+  }
+
+  bool canWatchChannel(channel_model.Channel? channel) {
+    final _ = hasAccess.value;
+    final __ = mySubscription.value;
+
+    if (channel == null) return false;
+    if (channel.isPremium == false) return true;
     if (hasAccess.value) return true;
 
     return false;

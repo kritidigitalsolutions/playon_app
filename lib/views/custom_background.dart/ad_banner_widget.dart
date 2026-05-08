@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:play_on_app/res/app_urls.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
 
 class AdBannerWidget extends StatelessWidget {
@@ -16,6 +17,10 @@ class AdBannerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Check if HomeController is registered to avoid crashes on screens without HomeBinding
+    if (!Get.isRegistered<HomeController>()) {
+      return const SizedBox.shrink();
+    }
     final HomeController ctr = Get.find<HomeController>();
 
     return Obx(() {
@@ -42,9 +47,10 @@ class AdBannerWidget extends StatelessWidget {
           final imageUrl = banner.image ?? "";
 
           // Handle relative URLs if necessary
+          final baseUrl = AppUrls.baseUrl.replaceAll('/api', '');
           final fullImageUrl = imageUrl.startsWith('http')
               ? imageUrl
-              : "baseUrl$imageUrl"; // Replace baseUrl with your actual base URL if needed
+              : "$baseUrl$imageUrl";
 
           return Padding(
             padding: padding ?? EdgeInsets.zero,
@@ -64,7 +70,7 @@ class AdBannerWidget extends StatelessWidget {
                           image: NetworkImage(fullImageUrl),
                           fit: BoxFit.cover,
                           onError: (exception, stackTrace) {
-                            debugPrint("Error loading banner image: \$exception");
+                            debugPrint("Error loading banner image: $exception");
                           },
                         )
                       : null,

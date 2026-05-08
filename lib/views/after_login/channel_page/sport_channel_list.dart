@@ -15,6 +15,8 @@ import 'dart:ui';
 
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 
+import '../../../view_model/after_controller/plan_controller.dart';
+
 class SportChannelList extends StatefulWidget {
   const SportChannelList({super.key});
 
@@ -292,9 +294,10 @@ class _SportChannelListState extends State<SportChannelList> {
               AppButton(
                 title: "Watch",
                 onTap: () {
+                  final canWatch = Get.put(PlanController()).canWatchChannel(channel);
                   ctr.handleProtectedAction(() {
                     Get.toNamed(AppRoutes.channelPlay, arguments: channel);
-                  });
+                  }, checkAccess: true, hasPermission: canWatch);
                 },
                 height: 30,
                 textStyle: text13(),

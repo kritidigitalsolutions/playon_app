@@ -257,9 +257,11 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
       final canWatch = Get.find<PlanController>().canWatchMatch(matchArg);
       return GestureDetector(
         onTap: () {
-          if (highlight.matchId?.sId != null) {
-            // Pass the Match object instead of just ID string
-            Get.toNamed("${AppRoutes.matchPlay}?mode=highlight", arguments: matchArg);
+          if (matchArg != null) {
+            homeController.handleProtectedAction(() {
+              // Pass the Match object instead of just ID string
+              Get.toNamed("${AppRoutes.matchPlay}?mode=highlight", arguments: matchArg);
+            }, checkAccess: true, hasPermission: canWatch);
           }
         },
         child: Container(
