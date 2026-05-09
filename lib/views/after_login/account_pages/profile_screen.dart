@@ -61,11 +61,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _profileImagePath = pickedFile.path;
         });
         await _authController.updateProfile(profileImagePath: pickedFile.path);
-        showCustomSnackbar(
-          title: "Success",
-          message: "Profile picture updated!",
-          type: SnackType.success,
-        );
       }
     } catch (e) {
       showCustomSnackbar(

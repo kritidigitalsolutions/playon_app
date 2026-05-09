@@ -6,6 +6,8 @@ import 'package:play_on_app/model/response_model/podcast_model.dart';
 import '../../../model/response_model/comment_model.dart';
 import '../../../repo/match_repository.dart';
 import '../plan_controller.dart';
+import 'package:play_on_app/utils/custom_snakebar.dart';
+import 'package:flutter/material.dart';
 
 class PodcastPlayController extends GetxController {
   final podcast = Rxn<Podcast>();
@@ -158,15 +160,17 @@ class PodcastPlayController extends GetxController {
       if (res['success'] == true) {
         fetchComments();
       } else {
-        Get.snackbar(
-          "Error",
-          res['message'] ?? "Failed to add comment",
+        showCustomSnackbar(
+          title: "Error",
+          message: res['message'] ?? "Failed to add comment",
+          type: SnackType.error,
         );
       }
     } catch (e) {
-      Get.snackbar(
-        "Error",
-        "Failed to add comment",
+      showCustomSnackbar(
+        title: "Error",
+        message: "Failed to add comment",
+        type: SnackType.error,
       );
     }
   }
@@ -179,21 +183,18 @@ class PodcastPlayController extends GetxController {
 
       if (res['success'] == true) {
         comments.removeWhere((e) => e.sId == commentId);
-
-        Get.snackbar(
-          "Success",
-          "Comment deleted successfully",
-        );
       } else {
-        Get.snackbar(
-          "Error",
-          res['message'] ?? "Failed to delete comment",
+        showCustomSnackbar(
+          title: "Error",
+          message: res['message'] ?? "Failed to delete comment",
+          type: SnackType.error,
         );
       }
     } catch (e) {
-      Get.snackbar(
-        "Error",
-        "Failed to delete comment",
+      showCustomSnackbar(
+        title: "Error",
+        message: "Failed to delete comment",
+        type: SnackType.error,
       );
     } finally {
       deletingCommentId.value = '';

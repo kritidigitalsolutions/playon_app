@@ -7,6 +7,7 @@ import 'package:play_on_app/model/response_model/notification_model.dart';
 import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/utils/custom_button.dart';
+import 'package:play_on_app/utils/custom_snakebar.dart';
 import 'package:play_on_app/view_model/after_controller/notification_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 import 'package:intl/intl.dart';
@@ -261,67 +262,35 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                   controller.notificationList.refresh();
 
                                   // Show UNDO snackbar
-                                  Get.snackbar(
-                                    "",
-                                    "",
-                                    snackPosition: SnackPosition.BOTTOM,
-                                    backgroundColor: Colors.transparent,
-                                    margin: const EdgeInsets.all(12),
-                                      padding: EdgeInsets.zero,
-                                    duration: const Duration(seconds: 5),
+                                  showCustomSnackbar(
+                                    title: "Deleted",
+                                    message: "Notification removed",
+                                    type: SnackType.info,
+                                    action: GestureDetector(
+                                      onTap: () {
+                                        deleteTimer?.cancel();
 
-                                    messageText: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.secPrimary.withValues(alpha: 0.95),
-                                        borderRadius: BorderRadius.circular(14),
-                                        border: Border.all(
-                                          color: AppColors.white.withValues(alpha: 0.2),
+                                        if (recentlyDeleted != null && recentlyDeletedIndex != null) {
+                                          list.insert(recentlyDeletedIndex!, recentlyDeleted!);
+                                          controller.notificationList.refresh();
+                                        }
+
+                                        Get.closeCurrentSnackbar();
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary.withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: AppColors.primary.withOpacity(0.4)),
                                         ),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.delete_outline, color: Colors.redAccent, size: 22),
-
-                                          const SizedBox(width: 12),
-
-                                          Expanded(
-                                            child: Text(
-                                              "Notification removed",
-                                              style: text14(
-                                                color: AppColors.white,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
+                                        child: Text(
+                                          "UNDO",
+                                          style: text12(
+                                            color: AppColors.primary,
+                                            fontWeight: FontWeight.bold,
                                           ),
-
-                                          GestureDetector(
-                                            onTap: () {
-                                              deleteTimer?.cancel();
-
-                                              if (recentlyDeleted != null && recentlyDeletedIndex != null) {
-                                                list.insert(recentlyDeletedIndex!, recentlyDeleted!);
-                                                controller.notificationList.refresh();
-                                              }
-
-                                              Get.closeCurrentSnackbar(); // 👈 close after undo
-                                            },
-                                            child: Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                              decoration: BoxDecoration(
-                                                color: AppColors.primary.withValues(alpha: 0.2),
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              child: Text(
-                                                "UNDO",
-                                                style: text12(
-                                                  color: AppColors.primary,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
+                                        ),
                                       ),
                                     ),
                                   );

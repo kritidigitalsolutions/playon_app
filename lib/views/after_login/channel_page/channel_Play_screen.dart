@@ -7,6 +7,7 @@ import 'package:play_on_app/utils/hive_service/hive_service.dart';
 import 'package:video_player/video_player.dart';
 import 'package:get/get.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:play_on_app/utils/custom_snakebar.dart';
 
 class ChannelPlayScreen extends StatefulWidget {
   const ChannelPlayScreen({super.key});
@@ -26,12 +27,10 @@ class _VideoPlayerScreenState extends State<ChannelPlayScreen> {
     if (!HiveService.isLogin()) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Get.back();
-        Get.snackbar(
-          "Access Denied",
-          "Please login to watch live channels",
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
+        showCustomSnackbar(
+          title: "Access Denied",
+          message: "Please login to watch live channels",
+          type: SnackType.error,
         );
       });
       return;
@@ -99,8 +98,8 @@ class _VideoPlayerScreenState extends State<ChannelPlayScreen> {
     _chewieController?.dispose();
     // Disable wakelock when leaving
     WakelockPlus.disable();
-    // Reset orientation when leaving
-    SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+    // Reset orientation to strictly portrait when leaving
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     super.dispose();
   }
 

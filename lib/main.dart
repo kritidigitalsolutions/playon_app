@@ -36,6 +36,11 @@ void main() async {
     try {
       await Firebase.initializeApp().timeout(const Duration(seconds: 8));
       await MobileAds.instance.initialize();
+      
+      // OPTIONAL: Configure test devices if you still see "Test Ad" with real IDs
+      // MobileAds.instance.updateRequestConfiguration(
+      //   RequestConfiguration(testDeviceIds: ["YOUR_DEVICE_ID"]),
+      // );
     } catch (e) {
       debugPrint("Firebase or AdMob init failed: $e");
     }

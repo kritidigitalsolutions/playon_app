@@ -164,15 +164,24 @@ class AuthController extends GetxController {
       if (data.success == true) {
         sentOtp.value = data.otp ?? "";
         isNewUser.value = data.isNewUser ?? false;
-        showCustomSnackbar(
-          title: "Success",
-          message: data.message ?? "OTP Sent",
-          type: SnackType.success,
-        );
         startResendTimer();
-        if (Get.currentRoute != AppRoutes.otpVerify) {
+        
+        // Only show message for resend case to give feedback as requested
+        if (Get.currentRoute == AppRoutes.otpVerify) {
+          showCustomSnackbar(
+            title: "Success",
+            message: "A new code has been sent to your phone",
+            type: SnackType.success,
+          );
+        } else {
           Get.toNamed(AppRoutes.otpVerify);
         }
+      } else {
+        showCustomSnackbar(
+          title: "Error",
+          message: data.message ?? "Failed to send OTP",
+          type: SnackType.error,
+        );
       }
     } catch (e) {
       showCustomSnackbar(title: "Error", message: e.toString(), type: SnackType.error);
@@ -335,9 +344,19 @@ class AuthController extends GetxController {
           }
           Get.offAllNamed(AppRoutes.myHomePage);
         }
+      } else {
+        showCustomSnackbar(
+          title: "Invalid Code",
+          message: data.message ?? "Please enter the correct verification code",
+          type: SnackType.error,
+        );
       }
     } catch (e) {
-      showCustomSnackbar(title: "Error", message: e.toString(), type: SnackType.error);
+      showCustomSnackbar(
+        title: "Invalid Code",
+        message: "Please enter the correct verification code",
+        type: SnackType.error,
+      );
     } finally {
       isVerifyingOtp.value = false;
     }

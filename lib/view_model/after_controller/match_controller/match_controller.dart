@@ -14,6 +14,7 @@ import 'package:play_on_app/data/network/notification_service.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
 import 'package:play_on_app/model/response_model/score_model.dart' as score_model;
 import 'package:play_on_app/model/response_model/match_extra_details_model.dart';
+import 'package:play_on_app/utils/custom_snakebar.dart';
 
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
@@ -224,10 +225,10 @@ class MatchDetailsController extends GetxController {
       if (res['success'] == true) {
         fetchComments();
       } else {
-        Get.snackbar("Error", res['message'] ?? "Failed to add comment");
+        showCustomSnackbar(title: "Error", message: res['message'] ?? "Failed to add comment", type: SnackType.error);
       }
     } catch (e) {
-      Get.snackbar("Error", "Failed to add comment");
+      showCustomSnackbar(title: "Error", message: "Failed to add comment", type: SnackType.error);
     }
   }
   Future<void> deleteComment(String commentId) async {
@@ -238,21 +239,18 @@ class MatchDetailsController extends GetxController {
 
       if (res['success'] == true) {
         comments.removeWhere((e) => e.sId == commentId);
-
-        Get.snackbar(
-          "Success",
-          "Comment deleted successfully",
-        );
       } else {
-        Get.snackbar(
-          "Error",
-          res['message'] ?? "Failed to delete comment",
+        showCustomSnackbar(
+          title: "Error",
+          message: res['message'] ?? "Failed to delete comment",
+          type: SnackType.error,
         );
       }
     } catch (e) {
-      Get.snackbar(
-        "Error",
-        "Failed to delete comment",
+      showCustomSnackbar(
+        title: "Error",
+        message: "Failed to delete comment",
+        type: SnackType.error,
       );
     } finally {
       deletingCommentId.value = '';
@@ -331,17 +329,17 @@ class MatchDetailsController extends GetxController {
       // Cancel notification
       NotificationService.cancelNotification(match.value!.sId.hashCode);
       
-      Get.snackbar("Reminder Removed", "You will not be notified for this match.");
+      showCustomSnackbar(title: "Reminder Removed", message: "You will not be notified for this match.", type: SnackType.info);
     } else {
       // Set reminder
       if (match.value!.matchDate == null) {
-        Get.snackbar("Error", "Match date not available");
+        showCustomSnackbar(title: "Error", message: "Match date not available", type: SnackType.error);
         return;
       }
 
       final startTime = DateTime.parse(match.value!.matchDate!);
       if (startTime.isBefore(DateTime.now())) {
-        Get.snackbar("Error", "Match has already started");
+        showCustomSnackbar(title: "Error", message: "Match has already started", type: SnackType.error);
         return;
       }
 
@@ -369,7 +367,7 @@ class MatchDetailsController extends GetxController {
       await storage.write('reminders', reminders);
       isReminderOn.value = true;
       
-      Get.snackbar("Reminder Set", "We will notify you before the match starts.");
+      showCustomSnackbar(title: "Reminder Set", message: "We will notify you before the match starts.", type: SnackType.success);
     }
   }
 
@@ -380,14 +378,6 @@ class MatchDetailsController extends GetxController {
   // Unlock the match (called when video is ready or user buys plan)
   void unlockMatch() {
     isLock.value = false;
-    // You can also show a success message
-    Get.snackbar(
-      "Success",
-      "Match unlocked successfully!",
-      backgroundColor: Colors.green.withValues(alpha: 0.9),
-      colorText: Colors.white,
-      duration: const Duration(seconds: 2),
-    );
   }
 
   @override
@@ -530,9 +520,6 @@ class VideoControllerX extends GetxController {
       }
     } catch (e) {
       print("Error in fetchMatchDetails: $e");
-      if (!isInitialized.value) {
-        Get.snackbar("Error", "Failed to load match video");
-      }
     } finally {
       isLoading.value = false;
     }
@@ -587,7 +574,7 @@ class VideoControllerX extends GetxController {
         isPlaying.value = true;
       } else {
         print("Failed to extract YouTube ID from: $url");
-        Get.snackbar("Error", "Invalid YouTube URL");
+        showCustomSnackbar(title: "Error", message: "Invalid YouTube URL", type: SnackType.error);
       }
     } else {
       isYoutube.value = false;
@@ -598,7 +585,7 @@ class VideoControllerX extends GetxController {
           isPlaying.value = true;
         }).catchError((error) {
           print("Video Player Error: $error");
-          Get.snackbar("Playback Error", "Failed to play stream");
+          showCustomSnackbar(title: "Playback Error", message: "Failed to play stream", type: SnackType.error);
         });
     }
 

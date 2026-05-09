@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:play_on_app/res/app_colors.dart';
@@ -50,13 +51,26 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
     }
   }
 
+  @override
+  void dispose() {
+    // Reset orientation to strictly portrait when leaving
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    super.dispose();
+  }
+
   // Remove the local _checkHighlightAccess as it's now handled by matchDetailsController
   // void _checkHighlightAccess() { ... }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: BackgroundWithOneLight(
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+        }
+      },
+      child: Scaffold(
+        body: BackgroundWithOneLight(
         child: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,6 +120,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
           ),
         ),
       ),
+    )
     );
   }
 
@@ -592,10 +607,9 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                                   ),
                                 )
                                     : const Icon(
-                                  Icons
-                                      .delete_outline_rounded,
+                                  Icons.delete_sweep_outlined,
                                   color: Colors.redAccent,
-                                  size: 18,
+                                  size: 20,
                                 ),
                               );
                             }),

@@ -20,7 +20,9 @@ import 'package:share_plus/share_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:flutter/services.dart';
 import 'package:play_on_app/model/response_model/score_model.dart' as score_model;
+import 'package:play_on_app/utils/custom_snakebar.dart';
 
 import '../../../view_model/after_controller/home_contollers/home_controller.dart';
 import '../../custom_background.dart/custom_widget.dart';
@@ -45,11 +47,10 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Get.back();
         Get.toNamed(AppRoutes.login);
-        Get.snackbar(
-          "Authentication Required",
-          "Please login to watch matches and highlights.",
-          backgroundColor: Colors.red.withOpacity(0.8),
-          colorText: Colors.white,
+        showCustomSnackbar(
+          title: "Authentication Required",
+          message: "Please login to watch matches and highlights.",
+          type: SnackType.error,
         );
       });
       return;
@@ -59,6 +60,13 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
     if (Get.parameters['mode'] == 'highlight') {
       _selectedTabIndex = 0;
     }
+  }
+
+  @override
+  void dispose() {
+    // Reset orientation to portrait when leaving the play screen
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    super.dispose();
   }
 
   void _shareMatch() {
@@ -73,8 +81,14 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: BackgroundWithOneLight(
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+        }
+      },
+      child: Scaffold(
+        body: BackgroundWithOneLight(
         child: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -116,6 +130,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
           ),
         ),
       ),
+    )
     );
   }
 
@@ -1681,9 +1696,9 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                                       ),
                                     )
                                         : const Icon(
-                                      Icons.delete_outline_rounded,
+                                       Icons.delete_sweep_outlined,
                                       color: Colors.redAccent,
-                                      size: 18,
+                                      size: 20,
                                     ),
                                   );
                                 }),

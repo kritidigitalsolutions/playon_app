@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
 import 'package:get/get.dart';
 import 'package:play_on_app/model/response_model/subscription_model.dart';
@@ -12,6 +13,8 @@ import 'package:play_on_app/view_model/before_controller/auth_controller.dart';
 
 import '../../data/api_responce_data.dart';
 import '../../model/response_model/plan_model.dart';
+import '../../res/app_colors.dart';
+import '../../utils/app_text_style.dart';
 import '../../utils/custom_snakebar.dart';
 
 class PlanController extends GetxController {
@@ -161,6 +164,8 @@ class PlanController extends GetxController {
   String? _currentMatchId;
   String? _currentSeriesId;
   String? _currentTeamId;
+  String? _currentItemId;
+  String? _currentPromoCode;
 
   @override
   void onInit() {
@@ -257,6 +262,8 @@ class PlanController extends GetxController {
     _currentMatchId = matchId;
     _currentSeriesId = seriesId;
     _currentTeamId = teamId;
+    _currentItemId = itemId;
+    _currentPromoCode = promoCode;
 
     try {
       final response = await _api.createOrder(planId, itemId: itemId, seriesId: seriesId, matchId: matchId, teamId: teamId, promoCode: promoCode);
@@ -319,7 +326,82 @@ class PlanController extends GetxController {
 
   void _handlePaymentError(PaymentFailureResponse response) {
     isPaymentProcessing.value = false;
-    showCustomSnackbar(title: 'Error', message: response.message ?? 'Payment failed', type: SnackType.error);
+    _showPaymentFailureDialog(response.message ?? 'Payment failed or cancelled');
+  }
+
+  void _showPaymentFailureDialog(String errorMessage) {
+    Get.dialog(
+      Dialog(
+        backgroundColor: AppColors.secPrimary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 40),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                "Payment Failed",
+                style: text20(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "Sorry, we couldn't process your payment.",
+                textAlign: TextAlign.center,
+                style: text14(color: AppColors.white70),
+              ),
+              const SizedBox(height: 30),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Get.back(),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Text("Cancel", style: text16(color: AppColors.white70)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Get.back();
+                        if (_currentPlanId != null) {
+                          buyPlan(
+                            _currentPlanId!,
+                            matchId: _currentMatchId,
+                            seriesId: _currentSeriesId,
+                            teamId: _currentTeamId,
+                            itemId: _currentItemId,
+                            promoCode: _currentPromoCode,
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Text("Try Again", style: text16(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _handleExternalWallet(ExternalWalletResponse response) {

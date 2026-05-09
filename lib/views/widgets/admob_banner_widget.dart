@@ -18,10 +18,19 @@ class _AdMobBannerWidgetState extends State<AdMobBannerWidget> {
   bool _isLoaded = false;
   final AdController adController = Get.find<AdController>();
   final PlanController planController = Get.find<PlanController>();
+  Worker? _adWorker;
 
   @override
   void initState() {
     super.initState();
+    // Listen for ad placements being loaded from backend
+    _adWorker = ever(adController.adPlacements, (_) {
+      if (!_isLoaded && _bannerAd == null) {
+        _loadAd();
+      }
+    });
+    
+    // Initial attempt
     _loadAd();
   }
 
@@ -33,18 +42,23 @@ class _AdMobBannerWidgetState extends State<AdMobBannerWidget> {
 
     final placement = adController.getAdPlacementByPosition(widget.position);
     
-    String? adUnitId;
+    // If we have placements but none for this position yet, wait for the worker
+    if (adController.adPlacements.isNotEmpty && placement == null) {
+      debugPrint('AdMob: No placement found for ${widget.position} in database.');
+      // return; // Optional: don't show test ad if position missing in DB
+    }
+
+    String? adUnitId = placement?.adUnitId;
     
-    if (kDebugMode) {
-      adUnitId = 'ca-app-pub-3940256099942544/6300978111';
+    // If ID is missing, we use a fallback to verify layout, but this is why you see "Test Ad"
+    if (adUnitId == null || adUnitId.isEmpty) {
+      adUnitId = 'ca-app-pub-3940256099942544/6300978111'; // Google Test Banner ID
+      debugPrint('AdMob: Waiting for Real ID for ${widget.position}...');
     } else {
-      adUnitId = placement?.adUnitId;
+      debugPrint('AdMob: Loading Production Ad for ${widget.position}');
     }
 
-    if (adUnitId == null) {
-      return;
-    }
-
+    _bannerAd?.dispose();
     _bannerAd = BannerAd(
       adUnitId: adUnitId,
       request: const AdRequest(),
@@ -62,6 +76,7 @@ class _AdMobBannerWidgetState extends State<AdMobBannerWidget> {
         onAdFailedToLoad: (ad, err) {
           debugPrint('BannerAd failed to load: $err');
           ad.dispose();
+          _bannerAd = null;
         },
       ),
     )..load();
@@ -69,7 +84,9 @@ class _AdMobBannerWidgetState extends State<AdMobBannerWidget> {
 
   @override
   void dispose() {
+    _adWorker?.dispose();
     _bannerAd?.dispose();
+    _bannerAd = null;
     super.dispose();
   }
 

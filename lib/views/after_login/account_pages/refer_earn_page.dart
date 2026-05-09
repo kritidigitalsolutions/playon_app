@@ -11,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 
 import 'package:flutter/services.dart';
+import 'package:play_on_app/utils/custom_snakebar.dart';
 
 class ReferralScreen extends StatelessWidget {
   const ReferralScreen({super.key});
@@ -159,10 +160,11 @@ class ReferralScreen extends StatelessWidget {
                       icon: const Icon(Icons.copy, color: Colors.white70),
                       onPressed: () {
                         Clipboard.setData(ClipboardData(text: code));
-                        Get.snackbar("Copied", "Referral code copied to clipboard",
-                            snackPosition: SnackPosition.BOTTOM,
-                            backgroundColor: AppColors.primary,
-                            colorText: Colors.white);
+                        showCustomSnackbar(
+                          title: "Copied",
+                          message: "Referral code copied to clipboard",
+                          type: SnackType.success,
+                        );
                       },
                     ),
                     IconButton(
@@ -284,10 +286,11 @@ class ReferralScreen extends StatelessWidget {
               ElevatedButton(
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: voucher.code ?? ""));
-                  Get.snackbar("Copied", "Voucher code copied!",
-                      snackPosition: SnackPosition.BOTTOM,
-                      backgroundColor: AppColors.primary,
-                      colorText: Colors.white);
+                  showCustomSnackbar(
+                    title: "Copied",
+                    message: "Voucher code copied!",
+                    type: SnackType.success,
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white.withValues(alpha: 0.1),

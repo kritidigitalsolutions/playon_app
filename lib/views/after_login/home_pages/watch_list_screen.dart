@@ -10,6 +10,7 @@ import 'package:play_on_app/view_model/after_controller/watchlist_controller.dar
 import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
+import 'package:play_on_app/utils/custom_snakebar.dart';
 
 class CreateWatchlistScreen extends StatelessWidget {
   CreateWatchlistScreen({super.key});
@@ -265,10 +266,10 @@ class CreateWatchlistScreen extends StatelessWidget {
               onTap: () async {
                 await watchlistController.toggleWatchlist(match.sId!, "match");
 
-                Get.snackbar(
-                  "Removed",
-                  "Removed from watchlist",
-                  snackPosition: SnackPosition.BOTTOM,
+                showCustomSnackbar(
+                  title: "Removed",
+                  message: "Removed from watchlist",
+                  type: SnackType.info,
                 );
               },
               child: Container(

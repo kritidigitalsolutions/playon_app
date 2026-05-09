@@ -8,6 +8,7 @@ import 'package:play_on_app/view_model/after_controller/plan_controller.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 import 'package:play_on_app/repo/match_repository.dart';
+import 'package:play_on_app/utils/custom_snakebar.dart';
 
 class SelectTeamPage extends StatefulWidget {
   const SelectTeamPage({super.key});
@@ -198,9 +199,7 @@ class _SelectTeamPageState extends State<SelectTeamPage> {
       return GestureDetector(
         onTap: () {
           if (isPurchased) {
-            // Navigate to matches for this team or just show info
-            Get.snackbar("Access Granted", "You have access to all matches for ${team['name']}",
-                backgroundColor: Colors.green.withOpacity(0.7), colorText: Colors.white);
+            // Already purchased, do nothing or show info if needed, but UI already shows green
           } else if (selectedPlan?.id != null) {
             planController.buyPlan(selectedPlan!.id!,
                 teamId: team['_id'],
