@@ -21,8 +21,6 @@ class AllHighlightsScreen extends StatefulWidget {
 }
 
 class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
-  series_model.Series? selectedSeries;
-
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<HomeController>();
@@ -33,23 +31,40 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
+              Obx(() => Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
                   children: [
-                    if (selectedSeries != null)
+                    if (controller.selectedHighlightSeries.value != null) ...[
                       IconButton(
                         icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
                         onPressed: () {
-                          setState(() {
-                            selectedSeries = null;
-                          });
+                          controller.selectedHighlightSeries.value = null;
                           controller.fetchHighlights(); // Fetch global highlights again
                         },
                       ),
+                      if (controller.selectedHighlightSeries.value!.tournamentLogo != null || controller.selectedHighlightSeries.value!.banner != null)
+                        Container(
+                          height: 40,
+                          width: 40,
+                          margin: const EdgeInsets.only(right: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: CachedNetworkImage(
+                              imageUrl: controller.selectedHighlightSeries.value!.tournamentLogo ?? controller.selectedHighlightSeries.value!.banner!,
+                              fit: BoxFit.contain,
+                              errorWidget: (context, url, error) => const Icon(Icons.emoji_events, color: AppColors.primary, size: 20),
+                            ),
+                          ),
+                        ),
+                    ],
                     Expanded(
                       child: Text(
-                        selectedSeries == null ? "All Series" : (selectedSeries!.title ?? "Highlights"),
+                        controller.selectedHighlightSeries.value == null ? "All Series" : (controller.selectedHighlightSeries.value!.title ?? "Highlights"),
                         style: text20(fontWeight: FontWeight.bold),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -57,11 +72,10 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
                     ),
                   ],
                 ),
-              ),
+              )),
 
               // Sport filter - Only show when no series is selected
-              if (selectedSeries == null)
-              Obx(() => SingleChildScrollView(
+              Obx(() => controller.selectedHighlightSeries.value == null ? SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
@@ -88,7 +102,7 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
                     );
                   }).toList(),
                 ),
-              )),
+              ) : const SizedBox.shrink()),
 
               const SizedBox(height: 8),
               const AdMobBannerWidget(position: "all_highlights_top"),
@@ -96,11 +110,12 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
 
               Expanded(
                 child: Obx(() {
-                  if (controller.isSeriesLoading.value || controller.isHighlightsLoading.value) {
+                  if (controller.isSeriesLoading.value || 
+                      (controller.selectedHighlightSeries.value == null ? controller.isHighlightsLoading.value : controller.isSeriesHighlightsLoading.value)) {
                     return const Center(child: CircularProgressIndicator());
                   }
 
-                  if (selectedSeries == null) {
+                  if (controller.selectedHighlightSeries.value == null) {
                     return _buildSeriesList(controller);
                   } else {
                     return _buildHighlightsList(controller);
@@ -140,9 +155,7 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
   Widget _buildSeriesCard(HomeController controller, series_model.Series series) {
     return GestureDetector(
       onTap: () {
-        setState(() {
-          selectedSeries = series;
-        });
+        controller.selectedHighlightSeries.value = series;
         if (series.sId != null) {
           controller.fetchHighlights(seriesId: series.sId);
         }
@@ -206,7 +219,9 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
   }
 
   Widget _buildHighlightsList(HomeController controller) {
-    final highlights = controller.highlightList.toList();
+    final highlights = controller.selectedHighlightSeries.value == null 
+        ? controller.highlightList.toList() 
+        : controller.seriesHighlightList.toList();
 
     if (highlights.isEmpty) {
       return Center(child: Text("No highlights available for this series", style: text14(color: Colors.white70)));
@@ -224,6 +239,35 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
 
   Widget _buildHighlightCard(highlight_model.HighlightItem highlight) {
     final homeController = Get.find<HomeController>();
+    
+    String teamA = highlight.teamA?.name ?? highlight.matchId?.teamA ?? homeController.selectedHighlightSeries.value?.teamA ?? "";
+    String teamB = highlight.teamB?.name ?? highlight.matchId?.teamB ?? homeController.selectedHighlightSeries.value?.teamB ?? "";
+    String? teamALogo = highlight.teamA?.logo;
+    String? teamBLogo = highlight.teamB?.logo;
+
+    // Lookup names if they are IDs
+    if (homeController.selectedHighlightSeries.value?.teams != null) {
+      if (highlight.teamA == null) {
+        final tA = homeController.selectedHighlightSeries.value!.teams!.firstWhereOrNull((t) => t.sId == teamA);
+        if (tA != null) {
+          teamA = tA.name ?? teamA;
+          teamALogo ??= tA.logo;
+        }
+      }
+      
+      if (highlight.teamB == null) {
+        final tB = homeController.selectedHighlightSeries.value!.teams!.firstWhereOrNull((t) => t.sId == teamB);
+        if (tB != null) {
+          teamB = tB.name ?? teamB;
+          teamBLogo ??= tB.logo;
+        }
+      }
+    }
+
+    final displayTitle = (teamA.isNotEmpty && teamB.isNotEmpty) 
+        ? "$teamA vs $teamB" 
+        : (highlight.title ?? "Highlights");
+
     // Try to find the full match from HomeController to get logos/series
     final fullMatch = homeController.allMatches.firstWhereOrNull((m) => m.sId == highlight.matchId?.sId)
         ?? homeController.liveMatches.firstWhereOrNull((m) => m.sId == highlight.matchId?.sId)
@@ -234,20 +278,26 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
       sId: highlight.matchId!.sId,
       isPremium: highlight.isPremium,
       status: highlight.matchId!.status,
-      teamA: highlight.matchId!.teamA,
-      teamB: highlight.matchId!.teamB,
+      teamA: teamA,
+      teamB: teamB,
+      teamALogo: teamALogo,
+      teamBLogo: teamBLogo,
       tournament: highlight.matchId!.tournament,
       sport: highlight.matchId!.sport,
+      seriesId: highlight.seriesId?.sId,
       videoUrl: highlight.videoUrl, // Ensure video URL is passed
       thumbnail: highlight.thumbnail,
       title: highlight.title,
     ) : (highlight.seriesId != null ? model.Match(
       sId: highlight.sId, // Use highlight ID
       isPremium: highlight.isPremium,
+      seriesId: highlight.seriesId!.sId,
       tournament: highlight.seriesId!.title,
       sport: highlight.seriesId!.sport,
-      teamA: highlight.seriesId!.title, // Fallback title
-      teamB: "Highlights",
+      teamA: teamA.isNotEmpty ? teamA : highlight.seriesId!.title, // Fallback title
+      teamB: teamB.isNotEmpty ? teamB : "Highlights",
+      teamALogo: teamALogo,
+      teamBLogo: teamBLogo,
       videoUrl: highlight.videoUrl,
       thumbnail: highlight.thumbnail,
       title: highlight.title,
@@ -313,7 +363,7 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        highlight.duration ?? "Highlights",
+                        _formatDuration(highlight.duration),
                         style: text11(color: Colors.white),
                       ),
                     ),
@@ -326,50 +376,40 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      highlight.title ?? "Highlights",
+                      displayTitle,
                       style: text16(fontWeight: FontWeight.bold),
                     ),
+                    if (highlight.title != null && highlight.title != displayTitle)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          highlight.title!,
+                          style: text13(color: AppColors.white60),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        if (fullMatch?.seriesId != null) ...[
-                          _seriesInfo(fullMatch!.seriesId!),
+                        if (matchArg?.seriesId != null) ...[
+                          _seriesInfo(matchArg!.seriesId!),
                           const SizedBox(width: 12),
                         ],
                         Expanded(
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              if (fullMatch != null) ...[
-                                _teamMiniLogo(fullMatch.teamALogo),
-                                const SizedBox(width: 4),
-                                Flexible(child: Text(fullMatch.teamA ?? "", style: text12(color: Colors.white70), maxLines: 2, overflow: TextOverflow.ellipsis)),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                                  child: Text("vs", style: text10(color: Colors.white38)),
-                                ),
-                                Flexible(child: Text(fullMatch.teamB ?? "", style: text12(color: Colors.white70), maxLines: 2, overflow: TextOverflow.ellipsis)),
-                                const SizedBox(width: 4),
-                                _teamMiniLogo(fullMatch.teamBLogo),
-                              ] else if (highlight.matchId != null) ...[
-                                Flexible(
-                                  child: Text(
-                                    "${highlight.matchId!.teamA} vs ${highlight.matchId!.teamB}",
-                                    style: text12(color: Colors.white70),
-                                    textAlign: TextAlign.end,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ] else if (highlight.seriesId != null) ...[
-                                Flexible(
-                                  child: Text(
-                                    highlight.seriesId!.title ?? "Series Highlights",
-                                    style: text12(color: Colors.white70),
-                                    textAlign: TextAlign.end,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
+                              _teamMiniLogo(matchArg?.teamALogo),
+                              const SizedBox(width: 4),
+                              Flexible(child: Text(matchArg?.teamA ?? "", style: text12(color: Colors.white70), maxLines: 2, overflow: TextOverflow.ellipsis)),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 6),
+                                child: Text("vs", style: text10(color: Colors.white38)),
+                              ),
+                              Flexible(child: Text(matchArg?.teamB ?? "", style: text12(color: Colors.white70), maxLines: 2, overflow: TextOverflow.ellipsis)),
+                              const SizedBox(width: 4),
+                              _teamMiniLogo(matchArg?.teamBLogo),
                             ],
                           ),
                         ),
@@ -383,6 +423,18 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
         ),
       );
     });
+  }
+
+  String _formatDuration(String? duration) {
+    if (duration == null) return "Highlights";
+    try {
+      final seconds = int.parse(duration);
+      final minutes = seconds ~/ 60;
+      final remainingSeconds = seconds % 60;
+      return "${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}";
+    } catch (e) {
+      return duration;
+    }
   }
 
   Widget _seriesInfo(String seriesId) {

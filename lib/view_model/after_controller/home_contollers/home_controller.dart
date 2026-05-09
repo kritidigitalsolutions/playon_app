@@ -51,16 +51,25 @@ class HomeController extends GetxController {
   var isBannerLoading = false.obs;
 
   var seriesList = <Series>[].obs;
+  var filteredSeriesList = <Series>[].obs;
   var isSeriesLoading = false.obs;
 
   var starPlayers = <StarPlayer>[].obs;
+  var filteredStarPlayers = <StarPlayer>[].obs;
   var isPlayersLoading = false.obs;
 
   var podcastList = <Podcast>[].obs;
+  var filteredPodcastList = <Podcast>[].obs;
   var isPodcastLoading = false.obs;
 
   var highlightList = <highlight_model.HighlightItem>[].obs;
+  var filteredHighlightList = <highlight_model.HighlightItem>[].obs;
   var isHighlightsLoading = false.obs;
+  
+  var seriesHighlightList = <highlight_model.HighlightItem>[].obs;
+  var isSeriesHighlightsLoading = false.obs;
+  
+  final Rxn<Series> selectedHighlightSeries = Rxn<Series>();
 
   var channelCategories = <ChannelCategory>[].obs;
   var isCategoryLoading = false.obs;
@@ -194,6 +203,7 @@ class HomeController extends GetxController {
         var fetchedSeries = data.series ?? [];
         
         seriesList.assignAll(fetchedSeries);
+        filteredSeriesList.assignAll(fetchedSeries);
 
         // Fetch full match details for each series (only for those on home screen to save resources, or all if preferred)
         for (var series in fetchedSeries.where((s) => s.isHomeScreen == true)) {
@@ -224,6 +234,7 @@ class HomeController extends GetxController {
       print("Error fetching series: $e");
     } finally {
       isSeriesLoading.value = false;
+      filterData(searchQuery.value);
     }
   }
 
@@ -234,26 +245,42 @@ class HomeController extends GetxController {
       if (res['success'] == true) {
         final data = StarPlayerModel.fromJson(res);
         starPlayers.assignAll(data.highlights ?? []);
+        filteredStarPlayers.assignAll(data.highlights ?? []);
       }
     } catch (e) {
       print("Error fetching star players: $e");
     } finally {
       isPlayersLoading.value = false;
+      filterData(searchQuery.value);
     }
   }
 
   Future<void> fetchHighlights({String? seriesId}) async {
-    isHighlightsLoading.value = true;
+    if (seriesId != null) {
+      isSeriesHighlightsLoading.value = true;
+    } else {
+      isHighlightsLoading.value = true;
+    }
     try {
       final res = await _matchRepository.getHighlights(seriesId: seriesId);
       if (res['success'] == true) {
         final data = highlight_model.HighlightModel.fromJson(res);
-        highlightList.assignAll(data.highlights ?? []);
+        if (seriesId != null) {
+          seriesHighlightList.assignAll(data.highlights ?? []);
+        } else {
+          highlightList.assignAll(data.highlights ?? []);
+          filteredHighlightList.assignAll(data.highlights ?? []);
+        }
       }
     } catch (e) {
       print("Error fetching highlights: $e");
     } finally {
-      isHighlightsLoading.value = false;
+      if (seriesId != null) {
+        isSeriesHighlightsLoading.value = false;
+      } else {
+        isHighlightsLoading.value = false;
+        filterData(searchQuery.value);
+      }
     }
   }
 
@@ -264,11 +291,13 @@ class HomeController extends GetxController {
       if (res['success'] == true) {
         final data = PodcastModel.fromJson(res);
         podcastList.assignAll(data.podcasts ?? []);
+        filteredPodcastList.assignAll(data.podcasts ?? []);
       }
     } catch (e) {
       print("Error fetching podcasts: $e");
     } finally {
       isPodcastLoading.value = false;
+      filterData(searchQuery.value);
     }
   }
 
@@ -329,6 +358,10 @@ class HomeController extends GetxController {
       filteredMatches.assignAll(allMatches);
       filteredLiveMatches.assignAll(liveMatches);
       filteredChannels.assignAll(allChannels);
+      filteredHighlightList.assignAll(highlightList);
+      filteredSeriesList.assignAll(seriesList);
+      filteredStarPlayers.assignAll(starPlayers);
+      filteredPodcastList.assignAll(podcastList);
     } else {
       final q = query.toLowerCase();
 
@@ -337,7 +370,9 @@ class HomeController extends GetxController {
             (m.title?.toLowerCase().contains(q) ?? false) ||
             (m.teamA?.toLowerCase().contains(q) ?? false) ||
             (m.teamB?.toLowerCase().contains(q) ?? false) ||
-            (m.sport?.toLowerCase().contains(q) ?? false);
+            (m.sport?.toLowerCase().contains(q) ?? false) ||
+            (m.tournament?.toLowerCase().contains(q) ?? false) ||
+            (m.venue?.toLowerCase().contains(q) ?? false);
         bool matchesSport = selectedSport.isEmpty || (m.sport?.toLowerCase() == selectedSport);
         return matchesQuery && matchesSport;
       }).toList());
@@ -347,7 +382,9 @@ class HomeController extends GetxController {
             (m.title?.toLowerCase().contains(q) ?? false) ||
             (m.teamA?.toLowerCase().contains(q) ?? false) ||
             (m.teamB?.toLowerCase().contains(q) ?? false) ||
-            (m.sport?.toLowerCase().contains(q) ?? false);
+            (m.sport?.toLowerCase().contains(q) ?? false) ||
+            (m.tournament?.toLowerCase().contains(q) ?? false) ||
+            (m.venue?.toLowerCase().contains(q) ?? false);
         bool matchesSport = selectedSport.isEmpty || (m.sport?.toLowerCase() == selectedSport);
         return matchesQuery && matchesSport;
       }).toList());
@@ -355,6 +392,49 @@ class HomeController extends GetxController {
       filteredChannels.assignAll(allChannels.where((c) {
         bool matchesQuery = q.isEmpty || (c.name?.toLowerCase().contains(q) ?? false);
         bool matchesSport = selectedSport.isEmpty || (c.category?.toLowerCase() == selectedSport);
+        return matchesQuery && matchesSport;
+      }).toList());
+
+      filteredHighlightList.assignAll(highlightList.where((h) {
+        bool matchesQuery = q.isEmpty ||
+            (h.title?.toLowerCase().contains(q) ?? false) ||
+            (h.description?.toLowerCase().contains(q) ?? false) ||
+            (h.teamA?.name?.toLowerCase().contains(q) ?? false) ||
+            (h.teamB?.name?.toLowerCase().contains(q) ?? false) ||
+            (h.seriesId?.title?.toLowerCase().contains(q) ?? false) ||
+            (h.matchId?.title?.toLowerCase().contains(q) ?? false) ||
+            (h.matchId?.teamA?.toLowerCase().contains(q) ?? false) ||
+            (h.matchId?.teamB?.toLowerCase().contains(q) ?? false);
+        bool matchesSport = selectedSport.isEmpty || 
+            (h.seriesId?.sport?.toLowerCase() == selectedSport) ||
+            (h.matchId?.sport?.toLowerCase() == selectedSport) ||
+            (h.teamA?.sport?.toLowerCase() == selectedSport);
+        return matchesQuery && matchesSport;
+      }).toList());
+
+      filteredSeriesList.assignAll(seriesList.where((s) {
+        bool matchesQuery = q.isEmpty ||
+            (s.title?.toLowerCase().contains(q) ?? false) ||
+            (s.sport?.toLowerCase().contains(q) ?? false) ||
+            (s.description?.toLowerCase().contains(q) ?? false);
+        bool matchesSport = selectedSport.isEmpty || (s.sport?.toLowerCase() == selectedSport);
+        return matchesQuery && matchesSport;
+      }).toList());
+
+      filteredStarPlayers.assignAll(starPlayers.where((p) {
+        bool matchesQuery = q.isEmpty ||
+            (p.playerName?.toLowerCase().contains(q) ?? false) ||
+            (p.title?.toLowerCase().contains(q) ?? false) ||
+            (p.sportId?.name?.toLowerCase().contains(q) ?? false);
+        bool matchesSport = selectedSport.isEmpty || (p.sportId?.name?.toLowerCase() == selectedSport);
+        return matchesQuery && matchesSport;
+      }).toList());
+
+      filteredPodcastList.assignAll(podcastList.where((p) {
+        bool matchesQuery = q.isEmpty ||
+            (p.title?.toLowerCase().contains(q) ?? false) ||
+            (p.category?.toLowerCase().contains(q) ?? false);
+        bool matchesSport = selectedSport.isEmpty || (p.category?.toLowerCase() == selectedSport);
         return matchesQuery && matchesSport;
       }).toList());
     }

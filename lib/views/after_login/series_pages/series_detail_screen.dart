@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:collection/collection.dart';
 import 'package:play_on_app/model/response_model/series_model.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as match_model;
+import 'package:play_on_app/model/response_model/highlight_model.dart' as highlight_model;
 import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/views/custom_background.dart/ad_banner_widget.dart';
+import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
+import '../../../view_model/after_controller/plan_controller.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class SeriesDetailScreen extends StatefulWidget {
   const SeriesDetailScreen({super.key});
@@ -26,6 +31,12 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
     super.initState();
     series = Get.arguments as Series;
     _tabController = TabController(length: 5, vsync: this);
+
+    // Fetch highlights for this series
+    final homeController = Get.find<HomeController>();
+    if (series.sId != null) {
+      homeController.fetchHighlights(seriesId: series.sId);
+    }
   }
 
   @override
@@ -207,23 +218,238 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
 
   /// ================= HIGHLIGHTS =================
   Widget _buildHighlightsTab() {
-    final matches = series.fullMatches
-        ?.where((m) =>
-    m.status == 'completed' || m.status == 'finished')
-        .toList() ??
-        [];
+    final homeController = Get.find<HomeController>();
 
-    if (matches.isEmpty) {
-      return Center(
-        child: Text("No highlights available",
-            style: text14(color: Colors.white60)),
+    return Obx(() {
+      if (homeController.isSeriesHighlightsLoading.value) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      final highlights = homeController.seriesHighlightList.toList();
+
+      if (highlights.isEmpty) {
+        return Center(
+          child: Text("No highlights available",
+              style: text14(color: Colors.white60)),
+        );
+      }
+
+      return ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: highlights.length,
+        itemBuilder: (_, i) => _buildHighlightCard(highlights[i]),
       );
+    });
+  }
+
+  Widget _buildHighlightCard(highlight_model.HighlightItem highlight) {
+    final homeController = Get.find<HomeController>();
+    
+    String teamA = highlight.teamA?.name ?? highlight.matchId?.teamA ?? series.teamA ?? "";
+    String teamB = highlight.teamB?.name ?? highlight.matchId?.teamB ?? series.teamB ?? "";
+    String? teamALogo = highlight.teamA?.logo;
+    String? teamBLogo = highlight.teamB?.logo;
+
+    // Lookup names if they are IDs
+    if (series.teams != null) {
+      if (highlight.teamA == null) {
+        final tA = series.teams!.firstWhereOrNull((t) => t.sId == teamA);
+        if (tA != null) {
+          teamA = tA.name ?? teamA;
+          teamALogo ??= tA.logo;
+        }
+      }
+      
+      if (highlight.teamB == null) {
+        final tB = series.teams!.firstWhereOrNull((t) => t.sId == teamB);
+        if (tB != null) {
+          teamB = tB.name ?? teamB;
+          teamBLogo ??= tB.logo;
+        }
+      }
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: matches.length,
-      itemBuilder: (_, i) => _matchRow(matches[i]),
+    final displayTitle = (teamA.isNotEmpty && teamB.isNotEmpty) 
+        ? "$teamA vs $teamB" 
+        : (highlight.title ?? "Highlights");
+
+    // Try to find the full match from HomeController to get logos/series
+    final fullMatch = homeController.allMatches.firstWhereOrNull((m) => m.sId == highlight.matchId?.sId)
+        ?? homeController.liveMatches.firstWhereOrNull((m) => m.sId == highlight.matchId?.sId)
+        ?? homeController.seriesList.expand((s) => s.fullMatches ?? <match_model.Match>[]).firstWhereOrNull((m) => m.sId == highlight.matchId?.sId);
+    
+    // Create a match object for access checking and UI display
+    final matchArg = fullMatch ?? (highlight.matchId != null ? match_model.Match(
+      sId: highlight.matchId!.sId,
+      isPremium: highlight.isPremium,
+      status: highlight.matchId!.status,
+      teamA: teamA,
+      teamB: teamB,
+      teamALogo: teamALogo,
+      teamBLogo: teamBLogo,
+      tournament: highlight.matchId!.tournament,
+      sport: highlight.matchId!.sport,
+      seriesId: highlight.seriesId?.sId ?? series.sId,
+      videoUrl: highlight.videoUrl,
+      thumbnail: highlight.thumbnail,
+      title: highlight.title,
+    ) : (highlight.seriesId != null || series.sId != null ? match_model.Match(
+      sId: highlight.sId,
+      isPremium: highlight.isPremium,
+      seriesId: highlight.seriesId?.sId ?? series.sId,
+      tournament: highlight.seriesId?.title ?? series.title,
+      sport: highlight.seriesId?.sport ?? series.sport,
+      teamA: teamA.isNotEmpty ? teamA : (highlight.seriesId?.title ?? series.title),
+      teamB: teamB.isNotEmpty ? teamB : "Highlights",
+      teamALogo: teamALogo,
+      teamBLogo: teamBLogo,
+      videoUrl: highlight.videoUrl,
+      thumbnail: highlight.thumbnail,
+      title: highlight.title,
+    ) : null));
+
+    final canWatch = Get.find<PlanController>().canWatchMatch(matchArg);
+    return GestureDetector(
+      onTap: () {
+        if (matchArg != null) {
+          homeController.handleProtectedAction(() {
+            Get.toNamed("${AppRoutes.matchPlay}?mode=highlight", arguments: matchArg);
+          }, checkAccess: true, hasPermission: canWatch);
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  child: CachedNetworkImage(
+                    imageUrl: highlight.thumbnail ?? '',
+                    height: 180,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(height: 180, color: Colors.white10),
+                    errorWidget: (context, url, error) => Container(
+                      height: 180,
+                      color: Colors.grey.withValues(alpha: 0.2),
+                      child: const Icon(Icons.play_circle_outline, color: Colors.white24, size: 50),
+                    ),
+                  ),
+                ),
+                Positioned.fill(
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.8),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(canWatch ? Icons.play_arrow : Icons.lock_outline, color: Colors.white, size: 30),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.7),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      _formatDuration(highlight.duration),
+                      style: text11(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    displayTitle,
+                    style: text16(fontWeight: FontWeight.bold),
+                  ),
+                  if (highlight.title != null && highlight.title != displayTitle)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        highlight.title!,
+                        style: text13(color: AppColors.white60),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            _teamMiniLogo(matchArg?.teamALogo),
+                            const SizedBox(width: 4),
+                            Flexible(child: Text(matchArg?.teamA ?? "", style: text12(color: Colors.white70), maxLines: 2, overflow: TextOverflow.ellipsis)),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 6),
+                              child: Text("vs", style: text10(color: Colors.white38)),
+                            ),
+                            Flexible(child: Text(matchArg?.teamB ?? "", style: text12(color: Colors.white70), maxLines: 2, overflow: TextOverflow.ellipsis)),
+                            const SizedBox(width: 4),
+                            _teamMiniLogo(matchArg?.teamBLogo),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDuration(String? duration) {
+    if (duration == null) return "Highlights";
+    try {
+      final seconds = int.parse(duration);
+      final minutes = seconds ~/ 60;
+      final remainingSeconds = seconds % 60;
+      return "${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}";
+    } catch (e) {
+      return duration;
+    }
+  }
+
+  Widget _teamMiniLogo(String? url) {
+    return Container(
+      height: 20,
+      width: 20,
+      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+      child: ClipOval(
+        child: Padding(
+          padding: const EdgeInsets.all(1),
+          child: CachedNetworkImage(
+            imageUrl: url ?? "",
+            fit: BoxFit.contain,
+            errorWidget: (_, __, ___) => const Icon(Icons.shield, size: 12, color: Colors.grey),
+          ),
+        ),
+      ),
     );
   }
 

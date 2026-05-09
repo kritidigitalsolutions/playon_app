@@ -25,6 +25,8 @@ class HighlightItem {
   String? sId;
   MatchId? matchId;
   SeriesId? seriesId;
+  HighlightTeam? teamA;
+  HighlightTeam? teamB;
   String? title;
   String? description;
   String? category;
@@ -42,6 +44,8 @@ class HighlightItem {
       {this.sId,
       this.matchId,
       this.seriesId,
+      this.teamA,
+      this.teamB,
       this.title,
       this.description,
       this.category,
@@ -59,6 +63,8 @@ class HighlightItem {
     sId = json['_id'];
     matchId = json['matchId'] != null ? MatchId.fromJson(json['matchId']) : null;
     seriesId = json['seriesId'] != null ? SeriesId.fromJson(json['seriesId']) : null;
+    teamA = json['teamA'] != null ? HighlightTeam.fromJson(json['teamA']) : null;
+    teamB = json['teamB'] != null ? HighlightTeam.fromJson(json['teamB']) : null;
     title = json['title'];
     description = json['description'];
     category = json['category'];
@@ -71,6 +77,24 @@ class HighlightItem {
     order = json['order'];
     createdAt = json['createdAt'];
     updatedAt = json['updatedAt'];
+  }
+}
+
+class HighlightTeam {
+  String? sId;
+  String? name;
+  String? sport;
+  String? logo;
+  String? shortName;
+
+  HighlightTeam({this.sId, this.name, this.sport, this.logo, this.shortName});
+
+  HighlightTeam.fromJson(Map<String, dynamic> json) {
+    sId = json['_id'];
+    name = json['name'];
+    sport = json['sport'];
+    logo = json['logo'];
+    shortName = json['shortName'];
   }
 }
 

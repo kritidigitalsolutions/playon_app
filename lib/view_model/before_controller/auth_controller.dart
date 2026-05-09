@@ -166,7 +166,7 @@ class AuthController extends GetxController {
         isNewUser.value = data.isNewUser ?? false;
         showCustomSnackbar(
           title: "Success",
-          message: "${data.message ?? "OTP Sent"}: ${data.otp}",
+          message: data.message ?? "OTP Sent",
           type: SnackType.success,
         );
         startResendTimer();

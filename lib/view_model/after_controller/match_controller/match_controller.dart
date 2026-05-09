@@ -434,16 +434,28 @@ class VideoControllerX extends GetxController {
   }
 
   void _setupLockListener() {
-    // We use a delay to ensure MatchDetailsController is registered if needed,
-    // but usually they are put together in the same screen.
     Future.delayed(Duration.zero, () {
       if (Get.isRegistered<MatchDetailsController>()) {
         final matchDetails = Get.find<MatchDetailsController>();
         ever(matchDetails.isLock, (bool locked) {
-          if (locked && videoController != null && videoController!.value.isPlaying) {
-            videoController?.pause();
-            isPlaying.value = false;
-            showControls.value = true;
+          if (locked) {
+            if (videoController != null && videoController!.value.isPlaying) {
+              videoController?.pause();
+              isPlaying.value = false;
+              showControls.value = true;
+            }
+          } else {
+            // If it was locked and we now have access, try to initialize video if not already done
+            if (!isInitialized.value && !isLoading.value) {
+              final isHighlightMode = Get.parameters['mode'] == 'highlight';
+              if (match.value != null) {
+                fetchMatchDetails(match.value!.sId!, isHighlight: isHighlightMode);
+              }
+            } else if (videoController != null && !videoController!.value.isPlaying) {
+              // If already initialized but paused due to lock, resume
+              videoController?.play();
+              isPlaying.value = true;
+            }
           }
         });
       }
@@ -453,8 +465,12 @@ class VideoControllerX extends GetxController {
   Future<void> fetchMatchDetails(String matchId, {bool isHighlight = false}) async {
     isLoading.value = true;
     try {
+      // 0. If we already have a videoUrl (passed from highlights screen), use it!
+      if (match.value?.videoUrl != null && isHighlight) {
+        initializeVideo(match.value!.videoUrl!, isHighlight: true);
+      }
       // 1. If it's a finished match, try to play the first highlight automatically from the new highlights API
-      if (isHighlight) {
+      else if (isHighlight) {
         final res = await _matchRepo.getHighlights(matchId: matchId);
         if (res['success'] == true && res['highlights'] != null) {
           final List highlightsList = res['highlights'];
@@ -462,7 +478,6 @@ class VideoControllerX extends GetxController {
             final firstHighlight = highlightsList.first;
             if (firstHighlight['videoUrl'] != null) {
               initializeVideo(firstHighlight['videoUrl'], isHighlight: true);
-              // Do not return here, continue to fetch match details for UI info
             }
           }
         }
