@@ -12,11 +12,8 @@ import 'package:play_on_app/view_model/after_controller/match_controller/match_c
 import 'package:play_on_app/views/after_login/match_pages/full_video_play_screen.dart';
 import 'package:play_on_app/views/widgets/admob_banner_widget.dart';
 import 'package:video_player/video_player.dart';
-import 'package:play_on_app/model/response_model/match_model.dart' as model;
-import 'package:play_on_app/model/response_model/highlight_model.dart' as highlight_model;
 import 'package:play_on_app/utils/hive_service/hive_service.dart';
 import 'package:play_on_app/utils/share_helper.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -44,6 +41,9 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
   void initState() {
     super.initState();
     WakelockPlus.enable();
+    // Force portrait mode when entering the screen
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    
     // Force authentication check for any match/highlight content
     if (!HiveService.isLogin()) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -169,12 +169,25 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
               }
 
               if (videoControllerX.isYoutube.value && videoControllerX.youtubeController != null) {
-                return YoutubePlayer(
-                  controller: videoControllerX.youtubeController!,
-                  showVideoProgressIndicator: true,
-                  progressIndicatorColor: Colors.red,
-                  onReady: () {
-                    videoControllerX.isInitialized.value = true;
+                return YoutubePlayerBuilder(
+                  key: ValueKey(videoControllerX.youtubeController.hashCode),
+                  player: YoutubePlayer(
+                    controller: videoControllerX.youtubeController!,
+                    showVideoProgressIndicator: true,
+                    progressIndicatorColor: Colors.red,
+                    onReady: () {
+                      videoControllerX.isInitialized.value = true;
+                    },
+                  ),
+                  builder: (context, player) => player,
+                  onEnterFullScreen: () {
+                    SystemChrome.setPreferredOrientations([
+                      DeviceOrientation.landscapeLeft,
+                      DeviceOrientation.landscapeRight,
+                    ]);
+                  },
+                  onExitFullScreen: () {
+                    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
                   },
                 );
               }
@@ -220,7 +233,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
               if (match?.status?.toLowerCase() != 'live') return const SizedBox();
               return Positioned(
                 top: 10,
-                left: 10,
+                right: 10,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
@@ -243,30 +256,33 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
               if (controller.isLock.value) {
                 return Positioned.fill(
                   child: Container(
-                    color: Colors.black.withOpacity(0.88),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    color: Colors.black.withValues(alpha: 0.88),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(
                           Icons.lock_rounded,
-                          size: 75,
+                          size: 50, // Reduced size to prevent overflow
                           color: Colors.white70,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         Text(
                           "Unlock Now",
-                          style: text20(fontWeight: FontWeight.bold),
+                          style: text18(fontWeight: FontWeight.bold),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 4),
                         Text(
                           "Buy plan to watch match",
-                          style: text15(color: Colors.white70),
+                          textAlign: TextAlign.center,
+                          style: text13(color: Colors.white70),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
 
                         CustomElevatedIconButton(
-                          height: 30,
-                          iconSize: 18,
+                          height: 28,
+                          iconSize: 16,
                           text: "Watch Now",
                           icon: Icons.play_arrow_rounded,
                           onPressed: () {
@@ -297,7 +313,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.9),
+                          color: Colors.red.withValues(alpha: 0.9),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -556,9 +572,9 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: Colors.red.withOpacity(0.15),
+                                    color: Colors.red.withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(color: Colors.red.withOpacity(0.5)),
+                                    border: Border.all(color: Colors.red.withValues(alpha: 0.5)),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -581,7 +597,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.05),
+                                    color: Colors.white.withValues(alpha: 0.05),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
@@ -695,7 +711,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
       
       List<String> tabs = [];
       if (!isLive) tabs.add('Highlights');
-      tabs.addAll(['Squads', 'Scorecard', 'Stats', 'Comments']);
+      tabs.addAll(['Squads', 'Scorecard', 'Stats', 'Performers', 'Events', 'Comments']);
 
       return Container(
         height: 60,
@@ -753,6 +769,8 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
         _buildLineup(),
         _buildScoreboard(),
         _buildStats(),
+        _buildTopPerformers(),
+        _buildEvents(),
         _buildComments(),
       ]);
 
@@ -929,105 +947,6 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
     );
   }
 
-  Widget _buildHighlightCard(String title, String team1, String team2) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.white.withValues(alpha: 0.11),
-                AppColors.white.withValues(alpha: 0.06),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.white.withValues(alpha: (0.35)),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: text16(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      team1,
-                      style: text14(
-                        color: AppColors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      team2,
-                      style: text14(
-                        color: AppColors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      "Run Rate: 5.47",
-                      style: text13(
-                        color: AppColors.white,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      "Run Rate: 5.47",
-                      style: text13(
-                        color: AppColors.white,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 10),
-
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Match Situation",
-                    style: text14(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Text(
-                    "India needs 65 runs in 65 balls",
-                    style: text13(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
   // Widget _buildStatsSection() {
   //   return Container(
   //     padding: const EdgeInsets.all(16),

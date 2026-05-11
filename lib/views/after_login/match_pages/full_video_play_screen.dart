@@ -17,12 +17,12 @@ class _FullScreenVideoPageState extends State<FullScreenVideoPage> {
   void initState() {
     super.initState();
 
-    // Respect user orientation but allow sensor rotation
+    // Force landscape for full screen video
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
+      // DeviceOrientation.portraitUp,
+      // DeviceOrientation.portraitDown,
     ]);
 
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);

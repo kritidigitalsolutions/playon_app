@@ -533,13 +533,22 @@ class VideoControllerX extends GetxController {
 
     print("Initializing Video: $url (Type: $streamType)");
 
-    // Reset previous controllers
-    videoController?.dispose();
-    youtubeController?.dispose();
+    // Signal UI that we are re-initializing
+    isInitialized.value = false;
+
+    // Capture old controllers to dispose them safely after UI rebuilds
+    final oldVideo = videoController;
+    final oldYoutube = youtubeController;
+
     videoController = null;
     youtubeController = null;
-    isInitialized.value = false;
     isYoutube.value = false;
+
+    // Small delay to let UI rebuild without old controllers before disposing them
+    Future.delayed(const Duration(milliseconds: 100), () {
+      oldVideo?.dispose();
+      oldYoutube?.dispose();
+    });
 
     // Detect YouTube
     bool isYoutubeUrl = url.contains('youtube.com') || url.contains('youtu.be') || streamType?.toLowerCase() == 'youtube';
@@ -630,8 +639,20 @@ class VideoControllerX extends GetxController {
 
   @override
   void onClose() {
-    videoController?.dispose();
-    youtubeController?.dispose();
+    // Signal UI to stop using controllers
+    isInitialized.value = false;
+    
+    final oldVideo = videoController;
+    final oldYoutube = youtubeController;
+    
+    videoController = null;
+    youtubeController = null;
+    
+    // Dispose after a small delay to avoid "controller used after dispose" errors during cleanup
+    Future.delayed(const Duration(milliseconds: 100), () {
+      oldVideo?.dispose();
+      oldYoutube?.dispose();
+    });
     super.onClose();
   }
 }

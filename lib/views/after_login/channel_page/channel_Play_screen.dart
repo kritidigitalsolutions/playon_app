@@ -69,8 +69,6 @@ class _ChannelPlayScreenState extends State<ChannelPlayScreen> {
         deviceOrientationsOnEnterFullScreen: [
           DeviceOrientation.landscapeLeft,
           DeviceOrientation.landscapeRight,
-          DeviceOrientation.portraitUp,
-          DeviceOrientation.portraitDown,
         ],
         aspectRatio: _videoPlayerController.value.aspectRatio,
         materialProgressColors: ChewieProgressColors(

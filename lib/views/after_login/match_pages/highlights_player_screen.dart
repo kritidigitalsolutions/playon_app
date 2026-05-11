@@ -16,6 +16,7 @@ import 'package:play_on_app/model/response_model/match_model.dart' as model;
 import 'package:play_on_app/model/response_model/star_player_model.dart' as star_model;
 import 'package:play_on_app/view_model/after_controller/player_controller.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../../../routes/app_routes.dart';
 import '../../../view_model/after_controller/plan_controller.dart';
 import 'package:play_on_app/utils/share_helper.dart';
@@ -156,12 +157,36 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
               }
 
               if (!videoControllerX.isInitialized.value ||
-                  videoControllerX.videoController == null) {
+                  (videoControllerX.videoController == null && videoControllerX.youtubeController == null)) {
                 return const Center(
                   child: Text(
                     "No video found",
                     style: TextStyle(color: Colors.white),
                   ),
+                );
+              }
+
+              if (videoControllerX.isYoutube.value && videoControllerX.youtubeController != null) {
+                return YoutubePlayerBuilder(
+                  key: ValueKey(videoControllerX.youtubeController.hashCode),
+                  player: YoutubePlayer(
+                    controller: videoControllerX.youtubeController!,
+                    showVideoProgressIndicator: true,
+                    progressIndicatorColor: AppColors.primary,
+                    onReady: () {
+                      videoControllerX.isInitialized.value = true;
+                    },
+                  ),
+                  builder: (context, player) => player,
+                  onEnterFullScreen: () {
+                    SystemChrome.setPreferredOrientations([
+                      DeviceOrientation.landscapeLeft,
+                      DeviceOrientation.landscapeRight,
+                    ]);
+                  },
+                  onExitFullScreen: () {
+                    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+                  },
                 );
               }
 
@@ -177,30 +202,33 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
               if (matchDetailsController.isLock.value) {
                 return Positioned.fill(
                   child: Container(
-                    color: Colors.black.withOpacity(0.88),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    color: Colors.black.withValues(alpha: 0.88),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(
                           Icons.lock_rounded,
-                          size: 75,
+                          size: 50,
                           color: Colors.white70,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         Text(
                           "Unlock Now",
-                          style: text20(fontWeight: FontWeight.bold),
+                          style: text18(fontWeight: FontWeight.bold),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 4),
                         Text(
                           "Buy plan to watch highlight",
-                          style: text15(color: Colors.white70),
+                          textAlign: TextAlign.center,
+                          style: text13(color: Colors.white70),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
 
                         CustomElevatedIconButton(
-                          height: 30,
-                          iconSize: 18,
+                          height: 28,
+                          iconSize: 16,
                           text: "Watch Now",
                           icon: Icons.play_arrow_rounded,
                           onPressed: () {
@@ -230,7 +258,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withValues(alpha: 0.5),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -295,7 +323,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.white10),
             ),
@@ -432,7 +460,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
             Obx(() => Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -448,9 +476,9 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: AppColors.white.withOpacity(0.05),
+            color: AppColors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.white.withOpacity(0.1)),
+            border: Border.all(color: AppColors.white.withValues(alpha: 0.1)),
           ),
           child: Row(
             children: [
@@ -460,7 +488,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                   style: text14(),
                   decoration: InputDecoration(
                     hintText: "Add a comment...",
-                    hintStyle: text14(color: AppColors.white.withOpacity(0.4)),
+                    hintStyle: text14(color: AppColors.white.withValues(alpha: 0.4)),
                     border: InputBorder.none,
                   ),
                 ),
@@ -489,7 +517,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                 padding: const EdgeInsets.all(20.0),
                 child: Text(
                   "No comments yet. Be the first to comment!",
-                  style: text14(color: AppColors.white.withOpacity(0.5)),
+                  style: text14(color: AppColors.white.withValues(alpha: 0.5)),
                 ),
               ),
             );
@@ -507,7 +535,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                 children: [
                   CircleAvatar(
                     radius: 18,
-                    backgroundColor: AppColors.primary.withOpacity(0.2),
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.2),
                     child: ClipOval(
                       child: CachedNetworkImage(
                         imageUrl: comment.userImage ?? "",
@@ -622,7 +650,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                               _formatDate(comment.createdAt),
                               style: text10(
                                 color: AppColors.white
-                                    .withOpacity(0.4),
+                                    .withValues(alpha: 0.4),
                               ),
                             ),
                           ],
@@ -630,7 +658,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                         const SizedBox(height: 4),
                         Text(
                           comment.comment ?? "",
-                          style: text13(color: AppColors.white.withOpacity(0.8)),
+                          style: text13(color: AppColors.white.withValues(alpha: 0.8)),
                         ),
                       ],
                     ),

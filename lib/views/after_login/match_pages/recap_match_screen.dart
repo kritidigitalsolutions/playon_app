@@ -18,6 +18,7 @@ import 'package:play_on_app/views/widgets/admob_banner_widget.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
 import 'package:video_player/video_player.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 import '../../../view_model/after_controller/home_contollers/home_controller.dart';
 
@@ -358,8 +359,31 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              if (!videoControllerX.isInitialized.value || videoControllerX.videoController == null) {
+              if (!videoControllerX.isInitialized.value || (videoControllerX.videoController == null && videoControllerX.youtubeController == null)) {
                 return const Center(child: Text("Loading recap...", style: TextStyle(color: Colors.white)));
+              }
+
+              if (videoControllerX.isYoutube.value && videoControllerX.youtubeController != null) {
+                return YoutubePlayerBuilder(
+                  player: YoutubePlayer(
+                    controller: videoControllerX.youtubeController!,
+                    showVideoProgressIndicator: true,
+                    progressIndicatorColor: AppColors.primary,
+                    onReady: () {
+                      videoControllerX.isInitialized.value = true;
+                    },
+                  ),
+                  builder: (context, player) => player,
+                  onEnterFullScreen: () {
+                    SystemChrome.setPreferredOrientations([
+                      DeviceOrientation.landscapeLeft,
+                      DeviceOrientation.landscapeRight,
+                    ]);
+                  },
+                  onExitFullScreen: () {
+                    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+                  },
+                );
               }
 
               return AspectRatio(
@@ -423,7 +447,7 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
               if (controller.isLock.value) {
                 return Positioned.fill(
                   child: Container(
-                    color: Colors.black.withOpacity(0.88),
+                    color: Colors.black.withValues(alpha: 0.88),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -478,7 +502,7 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                         width: 65,
                         height: 65,
                         decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.9),
+                          color: Colors.red.withValues(alpha: 0.9),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -581,7 +605,7 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                     width: 35,
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: AppColors.white.withOpacity(0.1),
+                      color: AppColors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Image.network(
@@ -603,7 +627,7 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                       ),
                       Text(
                         "${match.sport?.toUpperCase()} • ${match.venue ?? 'TBA'}",
-                        style: text12(color: AppColors.white.withOpacity(0.5)),
+                        style: text12(color: AppColors.white.withValues(alpha: 0.5)),
                       ),
                     ],
                   ),
@@ -617,9 +641,9 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
             Container(
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
               decoration: BoxDecoration(
-                color: AppColors.white.withOpacity(0.05),
+                color: AppColors.white.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.white.withOpacity(0.1)),
+                border: Border.all(color: AppColors.white.withValues(alpha: 0.1)),
               ),
               child: Row(
                 children: [
@@ -657,9 +681,9 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                             margin: const EdgeInsets.only(top: 4),
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.1),
+                              color: Colors.red.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: Colors.red.withOpacity(0.5)),
+                              border: Border.all(color: Colors.red.withValues(alpha: 0.5)),
                             ),
                             child: Text("LIVE", style: text10(color: Colors.red, fontWeight: FontWeight.bold)),
                           ),
@@ -699,10 +723,10 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         shape: BoxShape.circle,
-        border: Border.all(color: AppColors.primary.withOpacity(0.5), width: 1.5),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.2),
+            color: AppColors.primary.withValues(alpha: 0.2),
             blurRadius: 10,
             spreadRadius: 2,
           ),
