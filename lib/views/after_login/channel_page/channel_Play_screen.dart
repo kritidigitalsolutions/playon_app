@@ -1,29 +1,38 @@
+import 'dart:ui';
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:play_on_app/model/response_model/channel_model.dart' as model;
 import 'package:play_on_app/res/app_colors.dart';
+import 'package:play_on_app/routes/app_routes.dart';
+import 'package:play_on_app/utils/app_text_style.dart';
+import 'package:play_on_app/utils/custom_button.dart';
 import 'package:play_on_app/utils/hive_service/hive_service.dart';
+import 'package:play_on_app/utils/share_helper.dart';
 import 'package:video_player/video_player.dart';
 import 'package:get/get.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:play_on_app/utils/custom_snakebar.dart';
+import 'package:play_on_app/views/widgets/admob_banner_widget.dart';
+import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
 
 class ChannelPlayScreen extends StatefulWidget {
   const ChannelPlayScreen({super.key});
 
   @override
-  State<ChannelPlayScreen> createState() => _VideoPlayerScreenState();
+  State<ChannelPlayScreen> createState() => _ChannelPlayScreenState();
 }
 
-class _VideoPlayerScreenState extends State<ChannelPlayScreen> {
+class _ChannelPlayScreenState extends State<ChannelPlayScreen> {
   late VideoPlayerController _videoPlayerController;
   ChewieController? _chewieController;
   model.Channel? channel;
+  final HomeController homeController = Get.find<HomeController>();
 
   @override
   void initState() {
     super.initState();
+    WakelockPlus.enable();
     if (!HiveService.isLogin()) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Get.back();
@@ -40,11 +49,9 @@ class _VideoPlayerScreenState extends State<ChannelPlayScreen> {
   }
 
   Future<void> _initializePlayer() async {
-    // Enable wakelock to prevent screen dimming/sleep
     WakelockPlus.enable();
 
-    final url = channel?.streamUrl ??
-        "https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4";
+    final url = channel?.streamUrl ?? "";
 
     _videoPlayerController = VideoPlayerController.networkUrl(
       Uri.parse(url),
@@ -58,6 +65,14 @@ class _VideoPlayerScreenState extends State<ChannelPlayScreen> {
         autoPlay: true,
         looping: false,
         showControls: true,
+        deviceOrientationsAfterFullScreen: [DeviceOrientation.portraitUp],
+        deviceOrientationsOnEnterFullScreen: [
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+          DeviceOrientation.portraitUp,
+          DeviceOrientation.portraitDown,
+        ],
+        aspectRatio: _videoPlayerController.value.aspectRatio,
         materialProgressColors: ChewieProgressColors(
           playedColor: AppColors.error,
           handleColor: AppColors.redAccent,
@@ -73,7 +88,6 @@ class _VideoPlayerScreenState extends State<ChannelPlayScreen> {
         allowedScreenSleep: false,
         allowFullScreen: true,
         fullScreenByDefault: false,
-        aspectRatio: _videoPlayerController.value.aspectRatio,
         errorBuilder: (context, errorMessage) {
           return Center(
             child: Text(
@@ -92,13 +106,21 @@ class _VideoPlayerScreenState extends State<ChannelPlayScreen> {
     }
   }
 
+  void _shareChannel() {
+    if (channel == null) return;
+    final text = "Watch ${channel!.name} live on PlayOn!\nDownload now: https://play.google.com/store/apps/details?id=com.playon.app";
+    ShareHelper.shareMatchWithImage(
+      text: text,
+      imageUrl: channel!.thumbnail ?? channel!.logo,
+    );
+  }
+
   @override
   void dispose() {
+    WakelockPlus.disable();
     _videoPlayerController.dispose();
     _chewieController?.dispose();
-    // Disable wakelock when leaving
     WakelockPlus.disable();
-    // Reset orientation to strictly portrait when leaving
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     super.dispose();
   }
@@ -106,60 +128,125 @@ class _VideoPlayerScreenState extends State<ChannelPlayScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.secPrimary,
       body: SafeArea(
-        child: Stack(
-          fit: StackFit.expand,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Video Player
-            _chewieController != null &&
-                    _chewieController!
-                        .videoPlayerController.value.isInitialized
-                ? Chewie(controller: _chewieController!)
-                : const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
+            // 1. Video Player at Top
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Stack(
+                children: [
+                  Container(
+                    color: Colors.black,
+                    child: _chewieController != null &&
+                            _chewieController!.videoPlayerController.value.isInitialized
+                        ? Chewie(controller: _chewieController!)
+                        : const Center(
+                            child: CircularProgressIndicator(color: Colors.white),
+                          ),
                   ),
 
-            // Custom Top Bar (Back Button + Title)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.black87, Colors.transparent],
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () {
+                  // Back Button
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: GestureDetector(
+                      onTap: () {
                         Get.back();
                       },
-                      icon: const Icon(
-                        Icons.arrow_back_ios_new,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    if (channel != null)
-                      Text(
-                        channel!.name ?? "Live Stream",
-                        style: const TextStyle(
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.arrow_back_ios_new,
                           color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                          size: 20,
                         ),
                       ),
-                    const Spacer(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // 2. Channel Info & Actions
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        // Logo
+                        Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: channel?.logo != null && channel!.logo!.isNotEmpty
+                                ? Image.network(
+                                    channel!.logo!,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, __, ___) => const Icon(Icons.tv, color: Colors.white),
+                                  )
+                                : const Icon(Icons.tv, color: Colors.white),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // Name & Number
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                channel?.name ?? "Live Stream",
+                                style: text18(fontWeight: FontWeight.bold, color: Colors.white),
+                              ),
+                              if (channel?.channelNumber != null)
+                                Text(
+                                  "Channel ${channel!.channelNumber}",
+                                  style: text16(color: Colors.white),
+                                ),
+                            ],
+                          ),
+                        ),
+                        // Share Button
+                        IconButton(
+                          onPressed: _shareChannel,
+                          icon: const Icon(Icons.share, color: AppColors.button),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // 3. Details
+                    if (channel?.description != null && channel!.description!.isNotEmpty) ...[
+                      Text("Description", style: text14(fontWeight: FontWeight.bold, color: Colors.white)),
+                      const SizedBox(height: 8),
+                      Text(channel!.description!, style: text12(color: Colors.white70)),
+                      const SizedBox(height: 20),
+                    ],
+
+                    // 4. Banner Ad
+                    const AdMobBannerWidget(position: "channel_play_bottom"),
+
+                    const SizedBox(height: 20),
+
+                    // 5. More Channels (Related)
+                    Text("Related Channels", style: text16(fontWeight: FontWeight.bold, color: Colors.white)),
+                    const SizedBox(height: 12),
+                    _buildRelatedChannels(),
                   ],
                 ),
               ),
@@ -167,6 +254,112 @@ class _VideoPlayerScreenState extends State<ChannelPlayScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildRelatedChannels() {
+    final related = homeController.allChannels
+        .where((c) => c.category == channel?.category && c.sId != channel?.sId)
+        .toList();
+
+    // Sort related channels by channelNumber
+    related.sort((a, b) => (a.channelNumber ?? 0).compareTo(b.channelNumber ?? 0));
+
+    if (related.isEmpty) {
+      return const Center(
+        child: Text("No related channels", style: TextStyle(color: Colors.white38)),
+      );
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: related.length,
+      itemBuilder: (context, index) {
+        final item = related[index];
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: AppColors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppColors.white.withValues(alpha: 0.18),
+                  width: 1.2,
+                ),
+              ),
+              child: Row(
+                children: [
+                  // Channel Logo
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppColors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: item.logo != null && item.logo!.isNotEmpty
+                          ? Image.network(
+                              item.logo!,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.tv, color: AppColors.white70),
+                            )
+                          : const Icon(Icons.tv, color: AppColors.white70, size: 28),
+                    ),
+                  ),
+
+                  const SizedBox(width: 16),
+
+                  // Channel Name
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.name ?? "Unknown Channel",
+                          style: text16(fontWeight: FontWeight.w500, color: Colors.white),
+                        ),
+                        if (item.category != null)
+                          Text(
+                            item.category!.toUpperCase(),
+                            style: text12(color: Colors.white60),
+                          ),
+                      ],
+                    ),
+                  ),
+
+                  // Channel Number
+                  if (item.channelNumber != null)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Text(
+                        "${item.channelNumber}",
+                        style: text24(color: AppColors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+
+                  // Watch Button
+                  AppButton(
+                    title: "Watch",
+                    onTap: () {
+                      Get.offNamed(AppRoutes.channelPlay, arguments: item, preventDuplicates: false);
+                    },
+                    height: 30,
+                    textStyle: text13(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

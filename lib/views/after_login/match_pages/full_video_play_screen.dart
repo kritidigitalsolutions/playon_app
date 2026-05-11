@@ -17,22 +17,22 @@ class _FullScreenVideoPageState extends State<FullScreenVideoPage> {
   void initState() {
     super.initState();
 
-    // 🔥 Landscape mode
+    // Respect user orientation but allow sensor rotation
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
     ]);
 
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 
   @override
   void dispose() {
-    // 🔥 Back to portrait
+    // Reset to portrait when leaving
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-
     super.dispose();
   }
 

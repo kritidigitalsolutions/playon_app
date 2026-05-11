@@ -9,6 +9,7 @@ import 'package:play_on_app/views/after_login/match_pages/full_video_play_screen
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 import 'package:play_on_app/views/widgets/admob_banner_widget.dart';
 import 'package:video_player/video_player.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../routes/app_routes.dart';
 import '../../custom_background.dart/custum_date.dart';
 
@@ -23,7 +24,14 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
   final controller = Get.put(PodcastPlayController());
 
   @override
+  void initState() {
+    super.initState();
+    WakelockPlus.enable();
+  }
+
+  @override
   void dispose() {
+    WakelockPlus.disable();
     // Reset orientation to strictly portrait when leaving
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     super.dispose();

@@ -15,6 +15,7 @@ import 'package:play_on_app/views/widgets/admob_banner_widget.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
 import 'package:play_on_app/model/response_model/star_player_model.dart' as star_model;
 import 'package:play_on_app/view_model/after_controller/player_controller.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../routes/app_routes.dart';
 import '../../../view_model/after_controller/plan_controller.dart';
 import 'package:play_on_app/utils/share_helper.dart';
@@ -39,7 +40,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
   @override
   void initState() {
     super.initState();
-
+    WakelockPlus.enable();
     /// ✅ Get only star player
     player = Get.arguments as star_model.StarPlayer;
 
@@ -53,6 +54,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
 
   @override
   void dispose() {
+    WakelockPlus.disable();
     // Reset orientation to strictly portrait when leaving
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     super.dispose();

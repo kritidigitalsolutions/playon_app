@@ -1,6 +1,6 @@
 class AppUrls {
-  // static const String baseUrl = 'http://192.168.1.12:8000/api';
-  static const String baseUrl = 'http://13.233.70.187/api';
+  static const String baseUrl = 'http://192.168.1.12:8000/api';
+  // static const String baseUrl = 'http://13.233.70.187/api';
   // static const String baseUrl = 'https://play-on-weld.vercel.app/api';
 
   // Auth Endpoints

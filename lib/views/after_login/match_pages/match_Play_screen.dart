@@ -19,6 +19,7 @@ import 'package:play_on_app/utils/share_helper.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:play_on_app/model/response_model/score_model.dart' as score_model;
@@ -42,6 +43,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
   @override
   void initState() {
     super.initState();
+    WakelockPlus.enable();
     // Force authentication check for any match/highlight content
     if (!HiveService.isLogin()) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -64,6 +66,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
 
   @override
   void dispose() {
+    WakelockPlus.disable();
     // Reset orientation to portrait when leaving the play screen
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     super.dispose();
@@ -187,6 +190,29 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
 
               return const Center(child: CircularProgressIndicator());
             }),
+
+            /// 🔙 BACK BUTTON
+            Positioned(
+              top: 10,
+              left: 10,
+              child: GestureDetector(
+                onTap: () {
+                  Get.back();
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back_ios_new,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
 
             /// 🔴 LIVE BADGE
             Obx(() {

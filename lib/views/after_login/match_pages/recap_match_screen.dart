@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -16,6 +17,7 @@ import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 import 'package:play_on_app/views/widgets/admob_banner_widget.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
 import 'package:video_player/video_player.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../view_model/after_controller/home_contollers/home_controller.dart';
 
@@ -34,6 +36,15 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
   @override
   void initState() {
     super.initState();
+    WakelockPlus.enable();
+  }
+
+  @override
+  void dispose() {
+    WakelockPlus.disable();
+    // Reset orientation to portrait when leaving the recap screen
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    super.dispose();
   }
 
   // @override
@@ -358,6 +369,29 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                 ),
               );
             }),
+
+            /// 🔙 BACK BUTTON
+            Positioned(
+              top: 10,
+              left: 10,
+              child: GestureDetector(
+                onTap: () {
+                  Get.back();
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back_ios_new,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
 
             /// RECAP BADGE
             Positioned(

@@ -35,6 +35,7 @@ class Channel {
   int? viewerCount;
   bool? featured;
   bool? isPremium;
+  int? channelNumber;
   String? createdAt;
   String? updatedAt;
 
@@ -56,6 +57,7 @@ class Channel {
       this.viewerCount,
       this.featured,
       this.isPremium,
+      this.channelNumber,
       this.createdAt,
       this.updatedAt});
 
@@ -77,6 +79,7 @@ class Channel {
     viewerCount = json['viewerCount'];
     featured = json['featured'];
     isPremium = json['isPremium'];
+    channelNumber = json['channelNumber'];
     createdAt = json['createdAt'];
     updatedAt = json['updatedAt'];
   }

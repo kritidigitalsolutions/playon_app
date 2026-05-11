@@ -163,6 +163,9 @@ class _SportChannelListState extends State<SportChannelList> {
                             ctr.channelCategories[selectedChannelTabIndex.value - 1].name?.toLowerCase())
                         .toList();
 
+                // Sort by channelNumber
+                displayChannels.sort((a, b) => (a.channelNumber ?? 0).compareTo(b.channelNumber ?? 0));
+
                 if (displayChannels.isEmpty) {
                   return const Center(
                     child: Text(
@@ -240,10 +243,10 @@ class _SportChannelListState extends State<SportChannelList> {
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: AppColors.white.withOpacity(0.08),
+            color: AppColors.white.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: AppColors.white.withOpacity(0.18),
+              color: AppColors.white.withValues(alpha: 0.18),
               width: 1.2,
             ),
           ),
@@ -289,6 +292,16 @@ class _SportChannelListState extends State<SportChannelList> {
                   ],
                 ),
               ),
+
+              // Channel Number
+              if (channel.channelNumber != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Text(
+                    "${channel.channelNumber}",
+                    style: text24(color: AppColors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
 
               // Watch Button
               AppButton(
