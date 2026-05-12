@@ -4,6 +4,7 @@ import 'package:play_on_app/model/response_model/player_model.dart';
 import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 import 'dart:ui';
+import 'dart:async';
 
 import 'package:play_on_app/view_model/after_controller/player_controller.dart';
 import 'package:play_on_app/views/after_login/account_pages/followed_players_page.dart';
@@ -23,8 +24,27 @@ class _SearchPlayersScreenState extends State<SearchPlayersScreen> {
   final RxString selectedSport = "".obs;
   final RxString selectedCountry = "".obs;
   final RxString searchQuery = "".obs;
+  Timer? _debounce;
 
-  void _onFilterChanged() {
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onFilterChanged({bool debounce = false}) {
+    if (debounce) {
+      if (_debounce?.isActive ?? false) _debounce?.cancel();
+      _debounce = Timer(const Duration(milliseconds: 500), () {
+        _fetch();
+      });
+    } else {
+      _fetch();
+    }
+  }
+
+  void _fetch() {
     _playerController.fetchPlayers(
       search: searchQuery.value,
       sport: selectedSport.value,
@@ -65,6 +85,10 @@ class _SearchPlayersScreenState extends State<SearchPlayersScreen> {
                             Expanded(
                               child: TextField(
                                 controller: _searchController,
+                                onChanged: (val) {
+                                  searchQuery.value = val;
+                                  _onFilterChanged(debounce: true);
+                                },
                                 onSubmitted: (val) {
                                   searchQuery.value = val;
                                   _onFilterChanged();
@@ -113,7 +137,7 @@ class _SearchPlayersScreenState extends State<SearchPlayersScreen> {
                         var sports = _playerController.getAvailableSports();
                         return _buildDropdown(
                           hint: "Select Sport",
-                          value: selectedSport.value.isEmpty ? null : selectedSport.value,
+                          value: selectedSport.value,
                           items: sports,
                           onChanged: (val) {
                             selectedSport.value = val ?? "";
@@ -130,7 +154,7 @@ class _SearchPlayersScreenState extends State<SearchPlayersScreen> {
                         var countries = _playerController.getAvailableCountries(selectedSport.value);
                         return _buildDropdown(
                           hint: "Select Country",
-                          value: selectedCountry.value.isEmpty ? null : selectedCountry.value,
+                          value: selectedCountry.value,
                           items: countries,
                           onChanged: (val) {
                             selectedCountry.value = val ?? "";

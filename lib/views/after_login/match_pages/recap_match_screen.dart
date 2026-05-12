@@ -21,6 +21,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 import '../../../view_model/after_controller/home_contollers/home_controller.dart';
+import '../../custom_background.dart/ad_banner_widget.dart';
 
 class RecapMatchScreen extends StatefulWidget {
   const RecapMatchScreen({super.key});
@@ -86,6 +87,8 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                 // Match Info Section
                 _buildMatchInfo(),
 
+                const AdBannerWidget(position: "recap_top"),
+                const SizedBox(height: 8),
                 const AdMobBannerWidget(position: "recap_top"),
 
                 // Tab Section

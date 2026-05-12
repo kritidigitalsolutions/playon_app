@@ -431,10 +431,11 @@ class MatchDetailScreen extends StatelessWidget {
               child: Column(
                 children: [
                   AdBannerWidget(
+                    position: "match_details",
                     height: 180,
                     padding: EdgeInsets.symmetric(horizontal: 16),
                   ),
-                  AdMobBannerWidget(position: "match_detail_top"),
+                  AdMobBannerWidget(position: "match_details"),
                 ],
               ),
             ),

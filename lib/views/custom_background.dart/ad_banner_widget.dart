@@ -8,11 +8,13 @@ import 'package:play_on_app/view_model/after_controller/home_contollers/home_con
 class AdBannerWidget extends StatelessWidget {
   final double height;
   final EdgeInsetsGeometry? padding;
+  final String? position;
 
   const AdBannerWidget({
     super.key,
     this.height = 160,
     this.padding = const EdgeInsets.symmetric(horizontal: 12),
+    this.position,
   });
 
   @override
@@ -24,26 +26,34 @@ class AdBannerWidget extends StatelessWidget {
     final HomeController ctr = Get.find<HomeController>();
 
     return Obx(() {
-      if (ctr.isBannerLoading.value && ctr.bannerList.isEmpty) {
+      var displayBanners = ctr.bannerList.toList();
+      
+      if (position != null) {
+        displayBanners = displayBanners.where((b) => b.position == position).toList();
+      }
+
+      if (ctr.isBannerLoading.value && displayBanners.isEmpty) {
         return SizedBox(
           height: height,
           child: const Center(child: CircularProgressIndicator()),
         );
       }
-      if (ctr.bannerList.isEmpty) {
+      
+      if (displayBanners.isEmpty) {
         return const SizedBox.shrink();
       }
+      
       return CarouselSlider.builder(
-        itemCount: ctr.bannerList.length,
+        itemCount: displayBanners.length,
         options: CarouselOptions(
           height: height,
           viewportFraction: 1.0,
-          autoPlay: ctr.bannerList.length > 1,
+          autoPlay: displayBanners.length > 1,
           autoPlayInterval: const Duration(seconds: 5),
           enlargeCenterPage: false,
         ),
         itemBuilder: (context, index, realIndex) {
-          final banner = ctr.bannerList[index];
+          final banner = displayBanners[index];
           final imageUrl = banner.image ?? "";
 
           // Handle relative URLs if necessary

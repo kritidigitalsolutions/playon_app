@@ -112,8 +112,9 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                           padding: EdgeInsets.symmetric(vertical: 8),
                           child: Column(
                             children: [
-                              AdBannerWidget(),
-                              AdMobBannerWidget(position: "match_play_top"),
+                              AdBannerWidget(position: "match_details"),
+                              SizedBox(height: 8),
+                              AdMobBannerWidget(position: "match_details"),
                             ],
                           ),
                         ),

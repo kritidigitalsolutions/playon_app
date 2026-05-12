@@ -10,6 +10,7 @@ import 'package:play_on_app/utils/hive_service/hive_service.dart';
 import 'package:play_on_app/view_model/after_controller/match_controller/match_controller.dart';
 import 'package:play_on_app/views/after_login/match_pages/full_video_play_screen.dart';
 import 'package:play_on_app/utils/custom_button.dart';
+import 'package:play_on_app/views/custom_background.dart/ad_banner_widget.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 import 'package:play_on_app/views/widgets/admob_banner_widget.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
@@ -373,7 +374,9 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
 
           const SizedBox(height: 20),
 
-          const AdMobBannerWidget(position: "highlight_play_top"),
+          const AdBannerWidget(position: "star_players"),
+          const SizedBox(height: 8),
+          const AdMobBannerWidget(position: "star_players"),
 
           const SizedBox(height: 10),
           Text(

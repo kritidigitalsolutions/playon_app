@@ -6,6 +6,7 @@ import 'package:play_on_app/utils/app_text_style.dart';
 import 'package:play_on_app/utils/hive_service/hive_service.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/podcast_play_controller.dart';
 import 'package:play_on_app/views/after_login/match_pages/full_video_play_screen.dart';
+import 'package:play_on_app/views/custom_background.dart/ad_banner_widget.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 import 'package:play_on_app/views/widgets/admob_banner_widget.dart';
 import 'package:video_player/video_player.dart';
@@ -121,7 +122,9 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
                               style: text14(color: AppColors.white70),
                             ),
                             const SizedBox(height: 16),
-                            const AdMobBannerWidget(position: "podcast_play_top"),
+                            const AdBannerWidget(position: "podcast"),
+                            const SizedBox(height: 8),
+                            const AdMobBannerWidget(position: "podcast"),
                             const SizedBox(height: 28),
       
                             /// COMMENTS HEADER

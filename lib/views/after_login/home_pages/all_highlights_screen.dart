@@ -13,6 +13,8 @@ import 'package:play_on_app/routes/app_routes.dart';
 import '../../../view_model/after_controller/plan_controller.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../custom_background.dart/ad_banner_widget.dart';
+
 class AllHighlightsScreen extends StatefulWidget {
   const AllHighlightsScreen({super.key});
 
@@ -104,10 +106,6 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
                 ),
               ) : const SizedBox.shrink()),
 
-              const SizedBox(height: 8),
-              const AdMobBannerWidget(position: "all_highlights_top"),
-              const SizedBox(height: 16),
-
               Expanded(
                 child: Obx(() {
                   if (controller.isSeriesLoading.value || 
@@ -138,15 +136,25 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
       return selectedSport.isEmpty || s.sport?.toLowerCase() == selectedSport;
     }).toList();
 
-    if (filteredSeries.isEmpty) {
-      return Center(child: Text("No series available", style: text14(color: Colors.white70)));
+    if (filteredSeries.isEmpty && controller.searchQuery.value.isNotEmpty) {
+      return Center(child: Text("No series found", style: text14(color: Colors.white70)));
     }
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: filteredSeries.length,
+      itemCount: filteredSeries.length + 1,
       itemBuilder: (context, index) {
-        final series = filteredSeries[index];
+        if (index == 0) {
+          return const Column(
+            children: [
+              AdBannerWidget(position: "highlights_top"),
+              SizedBox(height: 8),
+              AdMobBannerWidget(position: "highlights_top"),
+              SizedBox(height: 16),
+            ],
+          );
+        }
+        final series = filteredSeries[index - 1];
         return _buildSeriesCard(controller, series);
       },
     );
@@ -229,9 +237,19 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: highlights.length,
+      itemCount: highlights.length + 1,
       itemBuilder: (context, index) {
-        final highlight = highlights[index];
+        if (index == 0) {
+          return const Column(
+            children: [
+              AdBannerWidget(position: "highlights_top"),
+              SizedBox(height: 8),
+              AdMobBannerWidget(position: "highlights_top"),
+              SizedBox(height: 16),
+            ],
+          );
+        }
+        final highlight = highlights[index - 1];
         return _buildHighlightCard(highlight);
       },
     );

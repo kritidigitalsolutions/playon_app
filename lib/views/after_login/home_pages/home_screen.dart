@@ -226,7 +226,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 8),
                       // Dynamic Ad Banners
                       if (ctr.searchQuery.value.isEmpty) ...[
-                        const AdBannerWidget(),
+                        const AdBannerWidget(position: 'home_top'),
                         const SizedBox(height: 8),
                         const AdMobBannerWidget(position: 'home_top',),
                         const SizedBox(height: 16),
@@ -563,6 +563,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       // }),
 
                       const SizedBox(height: 20),
+                      const AdBannerWidget(position: 'home_bottom'),
+                      const SizedBox(height: 8),
                       const AdMobBannerWidget(position: 'home_bottom'),
                       const SizedBox(height: 20),
                       _buildFooter(),
@@ -768,6 +770,27 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: Colors.white,
                             size: 40,
                           ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 12,
+                        left: 12,
+                        child: Row(
+                          children: [
+                            if (match?.isPremium == true)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                margin: const EdgeInsets.only(right: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  "PREMIUM",
+                                  style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                       Positioned(
@@ -1017,14 +1040,33 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
 
-                      const Spacer(),
-
-                      if (match.isPremium != false && !canWatch)
-                        const Icon(
-                          Icons.lock,
-                          color: Colors.white,
-                          size: 18,
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: Row(
+                          children: [
+                            if (match.isPremium == true)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                margin: const EdgeInsets.only(right: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  "PREMIUM",
+                                  style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            if (match.isPremium != false && !canWatch)
+                              const Icon(
+                                Icons.lock,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                          ],
                         ),
+                      ),
                     ],
                   ),
 
@@ -1351,6 +1393,23 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
 
+                          if (item.isPremium == true)
+                            Positioned(
+                              top: 10,
+                              right: 10,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  "PREMIUM",
+                                  style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+
                           /// Title (clean, no HOT tag)
                           Positioned(
                             bottom: 12,
@@ -1497,6 +1556,21 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ],
                                     ),
+                                    if (match.isPremium == true || item.isPremium == true)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 8.0),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.amber,
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: const Text(
+                                            "PREMIUM",
+                                            style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      ),
                                   ],
                                 ),
                               ),
@@ -1644,6 +1718,23 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                           ),
+
+                          if (player.isPremium == true)
+                            Positioned(
+                              top: 10,
+                              right: 10,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  "PREMIUM",
+                                  style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
 
                           /// 🔻 TEXT INFO
                           Positioned(
@@ -1809,6 +1900,22 @@ class _HomeScreenState extends State<HomeScreen> {
                                 top: 8,
                                 left: 8,
                                 child: const Icon(Icons.lock, color: Colors.white70, size: 16),
+                              ),
+                            if (podcast.isPremium == true)
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text(
+                                    "PREMIUM",
+                                    style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
                               ),
                           ],
                         ),

@@ -16,6 +16,7 @@ import 'dart:ui';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 
 import '../../../view_model/after_controller/plan_controller.dart';
+import '../../custom_background.dart/ad_banner_widget.dart';
 
 class SportChannelList extends StatefulWidget {
   const SportChannelList({super.key});
@@ -144,10 +145,6 @@ class _SportChannelListState extends State<SportChannelList> {
               ),
             ),
 
-            const SizedBox(height: 20),
-
-            const AdMobBannerWidget(position: "livetv_top"),
-
             // Channels List
             Expanded(
               child: Obx(() {
@@ -166,13 +163,8 @@ class _SportChannelListState extends State<SportChannelList> {
                 // Sort by channelNumber
                 displayChannels.sort((a, b) => (a.channelNumber ?? 0).compareTo(b.channelNumber ?? 0));
 
-                if (displayChannels.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      "No channels found for this category",
-                      style: TextStyle(color: Colors.white70),
-                    ),
-                  );
+                if (displayChannels.isEmpty && ctr.searchQuery.value.isNotEmpty) {
+                    return const Center(child: Text("No channels found", style: TextStyle(color: Colors.white70)));
                 }
 
                 return RefreshIndicator(
@@ -182,11 +174,21 @@ class _SportChannelListState extends State<SportChannelList> {
                   child: AnimationLimiter(
                     child: ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: displayChannels.length,
+                      itemCount: displayChannels.length + 1,
                       itemBuilder: (BuildContext context, int index) {
-                        final channel = displayChannels[index];
+                        if (index == 0) {
+                          return const Column(
+                            children: [
+                              AdBannerWidget(position: "livetv_top"),
+                              SizedBox(height: 8),
+                              AdMobBannerWidget(position: "livetv_top"),
+                              SizedBox(height: 16),
+                            ],
+                          );
+                        }
+                        final channel = displayChannels[index - 1];
                         return AnimationConfiguration.staggeredList(
-                          position: index,
+                          position: index - 1,
                           duration: const Duration(milliseconds: 375),
                           child: SlideAnimation(
                             verticalOffset: 50.0,
@@ -235,90 +237,137 @@ class _SportChannelListState extends State<SportChannelList> {
 
   // Channel Item with Glass Effect
   Widget _buildChannelItem(model.Channel channel) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: AppColors.white.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.white.withValues(alpha: 0.18),
-              width: 1.2,
-            ),
-          ),
-          child: Row(
-            children: [
-              // Channel Logo
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: AppColors.white.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: channel.logo != null && channel.logo!.isNotEmpty
-                      ? Image.network(
-                          channel.logo!,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.tv, color: AppColors.white70),
-                        )
-                      : const Icon(Icons.tv, color: AppColors.white70, size: 28),
-                ),
+    bool isPremium = channel.isPremium ?? false;
+    final planController = Get.find<PlanController>();
+
+    return Obx(() {
+      final canWatch = planController.canWatchChannel(channel);
+      bool showLock = isPremium && !canWatch;
+
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: AppColors.white.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.white.withValues(alpha: 0.18),
+                width: 1.2,
               ),
-
-              const SizedBox(width: 16),
-
-              // Channel Name
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+            child: Row(
+              children: [
+                // Channel Logo
+                Stack(
                   children: [
-                    Text(
-                      channel.name ?? "Unknown Channel",
-                      style: text16(fontWeight: FontWeight.w500),
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppColors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: channel.logo != null && channel.logo!.isNotEmpty
+                            ? Image.network(
+                                channel.logo!,
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const Icon(Icons.tv, color: AppColors.white70),
+                              )
+                            : const Icon(Icons.tv, color: AppColors.white70, size: 28),
+                      ),
                     ),
-                    if (channel.category != null)
-                      Text(
-                        channel.category!.toUpperCase(),
-                        style: text12(color: AppColors.white60),
+                    if (showLock)
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.lock,
+                            color: Colors.amber,
+                            size: 12,
+                          ),
+                        ),
                       ),
                   ],
                 ),
-              ),
 
-              // Channel Number
-              if (channel.channelNumber != null)
-                Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: Text(
-                    "${channel.channelNumber}",
-                    style: text24(color: AppColors.white, fontWeight: FontWeight.bold),
+                const SizedBox(width: 16),
+
+                // Channel Name
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        channel.name ?? "Unknown Channel",
+                        style: text16(fontWeight: FontWeight.w500),
+                      ),
+                      Row(
+                        children: [
+                          if (channel.category != null)
+                            Text(
+                              channel.category!.toUpperCase(),
+                              style: text12(color: AppColors.white60),
+                            ),
+                          if (isPremium) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: Colors.amber.withOpacity(0.5), width: 0.5),
+                              ),
+                              child: Text(
+                                "PREMIUM",
+                                style: text10(color: Colors.amber, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
                   ),
                 ),
 
-              // Watch Button
-              AppButton(
-                title: "Watch",
-                onTap: () {
-                  final canWatch = Get.put(PlanController()).canWatchChannel(channel);
-                  ctr.handleProtectedAction(() {
-                    Get.toNamed(AppRoutes.channelPlay, arguments: channel);
-                  }, checkAccess: true, hasPermission: canWatch);
-                },
-                height: 30,
-                textStyle: text13(),
-              ),
-            ],
+                // Channel Number
+                if (channel.channelNumber != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: Text(
+                      "${channel.channelNumber}",
+                      style: text24(color: AppColors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+
+                // Watch Button
+                AppButton(
+                  title: "Watch",
+                  onTap: () {
+                    ctr.handleProtectedAction(() {
+                      Get.toNamed(AppRoutes.channelPlay, arguments: channel);
+                    }, checkAccess: true, hasPermission: canWatch);
+                  },
+                  height: 30,
+                  textStyle: text13(),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 }

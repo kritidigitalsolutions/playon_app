@@ -9,6 +9,7 @@ import 'package:play_on_app/view_model/after_controller/home_contollers/home_con
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 import 'package:play_on_app/views/widgets/admob_banner_widget.dart';
 import '../../../routes/app_routes.dart';
+import '../../custom_background.dart/ad_banner_widget.dart';
 
 class MatchScheduleScreen extends StatefulWidget {
   const MatchScheduleScreen({super.key});
@@ -102,7 +103,9 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
 
                     const SizedBox(height: 16),
 
-                    const AdMobBannerWidget(position: "schedules_top"),
+                    const AdBannerWidget(position: "event_top"),
+                    const SizedBox(height: 8),
+                    const AdMobBannerWidget(position: "event_top"),
 
                     const SizedBox(height: 16),
 

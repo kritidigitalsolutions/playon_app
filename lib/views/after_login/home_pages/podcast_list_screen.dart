@@ -7,6 +7,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../routes/app_routes.dart';
 import '../../../view_model/after_controller/plan_controller.dart';
+import '../../custom_background.dart/ad_banner_widget.dart';
+import '../../widgets/admob_banner_widget.dart';
 
 class PodcastListScreen extends StatelessWidget {
   const PodcastListScreen({super.key});
@@ -45,9 +47,19 @@ class PodcastListScreen extends StatelessWidget {
 
         return ListView.builder(
           padding: const EdgeInsets.all(16),
-          itemCount: controller.podcastList.length,
+          itemCount: controller.podcastList.length + 1,
           itemBuilder: (context, index) {
-            final podcast = controller.podcastList[index];
+            if (index == 0) {
+              return const Column(
+                children: [
+                  AdBannerWidget(position: "podcast"),
+                  SizedBox(height: 8),
+                  AdMobBannerWidget(position: "podcast"),
+                  SizedBox(height: 16),
+                ],
+              );
+            }
+            final podcast = controller.podcastList[index - 1];
             return Obx(() {
               final planCtr = Get.find<PlanController>();
               final canWatch = planCtr.canWatchPodcast(podcast);

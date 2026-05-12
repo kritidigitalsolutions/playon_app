@@ -16,6 +16,8 @@ import 'package:play_on_app/utils/custom_snakebar.dart';
 import 'package:play_on_app/views/widgets/admob_banner_widget.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
 
+import '../../custom_background.dart/ad_banner_widget.dart';
+
 class ChannelPlayScreen extends StatefulWidget {
   const ChannelPlayScreen({super.key});
 
@@ -237,6 +239,8 @@ class _ChannelPlayScreenState extends State<ChannelPlayScreen> {
                     ],
 
                     // 4. Banner Ad
+                    const AdBannerWidget(position: "channel_play_bottom"),
+                    const SizedBox(height: 8),
                     const AdMobBannerWidget(position: "channel_play_bottom"),
 
                     const SizedBox(height: 20),

@@ -17,6 +17,8 @@ import 'package:play_on_app/view_model/after_controller/series_controller.dart';
 import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 
 import '../../../view_model/after_controller/plan_controller.dart';
+import '../../custom_background.dart/ad_banner_widget.dart';
+import '../../widgets/admob_banner_widget.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -196,12 +198,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _header(),
-                const SizedBox(height: 20),
+                const SizedBox(height: 10),
                 Expanded(
                   child: ListView(
                     physics: const BouncingScrollPhysics(),
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     children: [
+                      const AdBannerWidget(position: 'profile_top'),
+                      const SizedBox(height: 8),
+                      const AdMobBannerWidget(position: 'profile_top'),
+                      const SizedBox(height: 16),
                       _glassInfoTile(
                         text: _authController.userData.value?.fullName ?? "Enter Name",
                         onEdit: () => _showEditDialog("Full Name", _authController.userData.value?.fullName ?? ""),

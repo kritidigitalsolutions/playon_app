@@ -168,21 +168,21 @@ class SeeAllMatchesScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-                        if (match.isPremium == false)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.success.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              "FREE",
-                              style: text10(
-                                  color: AppColors.success,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ),
+                        // if (match.isPremium == false)
+                        //   Container(
+                        //     padding: const EdgeInsets.symmetric(
+                        //         horizontal: 6, vertical: 2),
+                        //     decoration: BoxDecoration(
+                        //       color: AppColors.success.withOpacity(0.2),
+                        //       borderRadius: BorderRadius.circular(4),
+                        //     ),
+                        //     child: Text(
+                        //       "FREE",
+                        //       style: text10(
+                        //           color: AppColors.success,
+                        //           fontWeight: FontWeight.bold),
+                        //     ),
+                        //   ),
                       ],
                     ),
                     const SizedBox(height: 4),

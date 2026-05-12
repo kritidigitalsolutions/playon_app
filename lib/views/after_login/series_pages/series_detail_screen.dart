@@ -14,6 +14,8 @@ import 'package:play_on_app/view_model/after_controller/home_contollers/home_con
 import '../../../view_model/after_controller/plan_controller.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../widgets/admob_banner_widget.dart';
+
 class SeriesDetailScreen extends StatefulWidget {
   const SeriesDetailScreen({super.key});
 
@@ -186,7 +188,9 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const AdBannerWidget(padding: EdgeInsets.zero, height: 140),
+        const AdBannerWidget(padding: EdgeInsets.zero, height: 140, position: "series_top"),
+        const SizedBox(height: 8),
+        const AdMobBannerWidget(position: "series_top"),
         const SizedBox(height: 16),
         if (live.isNotEmpty) _buildHorizontalSection("Live Matches", live),
         if (upcoming.isNotEmpty) _buildHorizontalSection("Upcoming Matches", upcoming),
@@ -211,8 +215,20 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: matches.length,
-      itemBuilder: (_, i) => _matchRow(matches[i]),
+      itemCount: matches.length + 1,
+      itemBuilder: (_, i) {
+        if (i == 0) {
+          return const Column(
+            children: [
+              AdBannerWidget(position: "series_top"),
+              SizedBox(height: 8),
+              AdMobBannerWidget(position: "series_top"),
+              SizedBox(height: 16),
+            ],
+          );
+        }
+        return _matchRow(matches[i - 1]);
+      },
     );
   }
 
@@ -236,8 +252,20 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
 
       return ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: highlights.length,
-        itemBuilder: (_, i) => _buildHighlightCard(highlights[i]),
+        itemCount: highlights.length + 1,
+        itemBuilder: (_, i) {
+          if (i == 0) {
+            return const Column(
+              children: [
+                AdBannerWidget(position: "series_top"),
+                SizedBox(height: 8),
+                AdMobBannerWidget(position: "series_top"),
+                SizedBox(height: 16),
+              ],
+            );
+          }
+          return _buildHighlightCard(highlights[i - 1]);
+        },
       );
     });
   }
@@ -472,9 +500,19 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: teams.length,
+      itemCount: teams.length + 1,
       itemBuilder: (_, i) {
-        final team = teams[i];
+        if (i == 0) {
+          return const Column(
+            children: [
+              AdBannerWidget(position: "series_top"),
+              SizedBox(height: 8),
+              AdMobBannerWidget(position: "series_top"),
+              SizedBox(height: 16),
+            ],
+          );
+        }
+        final team = teams[i - 1];
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(12),
