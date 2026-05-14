@@ -108,7 +108,7 @@ class _ChannelPlayScreenState extends State<ChannelPlayScreen> {
 
   void _shareChannel() {
     if (channel == null) return;
-    final text = "Watch ${channel!.name} live on PlayOn!\nDownload now: https://play.google.com/store/apps/details?id=com.playon.app";
+    final text = "Watch ${channel!.name} live on PlayOn!\nDownload now: https://play.google.com/store/apps/details?id=com.cametech.playon";
     ShareHelper.shareMatchWithImage(
       text: text,
       imageUrl: channel!.thumbnail ?? channel!.logo,

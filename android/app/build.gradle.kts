@@ -6,10 +6,11 @@ plugins {
     id("kotlin-android")
     id("com.google.gms.google-services")
 
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    // Flutter Gradle Plugin
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Load key.properties file
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 
@@ -18,7 +19,8 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.playon.app"
+    namespace = "com.cametech.playon"
+
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -33,7 +35,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.playon.app"
+        applicationId = "com.cametech.playon"
 
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
@@ -42,6 +44,7 @@ android {
         versionName = flutter.versionName
     }
 
+    // Release Signing Config
     signingConfigs {
         create("release") {
             keyAlias = keystoreProperties["keyAlias"] as String
@@ -53,10 +56,19 @@ android {
 
     buildTypes {
         release {
+
+            // Enable Release Signing
             signingConfig = signingConfigs.getByName("release")
 
+            // Optional optimizations
             isMinifyEnabled = false
             isShrinkResources = false
+
+            // Proguard
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }

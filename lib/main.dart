@@ -50,7 +50,7 @@ void main() async {
     // 2. Timezone Initialization
     String timeZoneName = 'UTC';
     try {
-      const channel = MethodChannel('com.playon.app/timezone');
+      const channel = MethodChannel('com.cametech.playon/timezone');
       timeZoneName = await channel.invokeMethod<String>('getLocalTimezone') ?? 'UTC';
     } catch (e) {
       debugPrint("Native timezone channel error: $e");
