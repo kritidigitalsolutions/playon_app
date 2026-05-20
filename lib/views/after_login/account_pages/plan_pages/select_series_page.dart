@@ -97,10 +97,10 @@ class _SelectSeriesPageState extends State<SelectSeriesPage> {
         duration: const Duration(milliseconds: 300),
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: AppColors.white.withValues(alpha: 0.05),
+          color: AppColors.white.withOpacity(0.05),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isExpanded ? AppColors.primary.withValues(alpha: 0.5) : AppColors.white.withValues(alpha: 0.1),
+            color: isExpanded ? AppColors.primary.withOpacity(0.5) : AppColors.white.withOpacity(0.1),
           ),
         ),
         child: Column(
@@ -124,7 +124,7 @@ class _SelectSeriesPageState extends State<SelectSeriesPage> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.2),
+                            color: AppColors.primary.withOpacity(0.2),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.emoji_events, color: AppColors.primary),

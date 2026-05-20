@@ -501,43 +501,56 @@ class HomeController extends GetxController {
   }
 
   Future<void> fetchMatches({String? sport}) async {
-    // If we already have data, don't show full screen loading, 
-    // just use the linear indicator.
     if (allMatches.isEmpty) {
       isLoading.value = true;
     }
-    
-    // Separate observable for the linear progress bar
     isSilentLoading.value = true;
     
     try {
-      fetchBanners();
-      // Fetch Live Matches
-      final liveRes = await _matchRepository.getLiveMatches();
-      if (liveRes['success'] == true) {
-        final data = MatchModel.fromJson(liveRes);
-        liveMatches.assignAll(data.matches ?? []);
+      // Use Future.wait to fetch everything in parallel and handle individual failures
+      await Future.wait([
+        // Banners
+        fetchBanners().catchError((e) => debugPrint("Error fetching banners: $e")),
         
-        // Fetch real-time scores for live matches
-        for (var match in liveMatches) {
-          if (match.sId != null) {
-            fetchLiveScore(match.sId!);
+        // Live Matches
+        _matchRepository.getLiveMatches().then((liveRes) {
+          if (liveRes['success'] == true) {
+            final data = MatchModel.fromJson(liveRes);
+            liveMatches.assignAll(data.matches ?? []);
           }
+        }).catchError((e) => debugPrint("Error fetching live matches: $e")),
+
+        // All Matches
+        _matchRepository.getAllMatches().then((allRes) {
+          if (allRes['success'] == true) {
+            final data = MatchModel.fromJson(allRes);
+            allMatches.assignAll(data.matches ?? []);
+          }
+        }).catchError((e) => debugPrint("Error fetching all matches: $e")),
+      ]);
+
+      // Sync live matches from allMatches as a fallback
+      var liveFromAll = allMatches.where((m) => 
+        m.status?.toLowerCase() == 'live' || 
+        m.stream?.status?.toLowerCase() == 'live'
+      ).toList();
+
+      for (var m in liveFromAll) {
+        if (!liveMatches.any((lm) => lm.sId == m.sId)) {
+          liveMatches.add(m);
         }
       }
 
-      // Always fetch all matches for the dashboard
-      final allRes = await _matchRepository.getAllMatches();
-      if (allRes['success'] == true) {
-        final data = MatchModel.fromJson(allRes);
-        var fetchedMatches = data.matches ?? [];
-
-        allMatches.assignAll(fetchedMatches);
+      // Fetch scores for live matches
+      for (var match in liveMatches) {
+        if (match.sId != null) {
+          fetchLiveScore(match.sId!);
+        }
       }
       
       filterData(searchQuery.value);
     } catch (e) {
-      print("Error fetching matches: $e");
+      debugPrint("General error in fetchMatches: $e");
     } finally {
       isLoading.value = false;
       isSilentLoading.value = false;
@@ -608,7 +621,7 @@ class HomeController extends GetxController {
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(20, 40, 20, 30),
         decoration: BoxDecoration(
-          color: AppColors.primary.withValues(alpha: 0.7),
+          color: AppColors.primary.withOpacity(0.7),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -659,7 +672,7 @@ class HomeController extends GetxController {
         ),
       ),
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.7),
+      barrierColor: Colors.black.withOpacity(0.7),
       isScrollControlled: false,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),

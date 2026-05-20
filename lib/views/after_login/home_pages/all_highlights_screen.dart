@@ -51,7 +51,7 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
                           width: 40,
                           margin: const EdgeInsets.only(right: 12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.1),
+                            color: Colors.white.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: ClipRRect(
@@ -90,7 +90,7 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
                         margin: const EdgeInsets.only(right: 8),
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          color: isSelected ? AppColors.primary : Colors.white.withValues(alpha: 0.1),
+                          color: isSelected ? AppColors.primary : Colors.white.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -171,9 +171,9 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
+          color: Colors.white.withOpacity(0.05),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -188,7 +188,7 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
                   fit: BoxFit.cover,
                   errorWidget: (context, url, error) => Container(
                     height: 150,
-                    color: Colors.grey.withValues(alpha: 0.2),
+                    color: Colors.grey.withOpacity(0.2),
                     child: const Icon(Icons.image, color: Colors.white24),
                   ),
                 ),
@@ -335,9 +335,9 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
         child: Container(
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
+            color: Colors.white.withOpacity(0.05),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -354,7 +354,7 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
                       placeholder: (context, url) => Container(height: 180, color: Colors.white10),
                       errorWidget: (context, url, error) => Container(
                         height: 180,
-                        color: Colors.grey.withValues(alpha: 0.2),
+                        color: Colors.grey.withOpacity(0.2),
                         child: const Icon(Icons.play_circle_outline, color: Colors.white24, size: 50),
                       ),
                     ),
@@ -364,7 +364,7 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.8),
+                          color: AppColors.primary.withOpacity(0.8),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(canWatch ? Icons.play_arrow : Icons.lock_outline, color: Colors.white, size: 30),
@@ -377,7 +377,7 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.7),
+                        color: Colors.black.withOpacity(0.7),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(

@@ -311,9 +311,9 @@ class MatchDetailScreen extends StatelessWidget {
                                   return Container(
                                     padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
                                     decoration: BoxDecoration(
-                                      color: AppColors.white.withValues(alpha: 0.05),
+                                      color: AppColors.white.withOpacity(0.05),
                                       borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(color: AppColors.white.withValues(alpha: 0.1)),
+                                      border: Border.all(color: AppColors.white.withOpacity(0.1)),
                                     ),
                                     child: Column(
                                       children: [
@@ -353,9 +353,9 @@ class MatchDetailScreen extends StatelessWidget {
                                                     margin: const EdgeInsets.only(top: 4),
                                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                                     decoration: BoxDecoration(
-                                                      color: Colors.red.withValues(alpha: 0.1),
+                                                      color: Colors.red.withOpacity(0.1),
                                                       borderRadius: BorderRadius.circular(4),
-                                                      border: Border.all(color: Colors.red.withValues(alpha: 0.5)),
+                                                      border: Border.all(color: Colors.red.withOpacity(0.5)),
                                                     ),
                                                     child: Text("LIVE", style: text10(color: Colors.red, fontWeight: FontWeight.bold)),
                                                   ),
@@ -724,10 +724,10 @@ class MatchDetailScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         shape: BoxShape.circle,
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1.5),
+        border: Border.all(color: AppColors.primary.withOpacity(0.5), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.2),
+            color: AppColors.primary.withOpacity(0.2),
             blurRadius: 10,
             spreadRadius: 2,
           ),

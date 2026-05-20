@@ -68,10 +68,10 @@ class _SportChannelListState extends State<SportChannelList> {
                             horizontal: 16,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.white24.withValues(alpha: 0.15),
+                            color: AppColors.white24.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(30),
                             border: Border.all(
-                              color: AppColors.white.withValues(alpha: 0.25),
+                              color: AppColors.white.withOpacity(0.25),
                               width: 1.2,
                             ),
                           ),
@@ -216,12 +216,12 @@ class _SportChannelListState extends State<SportChannelList> {
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
       decoration: BoxDecoration(
         color: isSelected
-            ? AppColors.white.withValues(alpha: 0.15)
+            ? AppColors.white.withOpacity(0.15)
             : AppColors.transparent,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isSelected
-              ? AppColors.white.withValues(alpha: 0.4)
+              ? AppColors.white.withOpacity(0.4)
               : AppColors.transparent,
         ),
       ),
@@ -252,10 +252,10 @@ class _SportChannelListState extends State<SportChannelList> {
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: AppColors.white.withValues(alpha: 0.08),
+              color: AppColors.white.withOpacity(0.08),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppColors.white.withValues(alpha: 0.18),
+                color: AppColors.white.withOpacity(0.18),
                 width: 1.2,
               ),
             ),

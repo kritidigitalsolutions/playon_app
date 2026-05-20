@@ -96,9 +96,9 @@ class _SelectTeamPageState extends State<SelectTeamPage> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.white.withValues(alpha: 0.1),
+                    color: AppColors.white.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(30),
-                    border: Border.all(color: AppColors.white.withValues(alpha: 0.2)),
+                    border: Border.all(color: AppColors.white.withOpacity(0.2)),
                   ),
                   child: TextField(
                     controller: _searchController,
@@ -176,10 +176,10 @@ class _SelectTeamPageState extends State<SelectTeamPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.white.withValues(alpha: 0.1),
+          color: isSelected ? AppColors.primary : AppColors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.white.withValues(alpha: 0.2),
+            color: isSelected ? AppColors.primary : AppColors.white.withOpacity(0.2),
           ),
         ),
         child: Text(
@@ -212,10 +212,10 @@ class _SelectTeamPageState extends State<SelectTeamPage> {
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
               decoration: BoxDecoration(
-                color: isPurchased ? AppColors.primary.withValues(alpha: 0.1) : AppColors.white.withValues(alpha: 0.05),
+                color: isPurchased ? AppColors.primary.withOpacity(0.1) : AppColors.white.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isPurchased ? AppColors.primary : AppColors.white.withValues(alpha: 0.1),
+                  color: isPurchased ? AppColors.primary : AppColors.white.withOpacity(0.1),
                   width: 1.5,
                 ),
               ),

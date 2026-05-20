@@ -124,7 +124,7 @@ class ReferralScreen extends StatelessWidget {
                     color: AppColors.black,
                   ),
                 ),
-                backgroundColor: AppColors.white.withValues(alpha: 0.12),
+                backgroundColor: AppColors.white.withOpacity(0.12),
                 title: offer.title ?? "Get a reward worth up to",
                 amount: offer.discountType == 'percent'
                     ? "${offer.discountValue}% Off"
@@ -141,9 +141,9 @@ class ReferralScreen extends StatelessWidget {
               return Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
+                  color: Colors.white.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                  border: Border.all(color: Colors.white.withOpacity(0.1)),
                 ),
                 child: Row(
                   children: [
@@ -207,7 +207,7 @@ class ReferralScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.card_giftcard, size: 80, color: Colors.white.withValues(alpha: 0.2)),
+              Icon(Icons.card_giftcard, size: 80, color: Colors.white.withOpacity(0.2)),
               const SizedBox(height: 16),
               Text("No referral vouchers yet", style: text16(color: Colors.white70)),
               const SizedBox(height: 8),
@@ -237,9 +237,9 @@ class ReferralScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
+        color: Colors.white.withOpacity(0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -256,7 +256,7 @@ class ReferralScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.2),
+                  color: AppColors.primary.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -293,7 +293,7 @@ class ReferralScreen extends StatelessWidget {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white.withValues(alpha: 0.1),
+                  backgroundColor: Colors.white.withOpacity(0.1),
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
                 child: Text("COPY", style: text12(fontWeight: FontWeight.bold)),

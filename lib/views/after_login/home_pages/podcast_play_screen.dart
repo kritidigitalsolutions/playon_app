@@ -148,10 +148,10 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 14),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.05),
+                                color: Colors.white.withOpacity(0.05),
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.08),
+                                  color: Colors.white.withOpacity(0.08),
                                 ),
                               ),
                               child: Row(
@@ -246,7 +246,7 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
                                         child: Container(
                                           padding: const EdgeInsets.all(12),
                                           decoration: BoxDecoration(
-                                            color: Colors.white.withValues(alpha: 0.04),
+                                            color: Colors.white.withOpacity(0.04),
                                             borderRadius: BorderRadius.circular(14),
                                           ),
                                           child: Column(
@@ -423,7 +423,7 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
               if (controller.isLock.value) {
                 return Positioned.fill(
                   child: Container(
-                    color: Colors.black.withValues(alpha: 0.88),
+                    color: Colors.black.withOpacity(0.88),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -471,7 +471,7 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
               return Stack(
                 children: [
                   Container(
-                    color: Colors.black.withValues(alpha: 0.3),
+                    color: Colors.black.withOpacity(0.3),
                   ),
                   Center(
                     child: GestureDetector(
@@ -480,7 +480,7 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.5),
+                          color: Colors.black.withOpacity(0.5),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(

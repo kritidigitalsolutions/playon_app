@@ -159,7 +159,7 @@ class _ChannelPlayScreenState extends State<ChannelPlayScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.3),
+                          color: Colors.black.withOpacity(0.3),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -287,10 +287,10 @@ class _ChannelPlayScreenState extends State<ChannelPlayScreen> {
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color: AppColors.white.withValues(alpha: 0.08),
+                color: AppColors.white.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: AppColors.white.withValues(alpha: 0.18),
+                  color: AppColors.white.withOpacity(0.18),
                   width: 1.2,
                 ),
               ),

@@ -45,13 +45,11 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
     WakelockPlus.enable();
     /// ✅ Get only star player
     player = Get.arguments as star_model.StarPlayer;
-
-    videoControllerX.starPlayer.value = player;
+    
+    // Ensure controllers are refreshed with current arguments
+    videoControllerX.refreshWithArguments(player);
     matchDetailsController.starPlayer.value = player;
-
-    if (player.videoUrl != null) {
-      videoControllerX.initializeVideo(player.videoUrl!, isHighlight: true);
-    }
+    matchDetailsController.checkAccess();
   }
 
   @override
@@ -153,15 +151,14 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                 );
               }
 
-              if (videoControllerX.isLoading.value) {
+              if (videoControllerX.isLoading.value || !videoControllerX.isInitialized.value) {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              if (!videoControllerX.isInitialized.value ||
-                  (videoControllerX.videoController == null && videoControllerX.youtubeController == null)) {
+              if (videoControllerX.videoController == null && videoControllerX.youtubeController == null) {
                 return const Center(
                   child: Text(
-                    "No video found",
+                    "No video source found",
                     style: TextStyle(color: Colors.white),
                   ),
                 );
@@ -204,7 +201,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                 return Positioned.fill(
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    color: Colors.black.withValues(alpha: 0.88),
+                    color: Colors.black.withOpacity(0.88),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
@@ -259,7 +256,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.5),
+                          color: Colors.black.withOpacity(0.5),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -324,7 +321,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
+              color: Colors.white.withOpacity(0.05),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.white10),
             ),
@@ -463,7 +460,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
             Obx(() => Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
+                color: AppColors.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -479,9 +476,9 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: AppColors.white.withValues(alpha: 0.05),
+            color: AppColors.white.withOpacity(0.05),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.white.withValues(alpha: 0.1)),
+            border: Border.all(color: AppColors.white.withOpacity(0.1)),
           ),
           child: Row(
             children: [
@@ -491,7 +488,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                   style: text14(),
                   decoration: InputDecoration(
                     hintText: "Add a comment...",
-                    hintStyle: text14(color: AppColors.white.withValues(alpha: 0.4)),
+                    hintStyle: text14(color: AppColors.white.withOpacity(0.4)),
                     border: InputBorder.none,
                   ),
                 ),
@@ -520,7 +517,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                 padding: const EdgeInsets.all(20.0),
                 child: Text(
                   "No comments yet. Be the first to comment!",
-                  style: text14(color: AppColors.white.withValues(alpha: 0.5)),
+                  style: text14(color: AppColors.white.withOpacity(0.5)),
                 ),
               ),
             );
@@ -538,7 +535,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                 children: [
                   CircleAvatar(
                     radius: 18,
-                    backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+                    backgroundColor: AppColors.primary.withOpacity(0.2),
                     child: ClipOval(
                       child: CachedNetworkImage(
                         imageUrl: comment.userImage ?? "",
@@ -653,7 +650,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                               _formatDate(comment.createdAt),
                               style: text10(
                                 color: AppColors.white
-                                    .withValues(alpha: 0.4),
+                                    .withOpacity(0.4),
                               ),
                             ),
                           ],
@@ -661,7 +658,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                         const SizedBox(height: 4),
                         Text(
                           comment.comment ?? "",
-                          style: text13(color: AppColors.white.withValues(alpha: 0.8)),
+                          style: text13(color: AppColors.white.withOpacity(0.8)),
                         ),
                       ],
                     ),

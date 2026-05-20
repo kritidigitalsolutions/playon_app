@@ -58,10 +58,10 @@ class AccessPlansScreen extends StatelessWidget {
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.1),
+                                color: AppColors.primary.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: AppColors.primary.withValues(alpha: 0.3),
+                                  color: AppColors.primary.withOpacity(0.3),
                                 ),
                               ),
                               child: Row(
@@ -229,7 +229,7 @@ class AccessPlansScreen extends StatelessWidget {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
+                      borderSide: BorderSide(color: AppColors.primary.withOpacity(0.5)),
                     ),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
@@ -288,9 +288,9 @@ class AccessPlansScreen extends StatelessWidget {
           //                 margin: const EdgeInsets.only(right: 8),
           //                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           //                 decoration: BoxDecoration(
-          //                   color: AppColors.primary.withValues(alpha: 0.1),
+          //                   color: AppColors.primary.withOpacity(0.1),
           //                   borderRadius: BorderRadius.circular(20),
-          //                   border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+          //                   border: Border.all(color: AppColors.primary.withOpacity(0.3)),
           //                 ),
           //                 child: Row(
           //                   children: [
@@ -445,10 +445,10 @@ class AccessPlansScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha: 0.08),
+        color: AppColors.white.withOpacity(0.08),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: sub.status == 'active' ? AppColors.success.withValues(alpha: 0.5) : AppColors.white.withValues(alpha: 0.1),
+          color: sub.status == 'active' ? AppColors.success.withOpacity(0.5) : AppColors.white.withOpacity(0.1),
         ),
       ),
       child: Column(
@@ -461,7 +461,7 @@ class AccessPlansScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _getStatusColor(sub.status ?? "").withValues(alpha: 0.2),
+                  color: _getStatusColor(sub.status ?? "").withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -533,18 +533,18 @@ class AccessPlansScreen extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: isPrimary
-                ? AppColors.primary.withValues(alpha: 0.4)
-                : AppColors.white.withValues(alpha: 0.08),
+                ? AppColors.primary.withOpacity(0.4)
+                : AppColors.white.withOpacity(0.08),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isPrimary
-                  ? AppColors.primary.withValues(alpha: 0.2)
-                  : AppColors.white.withValues(alpha: 0.18),
+                  ? AppColors.primary.withOpacity(0.2)
+                  : AppColors.white.withOpacity(0.18),
               width: 1.4,
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.black.withValues(alpha: 0.3),
+                color: AppColors.black.withOpacity(0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),

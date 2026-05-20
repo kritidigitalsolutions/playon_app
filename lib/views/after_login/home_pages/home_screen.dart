@@ -79,10 +79,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 vertical: 6, // Reduced from 8
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.white24.withValues(alpha: 0.15),
+                                color: AppColors.white24.withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(30),
                                 border: Border.all(
-                                  color: AppColors.white.withValues(alpha: 0.25),
+                                  color: AppColors.white.withOpacity(0.25),
                                   width: 1.2,
                                 ),
                               ),
@@ -753,7 +753,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             end: Alignment.bottomCenter,
                             colors: [
                               Colors.transparent,
-                              Colors.black.withValues(alpha: 0.8),
+                              Colors.black.withOpacity(0.8),
                             ],
                           ),
                         ),
@@ -762,7 +762,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.8),
+                            color: AppColors.primary.withOpacity(0.8),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -929,7 +929,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: AppColors.white.withValues(alpha: 0.1),
+          color: AppColors.white.withOpacity(0.1),
           shape: BoxShape.circle,
         ),
         child: FaIcon(
@@ -979,131 +979,126 @@ class _HomeScreenState extends State<HomeScreen> {
 
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 4),
-
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-
-            /// ❌ Removed shadow
-            image: DecorationImage(
-              image: match.banner != null && match.banner!.isNotEmpty
-                  ? NetworkImage(match.banner!)
-                  : const AssetImage("assets/auth/cri.png")
-              as ImageProvider,
-              fit: BoxFit.cover,
-            ),
-          ),
-
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
+            child: Stack(
+              children: [
+                // Background Image
+                Positioned.fill(
+                  child: CachedNetworkImage(
+                    imageUrl: match.banner ?? match.thumbnail ?? "",
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      color: Colors.black26,
+                      child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    ),
+                    errorWidget: (context, url, error) => Image.asset(
+                      "assets/auth/cri.png",
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
 
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  /// TOP LIVE TAG
-                  Row(
+                // Content
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                              ),
+                      /// TOP ROW (LIVE badge and PREMIUM tag)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
                             ),
-
-                            const SizedBox(width: 4),
-
-                            Text(
-                              "LIVE",
-                              style: text11(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                          ],
-                        ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  "LIVE",
+                                  style: text11(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          Row(
+                            children: [
+                              if (match.isPremium == true)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  margin: const EdgeInsets.only(right: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text(
+                                    "PREMIUM",
+                                    style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              if (match.isPremium != false && !canWatch)
+                                const Icon(
+                                  Icons.lock,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                            ],
+                          ),
+                        ],
                       ),
 
-                      Positioned(
-                        top: 10,
-                        right: 10,
-                        child: Row(
-                          children: [
-                            if (match.isPremium == true)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                margin: const EdgeInsets.only(right: 8),
-                                decoration: BoxDecoration(
-                                  color: Colors.amber,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Text(
-                                  "PREMIUM",
-                                  style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            if (match.isPremium != false && !canWatch)
-                              const Icon(
-                                Icons.lock,
-                                color: Colors.white,
-                                size: 18,
-                              ),
-                          ],
+                      const Spacer(),
+
+                      /// SMALL CORNER BUTTON
+                      Align(
+                        alignment: Alignment.bottomLeft,
+                        child: SizedBox(
+                          height: 36,
+                          child: CustomElevatedIconButton(
+                            backgroundColor: canWatch
+                                ? AppColors.success
+                                : AppColors.primary,
+                            text: "Watch Now",
+                            icon: canWatch
+                                ? Icons.play_arrow_rounded
+                                : Icons.lock_outline,
+                            onPressed: () {
+                              ctr.handleProtectedAction(() {
+                                Get.toNamed(
+                                  AppRoutes.matchPlay,
+                                  arguments: match,
+                                );
+                              },
+                                  checkAccess: true,
+                                  hasPermission: canWatch);
+                            },
+                          ),
                         ),
                       ),
                     ],
                   ),
-
-                  const Spacer(),
-
-                  /// SMALL CORNER BUTTON
-                  Align(
-                    alignment: Alignment.bottomLeft,
-                    child: SizedBox(
-                      height: 36,
-
-                      child: CustomElevatedIconButton(
-                        // horizontalPadding: 12,
-                        backgroundColor: canWatch
-                            ? AppColors.success
-                            : AppColors.primary,
-
-                        text: "Watch Now",
-                        icon: canWatch
-                            ? Icons.play_arrow_rounded
-                            : Icons.lock_outline,
-
-                        onPressed: () {
-                          ctr.handleProtectedAction(() {
-                            Get.toNamed(
-                              AppRoutes.matchPlay,
-                              arguments: match,
-                            );
-                          },
-                              checkAccess: true,
-                              hasPermission: canWatch);
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -1150,7 +1145,7 @@ class _HomeScreenState extends State<HomeScreen> {
   //                     borderRadius: BorderRadius.circular(18),
   //                     boxShadow: [
   //                       BoxShadow(
-  //                         color: Colors.black.withValues(alpha: 0.4),
+  //                         color: Colors.black.withOpacity(0.4),
   //                         blurRadius: 10,
   //                         offset: const Offset(0, 6),
   //                       ),
@@ -1184,7 +1179,7 @@ class _HomeScreenState extends State<HomeScreen> {
   //                             begin: Alignment.bottomCenter,
   //                             end: Alignment.topCenter,
   //                             colors: [
-  //                               Colors.black.withValues(alpha: 0.8),
+  //                               Colors.black.withOpacity(0.8),
   //                               Colors.transparent,
   //                             ],
   //                           ),
@@ -1234,7 +1229,7 @@ class _HomeScreenState extends State<HomeScreen> {
   //                                   Container(
   //                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
   //                                     decoration: BoxDecoration(
-  //                                       color: AppColors.primary.withValues(alpha: 0.8),
+  //                                       color: AppColors.primary.withOpacity(0.8),
   //                                       borderRadius: BorderRadius.circular(4),
   //                                     ),
   //                                     child: Text(
@@ -1325,7 +1320,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         borderRadius: BorderRadius.circular(18),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.35),
+                            color: Colors.black.withOpacity(0.35),
                             blurRadius: 12,
                             offset: const Offset(0, 6),
                           ),
@@ -1478,16 +1473,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           width: 240,
                           margin: const EdgeInsets.only(right: 14),
                           decoration: BoxDecoration(
-                            color: AppColors.white.withValues(alpha: 0.05),
+                            color: AppColors.white.withOpacity(0.05),
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppColors.white.withValues(alpha: 0.1), width: 1),
+                            border: Border.all(color: AppColors.white.withOpacity(0.1), width: 1),
                             image: DecorationImage(
                               image: match.thumbnail != null && match.thumbnail!.isNotEmpty
                                   ? NetworkImage(match.thumbnail!)
                                   : const AssetImage('assets/auth/cri.png') as ImageProvider,
                               fit: BoxFit.cover,
                               colorFilter: ColorFilter.mode(
-                                Colors.black.withValues(alpha: 0.4),
+                                Colors.black.withOpacity(0.4),
                                 BlendMode.darken,
                               ),
                             ),
@@ -1671,8 +1666,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   begin: Alignment.bottomCenter,
                                   end: Alignment.topCenter,
                                   colors: [
-                                    Colors.black.withValues(alpha: 0.95),
-                                    Colors.black.withValues(alpha: 0.6),
+                                    Colors.black.withOpacity(0.95),
+                                    Colors.black.withOpacity(0.6),
                                     Colors.transparent,
                                   ],
                                   stops: const [0.0, 0.5, 1.0],
@@ -1686,7 +1681,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
+                                color: Colors.white.withOpacity(0.2),
                                 shape: BoxShape.circle,
                                 border: Border.all(color: Colors.white30),
                               ),
@@ -1706,7 +1701,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.6),
+                                color: Colors.black.withOpacity(0.6),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
@@ -1781,7 +1776,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 borderRadius: BorderRadius.circular(22),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.4),
+                                    color: Colors.black.withOpacity(0.4),
                                     blurRadius: 12,
                                     offset: const Offset(0, 6),
                                   ),
@@ -1871,7 +1866,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   begin: Alignment.bottomCenter,
                                   end: Alignment.topCenter,
                                   colors: [
-                                    Colors.black.withValues(alpha: 0.6),
+                                    Colors.black.withOpacity(0.6),
                                     Colors.transparent,
                                   ],
                                 ),
@@ -2232,7 +2227,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.5),
+                                color: Colors.black.withOpacity(0.5),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(Icons.play_arrow, color: Colors.white, size: 30),
@@ -2251,7 +2246,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               height: 18,
                               width: 18,
                               decoration: BoxDecoration(
-                                color: AppColors.white.withValues(alpha: 0.1),
+                                color: AppColors.white.withOpacity(0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: ClipOval(
@@ -2333,7 +2328,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.5),
+                          color: Colors.black.withOpacity(0.5),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.play_arrow, color: Colors.white,
@@ -2416,8 +2411,8 @@ class _HomeScreenState extends State<HomeScreen> {
       //       ),
       //       decoration: BoxDecoration(
       //         color: isSelected
-      //             ? AppColors.primary.withValues(alpha: 0.3)
-      //             : AppColors.secPrimary.withValues(alpha: 0.6),
+      //             ? AppColors.primary.withOpacity(0.3)
+      //             : AppColors.secPrimary.withOpacity(0.6),
       //         borderRadius: BorderRadius.circular(30),
       //         border: Border.all(
       //           color: isSelected ? AppColors.primary : Colors.white24,

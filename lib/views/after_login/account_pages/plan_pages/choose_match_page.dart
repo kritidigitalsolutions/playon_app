@@ -80,10 +80,10 @@ class _ChooseMatchPageState extends State<ChooseMatchPage> {
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.white24.withValues(alpha: 0.15),
+                              color: AppColors.white24.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(30),
                               border: Border.all(
-                                color: AppColors.white.withValues(alpha: 0.25),
+                                color: AppColors.white.withOpacity(0.25),
                                 width: 1.2,
                               ),
                             ),
@@ -117,16 +117,16 @@ class _ChooseMatchPageState extends State<ChooseMatchPage> {
                     child: Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppColors.white.withValues(alpha: 0.08),
+                        color: AppColors.white.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+                        border: Border.all(color: AppColors.primary.withOpacity(0.4)),
                       ),
                       child: Row(
                         children: [
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.2),
+                              color: AppColors.primary.withOpacity(0.2),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(Icons.lock_open_rounded, color: AppColors.primary, size: 20),
@@ -472,7 +472,7 @@ class _ChooseMatchPageState extends State<ChooseMatchPage> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : AppColors.secPrimary.withValues(alpha: 0.6),
+            color: isSelected ? AppColors.primary : AppColors.secPrimary.withOpacity(0.6),
             borderRadius: BorderRadius.circular(30),
             border: Border.all(color: isSelected ? AppColors.white : Colors.white24, width: isSelected ? 1.5 : 1),
           ),

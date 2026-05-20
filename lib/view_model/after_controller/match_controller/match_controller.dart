@@ -405,22 +405,66 @@ class VideoControllerX extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    
+    _loadInitialData();
+    // Stop playback if access is revoked
+    _setupLockListener();
+  }
+
+  void _loadInitialData() {
     bool isHighlightMode = Get.parameters['mode'] == 'highlight';
 
     if (Get.arguments is model.Match) {
       match.value = Get.arguments;
+      starPlayer.value = null;
       final status = match.value?.status?.toLowerCase();
       bool isFinished = status == 'finished' || status == 'completed' || isHighlightMode;
       fetchMatchDetails(match.value!.sId!, isHighlight: isFinished);
     } else if (Get.arguments is star_model.StarPlayer) {
       starPlayer.value = Get.arguments;
+      match.value = null;
+      isLoading.value = false;
+      if (starPlayer.value?.videoUrl != null) {
+        initializeVideo(starPlayer.value!.videoUrl!, isHighlight: true);
+      }
     } else if (Get.arguments is String) {
       fetchMatchDetails(Get.arguments, isHighlight: isHighlightMode);
     }
+  }
 
-    // Stop playback if access is revoked
-    _setupLockListener();
+  /// ✅ Method to manually refresh data if controller is reused
+  void refreshWithArguments(dynamic arguments) {
+    // Reset state
+    isInitialized.value = false;
+    isLoading.value = true;
+    matchData.value = null;
+    _disposeControllers();
+    
+    // Process new arguments
+    bool isHighlightMode = Get.parameters['mode'] == 'highlight';
+
+    if (arguments is model.Match) {
+      match.value = arguments;
+      starPlayer.value = null;
+      final status = match.value?.status?.toLowerCase();
+      bool isFinished = status == 'finished' || status == 'completed' || isHighlightMode;
+      fetchMatchDetails(match.value!.sId!, isHighlight: isFinished);
+    } else if (arguments is star_model.StarPlayer) {
+      starPlayer.value = arguments;
+      match.value = null;
+      isLoading.value = false;
+      if (starPlayer.value?.videoUrl != null) {
+        initializeVideo(starPlayer.value!.videoUrl!, isHighlight: true);
+      }
+    } else if (arguments is String) {
+      fetchMatchDetails(arguments, isHighlight: isHighlightMode);
+    }
+  }
+
+  void _disposeControllers() {
+    videoController?.dispose();
+    youtubeController?.dispose();
+    videoController = null;
+    youtubeController = null;
   }
 
   void _setupLockListener() {
@@ -440,6 +484,8 @@ class VideoControllerX extends GetxController {
               final isHighlightMode = Get.parameters['mode'] == 'highlight';
               if (match.value != null) {
                 fetchMatchDetails(match.value!.sId!, isHighlight: isHighlightMode);
+              } else if (starPlayer.value != null && starPlayer.value!.videoUrl != null) {
+                initializeVideo(starPlayer.value!.videoUrl!, isHighlight: true);
               }
             } else if (videoController != null && !videoController!.value.isPlaying) {
               // If already initialized but paused due to lock, resume
@@ -455,11 +501,22 @@ class VideoControllerX extends GetxController {
   Future<void> fetchMatchDetails(String matchId, {bool isHighlight = false}) async {
     isLoading.value = true;
     try {
-      // 0. If we already have a videoUrl (passed from highlights screen), use it!
-      if (match.value?.videoUrl != null && isHighlight) {
+      // 0. Check if the match already has a live stream object from the dashboard fetch
+      if (match.value?.stream?.streamUrl != null && 
+          (match.value?.stream?.status?.toLowerCase() == 'live' || match.value?.status?.toLowerCase() == 'live') && 
+          !isHighlight) {
+        print("Using already present stream from match object: ${match.value?.stream?.streamUrl}");
+        initializeVideo(
+          match.value!.stream!.streamUrl!,
+          streamType: match.value!.stream!.streamType,
+        );
+      }
+      
+      // 1. If we already have a videoUrl (passed from highlights screen), use it!
+      else if (match.value?.videoUrl != null && isHighlight) {
         initializeVideo(match.value!.videoUrl!, isHighlight: true);
       }
-      // 1. If it's a finished match, try to play the first highlight automatically from the new highlights API
+      // 2. If it's a finished match, try to play the first highlight automatically from the new highlights API
       else if (isHighlight) {
         final res = await _matchRepo.getHighlights(matchId: matchId);
         if (res['success'] == true && res['highlights'] != null) {
@@ -473,8 +530,8 @@ class VideoControllerX extends GetxController {
         }
       }
 
-      // 2. If it's a live match, fetch from the live streams API
-      if (match.value?.status?.toLowerCase() == 'live') {
+      // 3. If it's a live match and we don't have a stream yet, fetch from the live streams API
+      if (!isInitialized.value && match.value?.status?.toLowerCase() == 'live') {
         final streamsRes = await _matchRepo.getLiveStreams();
         if (streamsRes['success'] == true && streamsRes['streams'] != null) {
           final List streams = streamsRes['streams'];
@@ -485,17 +542,16 @@ class VideoControllerX extends GetxController {
           });
 
           if (stream != null && stream['streamUrl'] != null) {
-            print("Playing live stream: ${stream['streamUrl']}");
+            print("Playing live stream from dedicated endpoint: ${stream['streamUrl']}");
             initializeVideo(
               stream['streamUrl'],
               streamType: stream['streamType'],
             );
-            // Do not return here, continue to fetch match details for UI info
           }
         }
       }
 
-      // 3. Fetch official watchMatch API for full match object (teams, logos, status etc)
+      // 4. Fetch official watchMatch API for full match object (teams, logos, status etc)
       final response = await _matchRepo.watchMatch(matchId);
       matchData.value = model.WatchMatchResponse.fromJson(response);
 
@@ -528,13 +584,19 @@ class VideoControllerX extends GetxController {
   void initializeVideo(String url, {bool isHighlight = false, String? streamType}) {
     // Don't initialize if it's currently locked
     if (Get.isRegistered<MatchDetailsController>() && Get.find<MatchDetailsController>().isLock.value) {
+      debugPrint("Video: Cannot initialize, content is locked.");
       return;
     }
 
-    print("Initializing Video: $url (Type: $streamType)");
+    debugPrint("Initializing Video: $url (Type: $streamType)");
 
     // Signal UI that we are re-initializing
     isInitialized.value = false;
+    
+    // If it's a star player or highlight, make sure we show loading state
+    if (starPlayer.value != null || isHighlight) {
+      isLoading.value = false; // We are processing the URL, let isInitialized handle the loader
+    }
 
     // Capture old controllers to dispose them safely after UI rebuilds
     final oldVideo = videoController;
@@ -581,8 +643,10 @@ class VideoControllerX extends GetxController {
         );
         isInitialized.value = true;
         isPlaying.value = true;
+        isLoading.value = false;
       } else {
-        print("Failed to extract YouTube ID from: $url");
+        debugPrint("Failed to extract YouTube ID from: $url");
+        isLoading.value = false;
         showCustomSnackbar(title: "Error", message: "Invalid YouTube URL", type: SnackType.error);
       }
     } else {
@@ -593,7 +657,9 @@ class VideoControllerX extends GetxController {
           videoController?.play();
           isPlaying.value = true;
         }).catchError((error) {
-          print("Video Player Error: $error");
+          debugPrint("Video Player Error: $error");
+          isInitialized.value = false;
+          isLoading.value = false;
           showCustomSnackbar(title: "Playback Error", message: "Failed to play stream", type: SnackType.error);
         });
     }

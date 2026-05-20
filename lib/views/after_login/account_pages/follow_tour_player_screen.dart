@@ -111,9 +111,9 @@ class _FollowingScreenState extends State<FollowingScreen> {
         duration: const Duration(milliseconds: 300),
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
+          color: Colors.white.withOpacity(0.08),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+          border: Border.all(color: Colors.white.withOpacity(0.18)),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
@@ -251,7 +251,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
+              color: Colors.white.withOpacity(0.05),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(

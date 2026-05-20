@@ -113,7 +113,7 @@ class AppIconButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.2),
+          color: color.withOpacity(0.2),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: color),

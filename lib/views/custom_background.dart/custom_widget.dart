@@ -21,7 +21,7 @@ class BackgroundWithImg extends StatelessWidget {
           width: double.infinity,
           height: double.infinity,
           decoration: BoxDecoration(
-            color: AppColors.secPrimary.withValues(alpha: 0.8),
+            color: AppColors.secPrimary.withOpacity(0.8),
           ),
         ),
 
@@ -49,7 +49,7 @@ class BackgroundWithOutImg extends StatelessWidget {
           width: double.infinity,
           height: double.infinity,
           decoration: BoxDecoration(
-            color: AppColors.secPrimary.withValues(alpha: 0.2),
+            color: AppColors.secPrimary.withOpacity(0.2),
           ),
         ),
 
@@ -76,7 +76,7 @@ class BackgroundWithOneLight extends StatelessWidget {
           width: double.infinity,
           height: double.infinity,
           decoration: BoxDecoration(
-            color: AppColors.secPrimary.withValues(alpha: 0.2),
+            color: AppColors.secPrimary.withOpacity(0.2),
           ),
         ),
         Positioned(left: -50, bottom: -50, child: _softBlueGlow()),

@@ -40,10 +40,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.65,
         decoration: BoxDecoration(
-          color: AppColors.white.withValues(alpha: 0.12),
+          color: AppColors.white.withOpacity(0.12),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           border: Border.all(
-            color: AppColors.white.withValues(alpha: 0.25),
+            color: AppColors.white.withOpacity(0.25),
             width: 1.2,
           ),
         ),
@@ -57,7 +57,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   width: 50,
                   height: 5,
                   decoration: BoxDecoration(
-                    color: AppColors.white.withValues(alpha: 0.4),
+                    color: AppColors.white.withOpacity(0.4),
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
@@ -73,12 +73,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     fit: BoxFit.cover,
                     placeholder: (context, url) => Container(
                       height: 180,
-                      color: AppColors.white.withValues(alpha: 0.05),
+                      color: AppColors.white.withOpacity(0.05),
                       child: const Center(child: CircularProgressIndicator()),
                     ),
                     errorWidget: (context, url, error) => Container(
                       height: 180,
-                      color: AppColors.white.withValues(alpha: 0.05),
+                      color: AppColors.white.withOpacity(0.05),
                       child: const Icon(Icons.error),
                     ),
                   ),
@@ -94,12 +94,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     fit: BoxFit.cover,
                     placeholder: (context, url) => Container(
                       height: 180,
-                      color: AppColors.white.withValues(alpha: 0.05),
+                      color: AppColors.white.withOpacity(0.05),
                       child: const Center(child: CircularProgressIndicator()),
                     ),
                     errorWidget: (context, url, error) => Container(
                       height: 180,
-                      color: AppColors.white.withValues(alpha: 0.05),
+                      color: AppColors.white.withOpacity(0.05),
                       child: const Icon(Icons.error),
                     ),
                   ),
@@ -116,7 +116,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   child: Text(
                     notif.message ?? "",
                     style: text15(
-                      color: AppColors.white.withValues(alpha: 0.9),
+                      color: AppColors.white.withOpacity(0.9),
                     ),
                   ),
                 ),
@@ -128,7 +128,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     child: AppButton(
                       title: "Close",
                       onTap: () => Navigator.pop(context),
-                      color: AppColors.white.withValues(alpha: 0.15),
+                      color: AppColors.white.withOpacity(0.15),
                       textStyle: text15(),
                     ),
                   ),
@@ -318,8 +318,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                         child: Container(
                                           decoration: BoxDecoration(
                                             color: isRead
-                                                ? AppColors.white.withValues(alpha: 0.05)
-                                                : AppColors.white.withValues(alpha: 0.12),
+                                                ? AppColors.white.withOpacity(0.05)
+                                                : AppColors.white.withOpacity(0.12),
                                             borderRadius: BorderRadius.circular(14),
                                             border: Border.all(
                                               color: AppColors.white.withValues(
@@ -349,7 +349,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                                         height: 50,
                                                         fit: BoxFit.cover,
                                                         placeholder: (context, url) => Container(
-                                                          color: AppColors.white.withValues(alpha: 0.05),
+                                                          color: AppColors.white.withOpacity(0.05),
                                                         ),
                                                         errorWidget: (context,
                                                                 url,
@@ -370,7 +370,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                                         height: 50,
                                                         fit: BoxFit.cover,
                                                         placeholder: (context, url) => Container(
-                                                          color: AppColors.white.withValues(alpha: 0.05),
+                                                          color: AppColors.white.withOpacity(0.05),
                                                         ),
                                                         errorWidget: (context,
                                                                 url,
@@ -444,8 +444,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
       height: 50,
       decoration: BoxDecoration(
         color: isRead
-            ? AppColors.white.withValues(alpha: 0.1)
-            : AppColors.primary.withValues(alpha: 0.2),
+            ? AppColors.white.withOpacity(0.1)
+            : AppColors.primary.withOpacity(0.2),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Icon(

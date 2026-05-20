@@ -47,6 +47,7 @@ class Match {
   String? seriesId;
   String? createdAt;
   String? updatedAt;
+  MatchStream? stream;
 
   Match(
       {this.sId,
@@ -73,7 +74,8 @@ class Match {
       this.liveEndedAt,
       this.seriesId,
       this.createdAt,
-      this.updatedAt});
+      this.updatedAt,
+      this.stream});
 
   Match.fromJson(Map<String, dynamic> json) {
     sId = json['_id'] ?? json['id'];
@@ -101,6 +103,7 @@ class Match {
     seriesId = json['seriesId'];
     createdAt = json['createdAt'];
     updatedAt = json['updatedAt'];
+    stream = json['stream'] != null ? MatchStream.fromJson(json['stream']) : null;
   }
 }
 
@@ -123,11 +126,13 @@ class WatchMatchResponse {
 class MatchStream {
   String? streamUrl;
   String? streamType;
+  String? status;
 
-  MatchStream({this.streamUrl, this.streamType});
+  MatchStream({this.streamUrl, this.streamType, this.status});
 
   MatchStream.fromJson(Map<String, dynamic> json) {
     streamUrl = json['streamUrl'];
     streamType = json['streamType'];
+    status = json['status'];
   }
 }

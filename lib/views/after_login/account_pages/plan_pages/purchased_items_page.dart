@@ -56,7 +56,7 @@ class PurchasedItemsPage extends StatelessWidget {
                             Icon(
                               Icons.lock_outline,
                               size: 64,
-                              color: AppColors.white.withValues(alpha: 0.3),
+                              color: AppColors.white.withOpacity(0.3),
                             ),
                             const SizedBox(height: 16),
 
@@ -133,16 +133,16 @@ class PurchasedItemsPage extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.white.withValues(alpha: 0.08),
+              color: AppColors.white.withOpacity(0.08),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+              border: Border.all(color: AppColors.primary.withOpacity(0.3)),
             ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.15),
+                    color: AppColors.primary.withOpacity(0.15),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(icon, color: AppColors.primary, size: 24),
@@ -162,7 +162,7 @@ class PurchasedItemsPage extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.2),
+                    color: AppColors.success.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text("ACTIVE", style: text12(color: AppColors.success, fontWeight: FontWeight.bold)),

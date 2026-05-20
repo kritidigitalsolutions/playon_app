@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
+import 'package:play_on_app/model/response_model/match_model.dart' as model;
 import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/routes/app_routes.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
@@ -43,6 +44,15 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
     WakelockPlus.enable();
     // Force portrait mode when entering the screen
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+    // Refresh controllers with current match
+    if (Get.arguments != null) {
+      videoControllerX.refreshWithArguments(Get.arguments);
+      if (Get.arguments is model.Match) {
+        controller.match.value = Get.arguments;
+        controller.checkAccess();
+      }
+    }
     
     // Force authentication check for any match/highlight content
     if (!HiveService.isLogin()) {
@@ -162,11 +172,17 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                 );
               }
 
-              if (videoControllerX.isLoading.value) {
+              if (videoControllerX.isLoading.value || !videoControllerX.isInitialized.value) {
                 return const Center(child: CircularProgressIndicator());
               }
-              if (!videoControllerX.isInitialized.value || (videoControllerX.videoController == null && videoControllerX.youtubeController == null)) {
-                return const Center(child: Text("Loading stream...", style: TextStyle(color: Colors.white)));
+
+              if (videoControllerX.videoController == null && videoControllerX.youtubeController == null) {
+                return const Center(
+                  child: Text(
+                    "No video source found",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                );
               }
 
               if (videoControllerX.isYoutube.value && videoControllerX.youtubeController != null) {
@@ -216,7 +232,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.3),
+                    color: Colors.black.withOpacity(0.3),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -258,7 +274,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                 return Positioned.fill(
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    color: Colors.black.withValues(alpha: 0.88),
+                    color: Colors.black.withOpacity(0.88),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
@@ -314,7 +330,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.9),
+                          color: Colors.red.withOpacity(0.9),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -424,9 +440,9 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                 margin: const EdgeInsets.only(bottom: 20),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.white.withValues(alpha: 0.05),
+                  color: AppColors.white.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.white.withValues(alpha: 0.1)),
+                  border: Border.all(color: AppColors.white.withOpacity(0.1)),
                 ),
                 child: Text(
                   match.description!,
@@ -448,7 +464,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                     width: 50,
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: AppColors.white.withValues(alpha: 0.1),
+                      color: AppColors.white.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: seriesLogo.isNotEmpty
@@ -517,9 +533,9 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
-                      color: AppColors.white.withValues(alpha: 0.03),
+                      color: AppColors.white.withOpacity(0.03),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.white.withValues(alpha: 0.05)),
+                      border: Border.all(color: AppColors.white.withOpacity(0.05)),
                     ),
                     child: Row(
                       children: [
@@ -565,7 +581,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                                   "VS",
                                   style: text18(
                                     fontWeight: FontWeight.w900,
-                                    color: AppColors.white.withValues(alpha: 0.15),
+                                    color: AppColors.white.withOpacity(0.15),
                                   ),
                                 ),
                               const SizedBox(height: 12),
@@ -573,9 +589,9 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: Colors.red.withValues(alpha: 0.15),
+                                    color: Colors.red.withOpacity(0.15),
                                     borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(color: Colors.red.withValues(alpha: 0.5)),
+                                    border: Border.all(color: Colors.red.withOpacity(0.5)),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -598,7 +614,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.05),
+                                    color: Colors.white.withOpacity(0.05),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
@@ -645,9 +661,9 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
+                        color: AppColors.primary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
                       ),
                       child: Text(
                         matchReport,
@@ -672,10 +688,10 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         shape: BoxShape.circle,
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1.5),
+        border: Border.all(color: AppColors.primary.withOpacity(0.5), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.2),
+            color: AppColors.primary.withOpacity(0.2),
             blurRadius: 10,
             spreadRadius: 2,
           ),
@@ -741,10 +757,10 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         margin: const EdgeInsets.only(right: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.white.withValues(alpha: 0.05),
+          color: isSelected ? AppColors.primary : AppColors.white.withOpacity(0.05),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.white.withValues(alpha: 0.1),
+            color: isSelected ? AppColors.primary : AppColors.white.withOpacity(0.1),
           ),
         ),
         child: Text(
@@ -849,9 +865,9 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.2),
+            color: AppColors.primary.withOpacity(0.2),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.primary.withValues(alpha: 0.5)),
+            border: Border.all(color: AppColors.primary.withOpacity(0.5)),
           ),
           child: Text(
             teamName,
@@ -1027,9 +1043,9 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha: 0.05),
+        color: AppColors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: AppColors.white.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1112,7 +1128,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha: 0.05),
+        color: AppColors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -1145,7 +1161,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha: 0.05),
+        color: AppColors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -1203,7 +1219,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha: 0.05),
+        color: AppColors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(10),
         border: Border(left: BorderSide(color: _getEventColor(e.type), width: 4)),
       ),
@@ -1274,9 +1290,9 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.1),
+        color: AppColors.primary.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
       ),
       child: Column(
         children: [
@@ -1302,7 +1318,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
       margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: AppColors.white.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1311,7 +1327,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.white.withValues(alpha: 0.05),
+              color: AppColors.white.withOpacity(0.05),
               borderRadius: const BorderRadius.only(topLeft: Radius.circular(12), topRight: Radius.circular(12)),
             ),
             child: Row(
@@ -1358,7 +1374,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
   Widget _buildBatsmenHeader() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      color: AppColors.white.withValues(alpha: 0.02),
+      color: AppColors.white.withOpacity(0.02),
       child: Row(
         children: [
           Expanded(flex: 4, child: Text("Batsman", style: text11(color: AppColors.white60))),
@@ -1407,7 +1423,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
   Widget _buildBowlersHeader() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      color: AppColors.white.withValues(alpha: 0.02),
+      color: AppColors.white.withOpacity(0.02),
       child: Row(
         children: [
           Expanded(flex: 4, child: Text("Bowler", style: text11(color: AppColors.white60))),
@@ -1470,7 +1486,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
               Obx(() => Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
+                      color: AppColors.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -1486,9 +1502,9 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
-              color: AppColors.white.withValues(alpha: 0.05),
+              color: AppColors.white.withOpacity(0.05),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.white.withValues(alpha: 0.1)),
+              border: Border.all(color: AppColors.white.withOpacity(0.1)),
             ),
             child: Row(
               children: [
@@ -1498,7 +1514,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                     style: text14(),
                     decoration: InputDecoration(
                       hintText: "Add a comment...",
-                      hintStyle: text14(color: AppColors.white.withValues(alpha: 0.4)),
+                      hintStyle: text14(color: AppColors.white.withOpacity(0.4)),
                       border: InputBorder.none,
                     ),
                   ),
@@ -1527,7 +1543,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                   padding: const EdgeInsets.all(20.0),
                   child: Text(
                     "No comments yet. Be the first to comment!",
-                    style: text14(color: AppColors.white.withValues(alpha: 0.5)),
+                    style: text14(color: AppColors.white.withOpacity(0.5)),
                   ),
                 ),
               );
@@ -1545,7 +1561,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                   children: [
                     CircleAvatar(
                       radius: 18,
-                      backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+                      backgroundColor: AppColors.primary.withOpacity(0.2),
                       child: ClipOval(
                         child: CachedNetworkImage(
                           imageUrl: comment.userImage ?? "",
@@ -1654,7 +1670,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                               Text(
                                 _formatDate(comment.createdAt),
                                 style: text10(
-                                  color: AppColors.white.withValues(alpha: 0.4),
+                                  color: AppColors.white.withOpacity(0.4),
                                 ),
                               ),
                             ],
@@ -1662,7 +1678,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                           const SizedBox(height: 4),
                           Text(
                             comment.comment ?? "",
-                            style: text13(color: AppColors.white.withValues(alpha: 0.8)),
+                            style: text13(color: AppColors.white.withOpacity(0.8)),
                           ),
                         ],
                       ),
@@ -1702,10 +1718,10 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.085),
+            color: Colors.white.withOpacity(0.085),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.20),
+              color: Colors.white.withOpacity(0.20),
               width: 1.4,
             ),
           ),
@@ -1741,7 +1757,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                           gradient: LinearGradient(
                             colors: [
                               Colors.transparent,
-                              Colors.black.withValues(alpha: 0.4),
+                              Colors.black.withOpacity(0.4),
                             ],
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,

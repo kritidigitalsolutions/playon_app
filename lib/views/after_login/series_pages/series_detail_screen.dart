@@ -348,9 +348,9 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
+          color: Colors.white.withOpacity(0.05),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -367,7 +367,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
                     placeholder: (context, url) => Container(height: 180, color: Colors.white10),
                     errorWidget: (context, url, error) => Container(
                       height: 180,
-                      color: Colors.grey.withValues(alpha: 0.2),
+                      color: Colors.grey.withOpacity(0.2),
                       child: const Icon(Icons.play_circle_outline, color: Colors.white24, size: 50),
                     ),
                   ),
@@ -377,7 +377,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.8),
+                        color: AppColors.primary.withOpacity(0.8),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(canWatch ? Icons.play_arrow : Icons.lock_outline, color: Colors.white, size: 30),
@@ -390,7 +390,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.7),
+                      color: Colors.black.withOpacity(0.7),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -517,7 +517,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
+            color: Colors.white.withOpacity(0.05),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.white10),
           ),
@@ -528,7 +528,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
                 width: 50,
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: Colors.white.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: team.logo != null && team.logo!.isNotEmpty
@@ -565,10 +565,10 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
               //     padding: const EdgeInsets.symmetric(
               //         horizontal: 8, vertical: 4),
               //     decoration: BoxDecoration(
-              //       color: AppColors.primary.withValues(alpha: 0.1),
+              //       color: AppColors.primary.withOpacity(0.1),
               //       borderRadius: BorderRadius.circular(6),
               //       border: Border.all(
-              //           color: AppColors.primary.withValues(alpha: 0.3)),
+              //           color: AppColors.primary.withOpacity(0.3)),
               //     ),
               //     child: Text(
               //       team.shortName!,
@@ -621,7 +621,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
         constraints: const BoxConstraints(maxWidth: 320),
         margin: const EdgeInsets.only(right: 16),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
+          color: Colors.white.withOpacity(0.05),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.white10),
         ),
@@ -676,9 +676,9 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: _getStatusColor(match.status).withValues(alpha: 0.1),
+                          color: _getStatusColor(match.status).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: _getStatusColor(match.status).withValues(alpha: 0.5)),
+                          border: Border.all(color: _getStatusColor(match.status).withOpacity(0.5)),
                         ),
                         child: Text(
                           match.status?.toUpperCase() ?? "",
@@ -719,7 +719,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
+          color: Colors.white.withOpacity(0.05),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.white10),
         ),
