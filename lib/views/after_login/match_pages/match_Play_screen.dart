@@ -316,7 +316,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
 
             /// 🎮 CONTROLS
             Obx(() {
-              if (controller.isLock.value || !videoControllerX.showControls.value) {
+              if (controller.isLock.value || videoControllerX.isYoutube.value || !videoControllerX.showControls.value) {
                 return const SizedBox();
               }
 

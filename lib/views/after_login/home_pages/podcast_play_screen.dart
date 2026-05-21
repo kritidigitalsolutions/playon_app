@@ -11,6 +11,7 @@ import 'package:play_on_app/views/custom_background.dart/custom_widget.dart';
 import 'package:play_on_app/views/widgets/admob_banner_widget.dart';
 import 'package:video_player/video_player.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../../../routes/app_routes.dart';
 import '../../custom_background.dart/custum_date.dart';
 
@@ -401,12 +402,37 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
                 return const Center(child: CircularProgressIndicator(color: AppColors.primary));
               }
 
-              if (!controller.isInitialized.value || controller.videoController == null) {
+              if (!controller.isInitialized.value ||
+                  (controller.videoController == null && controller.youtubeController == null)) {
                 return const Center(
                   child: Text(
                     "Video unavailable",
                     style: TextStyle(color: Colors.white),
                   ),
+                );
+              }
+
+              if (controller.isYoutube.value && controller.youtubeController != null) {
+                return YoutubePlayerBuilder(
+                  key: ValueKey(controller.youtubeController.hashCode),
+                  player: YoutubePlayer(
+                    controller: controller.youtubeController!,
+                    showVideoProgressIndicator: true,
+                    progressIndicatorColor: AppColors.primary,
+                    onReady: () {
+                      controller.isInitialized.value = true;
+                    },
+                  ),
+                  builder: (context, player) => player,
+                  onEnterFullScreen: () {
+                    SystemChrome.setPreferredOrientations([
+                      DeviceOrientation.landscapeLeft,
+                      DeviceOrientation.landscapeRight,
+                    ]);
+                  },
+                  onExitFullScreen: () {
+                    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+                  },
                 );
               }
 
@@ -465,7 +491,7 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
 
             // Controls Overlay
             Obx(() {
-              if (controller.isLock.value || (!controller.showControls.value && controller.isPlaying.value)) {
+              if (controller.isLock.value || controller.isYoutube.value || (!controller.showControls.value && controller.isPlaying.value)) {
                 return const SizedBox();
               }
               return Stack(
@@ -495,7 +521,7 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    child: controller.isInitialized.value
+                    child: controller.isInitialized.value && controller.videoController != null
                         ? VideoProgressIndicator(
                             controller.videoController!,
                             allowScrubbing: true,
@@ -512,7 +538,7 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
                     bottom: 12,
                     child: GestureDetector(
                       onTap: () {
-                        if (controller.isInitialized.value) {
+                        if (controller.isInitialized.value && controller.videoController != null) {
                           Get.to(() => FullScreenVideoPage(controller: controller.videoController!));
                         }
                       },

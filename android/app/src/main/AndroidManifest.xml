@@ -47,8 +47,7 @@
 
                 <data
                     android:scheme="https"
-                    android:host="playonsports.online"
-                    android:pathPrefix="/match" />
+                    android:host="playonsports.online" />
 
             </intent-filter>
         </activity>

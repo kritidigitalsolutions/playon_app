@@ -613,13 +613,13 @@ class VideoControllerX extends GetxController {
     });
 
     // Detect YouTube
-    bool isYoutubeUrl = url.contains('youtube.com') || url.contains('youtu.be') || streamType?.toLowerCase() == 'youtube';
+    bool isYoutubeUrl = url.contains('youtube.com') || url.contains('youtu.be') || streamType?.toLowerCase() == 'youtube' || streamType?.toLowerCase() == 'yt';
 
     if (isYoutubeUrl) {
       isYoutube.value = true;
       String? videoId = YoutubePlayer.convertUrlToId(url);
       
-      // Better ID extraction for various YouTube URL formats
+      // Better ID extraction for various YouTube URL formats (embed links etc)
       if (videoId == null) {
         final regExp = RegExp(
           r'^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*',
@@ -630,6 +630,11 @@ class VideoControllerX extends GetxController {
         if (match != null && match.group(7)!.length == 11) {
           videoId = match.group(7);
         }
+      }
+      
+      // Handle cases where the URL might be just the ID
+      if (videoId == null && url.length == 11) {
+        videoId = url;
       }
 
       if (videoId != null) {

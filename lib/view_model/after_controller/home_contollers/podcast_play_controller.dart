@@ -8,13 +8,16 @@ import '../../../repo/match_repository.dart';
 import '../plan_controller.dart';
 import 'package:play_on_app/utils/custom_snakebar.dart';
 import 'package:flutter/material.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class PodcastPlayController extends GetxController {
   final podcast = Rxn<Podcast>();
   VideoPlayerController? videoController;
+  YoutubePlayerController? youtubeController;
   final planController = Get.find<PlanController>();
   
   var isInitialized = false.obs;
+  var isYoutube = false.obs;
   var isPlaying = false.obs;
   var showControls = true.obs;
   var isLoading = true.obs;
@@ -24,8 +27,6 @@ class PodcastPlayController extends GetxController {
   final isCommentsLoading = false.obs;
   final commentController = TextEditingController();
   final MatchRepository _repository = MatchRepository();
-
-
 
   @override
   void onInit() {
@@ -53,55 +54,113 @@ class PodcastPlayController extends GetxController {
     }
   }
 
-
   void checkAccess() {
     if (podcast.value == null) return;
     isLock.value = (podcast.value?.isPremium == true) && !planController.canWatchPodcast(podcast.value);
     
     // Stop playback if it becomes locked
-    if (isLock.value && videoController != null && videoController!.value.isPlaying) {
-      videoController?.pause();
+    if (isLock.value) {
+      if (isYoutube.value) {
+        youtubeController?.pause();
+      } else {
+        videoController?.pause();
+      }
       isPlaying.value = false;
       showControls.value = true;
     }
   }
+
   void initializeVideo(String url) {
     if (isLock.value) return;
     isLoading.value = true;
-    videoController = VideoPlayerController.networkUrl(Uri.parse(url))
-      ..initialize().then((_) {
+    isInitialized.value = false;
+    
+    // Dispose old controllers
+    videoController?.dispose();
+    youtubeController?.dispose();
+    videoController = null;
+    youtubeController = null;
+    isYoutube.value = false;
+
+    // Detect YouTube
+    bool isYoutubeUrl = url.contains('youtube.com') || url.contains('youtu.be');
+
+    if (isYoutubeUrl) {
+      isYoutube.value = true;
+      String? videoId = YoutubePlayer.convertUrlToId(url);
+      
+      if (videoId != null) {
+        youtubeController = YoutubePlayerController(
+          initialVideoId: videoId,
+          flags: const YoutubePlayerFlags(
+            autoPlay: true,
+            mute: false,
+          ),
+        );
         isInitialized.value = true;
-        videoController?.play();
         isPlaying.value = true;
         isLoading.value = false;
-      }).catchError((error) {
+      } else {
         isLoading.value = false;
-      });
+        showCustomSnackbar(title: "Error", message: "Invalid YouTube URL", type: SnackType.error);
+      }
+    } else {
+      isYoutube.value = false;
+      videoController = VideoPlayerController.networkUrl(Uri.parse(url))
+        ..initialize().then((_) {
+          isInitialized.value = true;
+          videoController?.play();
+          isPlaying.value = true;
+          isLoading.value = false;
+        }).catchError((error) {
+          isLoading.value = false;
+        });
 
-    videoController?.addListener(() {
-      if (videoController != null) {
-        isPlaying.value = videoController!.value.isPlaying;
+      videoController?.addListener(() {
+        if (videoController != null) {
+          isPlaying.value = videoController!.value.isPlaying;
+        }
+      });
+    }
+
+    _setupAutoHideControls();
+  }
+
+  void _setupAutoHideControls() {
+    Future.delayed(const Duration(seconds: 3), () {
+      if (isPlaying.value) {
+        showControls.value = false;
       }
     });
   }
 
   void togglePlay() {
-    if (videoController == null) return;
-    if (videoController!.value.isPlaying) {
-      videoController!.pause();
+    if (isYoutube.value) {
+      if (youtubeController == null) return;
+      if (youtubeController!.value.isPlaying) {
+        youtubeController!.pause();
+        isPlaying.value = false;
+      } else {
+        youtubeController!.play();
+        isPlaying.value = true;
+      }
     } else {
-      videoController!.play();
+      if (videoController == null) return;
+      if (videoController!.value.isPlaying) {
+        videoController!.pause();
+        isPlaying.value = false;
+      } else {
+        videoController!.play();
+        isPlaying.value = true;
+      }
     }
+    showControls.value = true;
   }
 
   void toggleControls() {
     showControls.value = !showControls.value;
     if (showControls.value) {
-      Future.delayed(const Duration(seconds: 3), () {
-        if (isPlaying.value) {
-          showControls.value = false;
-        }
-      });
+      _setupAutoHideControls();
     }
   }
 

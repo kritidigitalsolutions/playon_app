@@ -243,7 +243,7 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
 
             /// ▶ Controls
             Obx(() {
-              if (matchDetailsController.isLock.value || !videoControllerX.showControls.value) {
+              if (matchDetailsController.isLock.value || videoControllerX.isYoutube.value || !videoControllerX.showControls.value) {
                 return const SizedBox();
               }
 
