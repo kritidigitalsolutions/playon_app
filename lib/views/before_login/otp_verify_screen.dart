@@ -27,13 +27,18 @@ class OtpVerifyScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 100),
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                      onPressed: () => Get.back(),
+                    ),
+                    const SizedBox(height: 20),
                     // Main Heading
                     Text(
                       "Verify Your Number",
                       style: text24(
                         fontWeight: FontWeight.bold,
                       ).copyWith(fontSize: 32, height: 1.2),
+
                     ),
 
                     const SizedBox(height: 12),

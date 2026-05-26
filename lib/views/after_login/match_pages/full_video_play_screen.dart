@@ -66,13 +66,12 @@ class _FullScreenVideoPageState extends State<FullScreenVideoPage> {
             ),
           ),
 
-          /// ❌ BACK BUTTON
           Positioned(
             top: 20,
             left: 20,
             child: GestureDetector(
               onTap: () => Get.back(),
-              child: const Icon(Icons.arrow_back, color: Colors.white),
+              child: const Icon(Icons.arrow_back_ios, color: Colors.white),
             ),
           ),
 

@@ -20,12 +20,17 @@ class ActivateTvScreen extends StatelessWidget {
             padding: const EdgeInsets.all(12.0),
             child: Obx(() => Column(
                   children: [
-                    const SizedBox(height: 10),
-
-                    /// Title
-                    Text(
-                      "Activate on TV",
-                      style: text24(fontWeight: FontWeight.bold),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                          onPressed: () => Get.back(),
+                        ),
+                        Text(
+                          "Activate on TV",
+                          style: text24(fontWeight: FontWeight.bold),
+                        ),
+                      ],
                     ),
 
                     const SizedBox(height: 6),

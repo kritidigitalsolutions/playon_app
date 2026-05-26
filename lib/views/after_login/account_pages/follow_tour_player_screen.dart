@@ -42,7 +42,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
+                      icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
                       onPressed: () => Get.back(),
                     ),
                     const SizedBox(width: 4),

@@ -27,9 +27,10 @@ class FollowedPlayersScreen extends StatelessWidget {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back, color: AppColors.white),
+                      icon: const Icon(Icons.arrow_back_ios, color: AppColors.white, size: 20),
                       onPressed: () => Get.back(),
                     ),
+                    const SizedBox(width: 4),
                     Text(
                       "Followed Players",
                       style: text20(color: Colors.white, fontWeight: FontWeight.bold),

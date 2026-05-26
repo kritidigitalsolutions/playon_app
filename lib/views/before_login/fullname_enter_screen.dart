@@ -39,6 +39,16 @@ class FullNameScreen extends StatelessWidget {
         child: SafeArea(
           child: Column(
             children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                    onPressed: () => Get.back(),
+                  ),
+                ),
+              ),
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 24),

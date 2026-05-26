@@ -903,7 +903,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-  Widget _socialIcon(IconData icon, String url) {
+  Widget _socialIcon(dynamic icon, String url) {
     return GestureDetector(
       onTap: () async {
         String launchUrlStr = url;
@@ -941,7 +941,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  IconData _getSocialIcon(String platform) {
+  FaIconData _getSocialIcon(String platform) {
     switch (platform.toLowerCase()) {
       case 'facebook':
         return FontAwesomeIcons.facebookF;

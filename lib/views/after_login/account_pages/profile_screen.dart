@@ -257,6 +257,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
       child: Row(
         children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+            onPressed: () => Get.back(),
+          ),
+          const SizedBox(width: 4),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

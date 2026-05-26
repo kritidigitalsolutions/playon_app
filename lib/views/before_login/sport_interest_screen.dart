@@ -41,11 +41,19 @@ class _SportsInterestScreenState extends State<SportsInterestScreen> {
       body: BackgroundWithImg(
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                    onPressed: () => Get.back(),
+                  ),
+                ),
+                const SizedBox(height: 10),
                 Text(
                   "What Do You\nLove Watching?",
                   textAlign: TextAlign.center,

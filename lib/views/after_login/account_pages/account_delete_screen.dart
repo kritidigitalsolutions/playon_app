@@ -171,7 +171,11 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    const SizedBox(width: 16),
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                      onPressed: () => Get.back(),
+                    ),
+                    const SizedBox(width: 4),
                     Text(
                       "Delete Account",
                       style: text20(fontWeight: FontWeight.bold),

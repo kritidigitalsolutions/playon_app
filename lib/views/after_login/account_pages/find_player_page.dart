@@ -60,15 +60,15 @@ class _SearchPlayersScreenState extends State<SearchPlayersScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Search Bar
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back, color: AppColors.white),
+                      icon: const Icon(Icons.arrow_back_ios, color: AppColors.white, size: 20),
                       onPressed: () => Get.back(),
                     ),
+                    const SizedBox(width: 4),
                     Expanded(
                       child: Container(
                         height: 50,

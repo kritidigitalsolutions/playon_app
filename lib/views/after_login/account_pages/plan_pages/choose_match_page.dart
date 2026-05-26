@@ -54,7 +54,6 @@ class _ChooseMatchPageState extends State<ChooseMatchPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // App Bar
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12.0,
@@ -62,6 +61,11 @@ class _ChooseMatchPageState extends State<ChooseMatchPage> {
                 ),
                 child: Row(
                   children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                      onPressed: () => Get.back(),
+                    ),
+                    const SizedBox(width: 4),
                     Image.asset(
                       AppImage.logo,
                       height: 60,

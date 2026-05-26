@@ -15,7 +15,7 @@ class LoginScreen extends StatelessWidget {
   final AuthController ctr = Get.put(AuthController());
 
   Widget _socialLoginButton({
-    required IconData icon,
+    required dynamic icon,
     required String label,
     required Color color,
     required Color textColor,

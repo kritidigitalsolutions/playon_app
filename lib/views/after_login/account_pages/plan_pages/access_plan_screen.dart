@@ -32,10 +32,17 @@ class AccessPlansScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 10),
-                      Text(
-                        "Access & Plans",
-                        style: text24(fontWeight: FontWeight.bold),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                            onPressed: () => Get.back(),
+                          ),
+                          Text(
+                            "Access & Plans",
+                            style: text24(fontWeight: FontWeight.bold),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 6),
                       Row(

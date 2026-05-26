@@ -174,6 +174,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
               children: [
                 Row(
                   children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                      onPressed: () => Get.back(),
+                    ),
+                    const SizedBox(width: 4),
                     Text(
                       "Notifications",
                       style: text20(fontWeight: FontWeight.bold),

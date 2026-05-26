@@ -43,11 +43,19 @@ class CreateWatchlistScreen extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Column(
             children: [
-              const SizedBox(height: 20),
-
-              Text(
-                "Your Watchlist",
-                style: text20(fontWeight: FontWeight.bold),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                    onPressed: () => Get.back(),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    "Your Watchlist",
+                    style: text20(fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
 
               const SizedBox(height: 16),
