@@ -23,6 +23,7 @@ import 'package:play_on_app/views/after_login/home_pages/all_highlights_screen.d
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -107,6 +108,25 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+//   @override
+//   Widget build(BuildContext context) {
+//     return GetMaterialApp(
+//       title: 'PlayOn',
+//       debugShowCheckedModeBanner: false,
+//       initialRoute: AppRoutes.splashScreen,
+//       getPages: AppPages.routes,
+//       theme: ThemeData(
+//         scaffoldBackgroundColor: AppColors.secPrimary,
+//         fontFamily: "Poppins",
+//         useMaterial3: true,
+//       ),
+//     );
+//   }
+// }
+
+// class MyApp extends StatelessWidget {
+//   const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
@@ -119,17 +139,6 @@ class MyApp extends StatelessWidget {
         fontFamily: "Poppins",
         useMaterial3: true,
       ),
-      routingCallback: (routing) {
-        if (routing?.current != null && routing!.current.startsWith('/match/')) {
-          final matchId = routing.current.split('/').last;
-          // You might need to check if user is logged in or redirect accordingly
-          // For now, let's assume we want to go to match details for the given ID
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Get.offAllNamed(AppRoutes.myHomePage); // Reset to home
-            Get.toNamed(AppRoutes.matchDetails, arguments: matchId);
-          });
-        }
-      },
     );
   }
 }

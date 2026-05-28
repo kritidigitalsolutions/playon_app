@@ -179,6 +179,12 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
   /// ================= HOME TAB =================
   Widget _buildHomeTab() {
     final matches = series.fullMatches ?? [];
+    debugPrint("🔍 Total matches: ${matches.length}");
+    debugPrint("🔍 Series ID: ${series.sId}");
+    debugPrint("🔍 Series title: ${series.title}");
+    for (var m in matches) {
+      debugPrint("Match: ${m.teamA} vs ${m.teamB} | Status: ${m.status}");
+    }
 
     final live = matches.where((m) => m.status == 'live').toList();
     final upcoming = matches.where((m) => m.status == 'upcoming').toList();

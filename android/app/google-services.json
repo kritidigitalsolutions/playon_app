@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "257271466858-8d94niisjpuhkkgdo2c2kua0eemphoju.apps.googleusercontent.com",
+          "client_id": "257271466858-ot8ocernc6bn20smqtdiqhnb8tj3sk10.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.cametech.playon",
-            "certificate_hash": "3c45514e57f411a196cc6ebffdfd9e178e8cf309"
+            "certificate_hash": "6ba88512c9d7999113097ab310311ad632665492"
           }
         },
         {
@@ -37,6 +37,13 @@
             {
               "client_id": "257271466858-7c4qa7ttf0entmjckpcghvvso0f81pb0.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "257271466858-f1t04b696n2pd4boiebpcsagjq7sc5e0.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.cametech.playon"
+              }
             }
           ]
         }
@@ -74,6 +81,13 @@
             {
               "client_id": "257271466858-7c4qa7ttf0entmjckpcghvvso0f81pb0.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "257271466858-f1t04b696n2pd4boiebpcsagjq7sc5e0.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.cametech.playon"
+              }
             }
           ]
         }
