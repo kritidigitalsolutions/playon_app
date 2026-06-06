@@ -270,9 +270,24 @@ class MatchDetailsController extends GetxController {
 
   void checkAccess() {
     if (match.value != null) {
+      bool seriesPremium = match.value?.isSeriesPremium ?? false;
+
+      // If isSeriesPremium is not set, look it up from HomeController's series list
+      if (!seriesPremium && match.value?.seriesId != null) {
+        if (Get.isRegistered<HomeController>()) {
+          final homeCtr = Get.find<HomeController>();
+          final series = homeCtr.seriesList.firstWhereOrNull((s) => s.sId == match.value?.seriesId);
+          if (series != null) {
+            seriesPremium = series.isPremium ?? false;
+            // Update the match object's premium status for future checks
+            match.value?.isSeriesPremium = seriesPremium;
+          }
+        }
+      }
+
       // Lock only if (isPremium is true OR isSeriesPremium is true) AND (user has no active plan)
       // Otherwise (if not premium OR if user has a plan), it stays unlocked.
-      isLock.value = (match.value?.isPremium == true || match.value?.isSeriesPremium == true) &&
+      isLock.value = (match.value?.isPremium == true || seriesPremium) &&
                      !planController.canWatchMatch(match.value);
     } else if (starPlayer.value != null) {
       // For star player highlights
@@ -395,6 +410,7 @@ class VideoControllerX extends GetxController {
 
   final match = Rxn<model.Match>();
   final starPlayer = Rxn<star_model.StarPlayer>();
+  final currentHighlight = Rxn<highlight_model.HighlightItem>();
   var isInitialized = false.obs;
   var isYoutube = false.obs;
   var isPlaying = false.obs;
@@ -437,6 +453,7 @@ class VideoControllerX extends GetxController {
     isInitialized.value = false;
     isLoading.value = true;
     matchData.value = null;
+    currentHighlight.value = null;
     _disposeControllers();
     
     // Process new arguments
@@ -471,103 +488,192 @@ class VideoControllerX extends GetxController {
     Future.delayed(Duration.zero, () {
       if (Get.isRegistered<MatchDetailsController>()) {
         final matchDetails = Get.find<MatchDetailsController>();
+        
+        // Listen to isLock changes
         ever(matchDetails.isLock, (bool locked) {
-          if (locked) {
+          // If locked, only pause if we are NOT in highlight mode
+          // Highlights are generally free even if the match is locked
+          bool isHighlightMode = Get.parameters['mode'] == 'highlight' || currentHighlight.value != null;
+          
+          if (locked && !isHighlightMode) {
             if (videoController != null && videoController!.value.isPlaying) {
               videoController?.pause();
               isPlaying.value = false;
               showControls.value = true;
             }
-          } else {
+          } else if (!locked) {
             // If it was locked and we now have access, try to initialize video if not already done
-            if (!isInitialized.value && !isLoading.value) {
-              final isHighlightMode = Get.parameters['mode'] == 'highlight';
-              if (match.value != null) {
-                fetchMatchDetails(match.value!.sId!, isHighlight: isHighlightMode);
-              } else if (starPlayer.value != null && starPlayer.value!.videoUrl != null) {
-                initializeVideo(starPlayer.value!.videoUrl!, isHighlight: true);
-              }
-            } else if (videoController != null && !videoController!.value.isPlaying) {
+            _retryInitializationIfNecessary();
+            
+            if (videoController != null && !videoController!.value.isPlaying && isInitialized.value) {
               // If already initialized but paused due to lock, resume
               videoController?.play();
               isPlaying.value = true;
             }
           }
         });
+
+        // REMOVED: ever(isLoading, ...) which was causing infinite loops on 403 errors
+        // Instead, we trust the manual calls and isLock listener to trigger initialization.
       }
     });
   }
 
+  void _retryInitializationIfNecessary() {
+    if (isInitialized.value || isLoading.value) return;
+    
+    final matchDetails = Get.find<MatchDetailsController>();
+    if (matchDetails.isLock.value) return;
+
+    final isHighlightMode = Get.parameters['mode'] == 'highlight';
+    if (match.value != null) {
+      final status = match.value?.status?.toLowerCase();
+      bool isFinished = status == 'finished' || status == 'completed' || isHighlightMode;
+      fetchMatchDetails(match.value!.sId!, isHighlight: isFinished);
+    } else if (starPlayer.value != null && starPlayer.value!.videoUrl != null) {
+      initializeVideo(starPlayer.value!.videoUrl!, isHighlight: true);
+    }
+  }
+
   Future<void> fetchMatchDetails(String matchId, {bool isHighlight = false}) async {
+    // If we already have a video initialized for this match/highlight, don't restart unless explicitly requested
+    if (isInitialized.value && match.value?.sId == matchId) {
+      debugPrint("Video already initialized for $matchId");
+      isLoading.value = false;
+      return;
+    }
+
     isLoading.value = true;
     try {
-      // 0. Check if the match already has a live stream object from the dashboard fetch
-      if (match.value?.stream?.streamUrl != null && 
-          (match.value?.stream?.status?.toLowerCase() == 'live' || match.value?.status?.toLowerCase() == 'live') && 
-          !isHighlight) {
-        print("Using already present stream from match object: ${match.value?.stream?.streamUrl}");
-        initializeVideo(
-          match.value!.stream!.streamUrl!,
-          streamType: match.value!.stream!.streamType,
-        );
+      // 1. If we already have a videoUrl (e.g. from highlights screen or previous fetch), try playing it immediately
+      // This makes the UI feel much faster.
+      if (match.value?.sId == matchId) {
+        final videoUrl = match.value?.videoUrl;
+        final streamUrl = match.value?.stream?.streamUrl;
+
+        if (videoUrl != null && videoUrl.isNotEmpty) {
+           initializeVideo(videoUrl, isHighlight: isHighlight);
+        } else if (streamUrl != null && streamUrl.isNotEmpty) {
+           initializeVideo(
+             streamUrl, 
+             streamType: match.value?.stream?.streamType,
+             isHighlight: isHighlight,
+           );
+        }
       }
-      
-      // 1. If we already have a videoUrl (passed from highlights screen), use it!
-      else if (match.value?.videoUrl != null && isHighlight) {
-        initializeVideo(match.value!.videoUrl!, isHighlight: true);
-      }
-      // 2. If it's a finished match, try to play the first highlight automatically from the new highlights API
-      else if (isHighlight) {
-        final res = await _matchRepo.getHighlights(matchId: matchId);
-        if (res['success'] == true && res['highlights'] != null) {
-          final List highlightsList = res['highlights'];
-          if (highlightsList.isNotEmpty) {
-            final firstHighlight = highlightsList.first;
-            if (firstHighlight['videoUrl'] != null) {
-              initializeVideo(firstHighlight['videoUrl'], isHighlight: true);
+
+      // 2. Fetch official watchMatch API for latest status, recordings, and stream links
+      try {
+        final response = await _matchRepo.watchMatch(matchId);
+        matchData.value = model.WatchMatchResponse.fromJson(response);
+
+        if (matchData.value?.match != null) {
+          final newMatch = matchData.value!.match!;
+          
+          // Preserve videoUrl and seriesId from original match object if they were provided 
+          // (especially for highlights clicked from Home that pass these as arguments)
+          if (newMatch.videoUrl == null || newMatch.videoUrl!.isEmpty) {
+            newMatch.videoUrl = match.value?.videoUrl;
+          }
+          if (newMatch.seriesId == null || newMatch.seriesId!.isEmpty) {
+            newMatch.seriesId = match.value?.seriesId;
+          }
+
+          newMatch.isSeriesPremium = match.value?.isSeriesPremium;
+          match.value = newMatch;
+          
+          // Update isHighlight based on actual fetched status
+          final status = newMatch.status?.toLowerCase();
+          if (status == 'finished' || status == 'completed') {
+            isHighlight = true;
+          }
+        }
+      } catch (apiError) {
+        debugPrint("watchMatch API Error: $apiError");
+        // If it's a 403, mark it as locked in the UI
+        if (apiError.toString().contains("403") || apiError.toString().contains("UnauthorizedException")) {
+          if (Get.isRegistered<MatchDetailsController>()) {
+            final mDetails = Get.find<MatchDetailsController>();
+            
+            // Re-check access with lookup
+            mDetails.checkAccess();
+            
+            // Only force lock if the match/series is actually premium
+            // If it's supposedly free but getting 403, we keep mDetails.isLock as is (which should be false)
+            // and let Step 1 or Step 6 try to play with existing URLs.
+            if (match.value?.isPremium == true || match.value?.isSeriesPremium == true) {
+              mDetails.isLock.value = true;
             }
           }
         }
       }
 
-      // 3. If it's a live match and we don't have a stream yet, fetch from the live streams API
-      if (!isInitialized.value && match.value?.status?.toLowerCase() == 'live') {
-        final streamsRes = await _matchRepo.getLiveStreams();
-        if (streamsRes['success'] == true && streamsRes['streams'] != null) {
-          final List streams = streamsRes['streams'];
-          final stream = streams.firstWhereOrNull((s) {
-            final mData = s['matchId'];
-            if (mData is Map) return mData['_id'] == matchId;
-            return mData == matchId;
-          });
-
-          if (stream != null && stream['streamUrl'] != null) {
-            print("Playing live stream from dedicated endpoint: ${stream['streamUrl']}");
-            initializeVideo(
-              stream['streamUrl'],
-              streamType: stream['streamType'],
-            );
-          }
-        }
-      }
-
-      // 4. Fetch official watchMatch API for full match object (teams, logos, status etc)
-      final response = await _matchRepo.watchMatch(matchId);
-      matchData.value = model.WatchMatchResponse.fromJson(response);
-
       // Fetch live score in background
       if (Get.isRegistered<HomeController>()) {
         Get.find<HomeController>().fetchLiveScore(matchId);
       }
-      
-      if (matchData.value?.match != null) {
-        final newMatch = matchData.value!.match!;
-        newMatch.isSeriesPremium = match.value?.isSeriesPremium;
-        match.value = newMatch;
+
+      // 3. Re-check if we can play a main video recording or stream after fetching latest data
+      if (!isInitialized.value) {
+        final videoUrl = match.value?.videoUrl;
+        final streamUrl = match.value?.stream?.streamUrl ?? matchData.value?.stream?.streamUrl;
+
+        if (videoUrl != null && videoUrl.isNotEmpty) {
+          initializeVideo(videoUrl, isHighlight: isHighlight);
+        } else if (streamUrl != null && streamUrl.isNotEmpty) {
+          initializeVideo(
+            streamUrl,
+            streamType: match.value?.stream?.streamType ?? matchData.value?.stream?.streamType,
+            isHighlight: isHighlight,
+          );
+        }
       }
       
-      // If we haven't initialized video yet (e.g. not a highlight/live stream found above), 
-      // or if we just want to ensure the primary stream is used if available.
+      // 4. If it's a live match and still not initialized, try dedicated live streams endpoint
+      if (!isInitialized.value && !isHighlight && match.value?.status?.toLowerCase() == 'live') {
+        try {
+          final streamsRes = await _matchRepo.getLiveStreams();
+          if (streamsRes['success'] == true && streamsRes['streams'] != null) {
+            final List streams = streamsRes['streams'];
+            final stream = streams.firstWhereOrNull((s) {
+              final mData = s['matchId'];
+              if (mData is Map) return mData['_id'] == matchId;
+              return mData == matchId;
+            });
+
+            if (stream != null && stream['streamUrl'] != null) {
+              initializeVideo(
+                stream['streamUrl'],
+                streamType: stream['streamType'],
+              );
+            }
+          }
+        } catch (e) {
+          debugPrint("Error fetching live streams: $e");
+        }
+      }
+
+      // 5. If still not initialized and it's a finished match, try highlights API
+      if (!isInitialized.value && isHighlight) {
+        try {
+          final res = await _matchRepo.getHighlights(matchId: matchId);
+          if (res['success'] == true && res['highlights'] != null) {
+            final List highlightsList = res['highlights'];
+            if (highlightsList.isNotEmpty) {
+              final firstHighlight = highlightsList.first;
+              final hItem = highlight_model.HighlightItem.fromJson(firstHighlight);
+              currentHighlight.value = hItem;
+              if (hItem.videoUrl != null) {
+                initializeVideo(hItem.videoUrl!, isHighlight: true);
+              }
+            }
+          }
+        } catch (e) {
+          debugPrint("Error fetching highlights for player: $e");
+        }
+      }
+
+      // 6. Last resort: check if matchData has any streamUrl left
       if (!isInitialized.value && matchData.value?.stream?.streamUrl != null) {
         initializeVideo(
           matchData.value!.stream!.streamUrl!,
@@ -583,8 +689,9 @@ class VideoControllerX extends GetxController {
 
   void initializeVideo(String url, {bool isHighlight = false, String? streamType}) {
     // Don't initialize if it's currently locked
-    if (Get.isRegistered<MatchDetailsController>() && Get.find<MatchDetailsController>().isLock.value) {
-      debugPrint("Video: Cannot initialize, content is locked.");
+    // EXCEPT for highlights which are usually free
+    if (!isHighlight && Get.isRegistered<MatchDetailsController>() && Get.find<MatchDetailsController>().isLock.value) {
+      debugPrint("Video: Cannot initialize main stream, content is locked.");
       return;
     }
 

@@ -28,6 +28,8 @@ class Podcast {
   String? category;
   bool? isFeatured;
   bool? isPremium;
+  String? liveLogo;
+  bool? showLiveLogo;
   String? status;
   String? createdBy;
   String? createdAt;
@@ -45,6 +47,8 @@ class Podcast {
       this.category,
       this.isFeatured,
       this.isPremium,
+      this.liveLogo,
+      this.showLiveLogo,
       this.status,
       this.createdBy,
       this.createdAt,
@@ -62,6 +66,8 @@ class Podcast {
     category = json['category'];
     isFeatured = json['isFeatured'];
     isPremium = json['isPremium'];
+    liveLogo = json['liveLogo'];
+    showLiveLogo = json['showLiveLogo'];
     status = json['status'];
     createdBy = json['createdBy'];
     createdAt = json['createdAt'];

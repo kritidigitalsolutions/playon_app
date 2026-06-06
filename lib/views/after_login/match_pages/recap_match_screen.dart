@@ -74,6 +74,29 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return Obx(() {
+      final isYoutube = videoControllerX.isYoutube.value &&
+          videoControllerX.youtubeController != null;
+
+      if (isYoutube) {
+        return YoutubePlayerBuilder(
+          player: YoutubePlayer(
+            controller: videoControllerX.youtubeController!,
+            showVideoProgressIndicator: true,
+            progressIndicatorColor: AppColors.primary,
+            onReady: () {
+              videoControllerX.isInitialized.value = true;
+            },
+          ),
+          builder: (context, player) => _buildScaffold(youtubePlayer: player),
+        );
+      } else {
+        return _buildScaffold();
+      }
+    });
+  }
+
+  Widget _buildScaffold({Widget? youtubePlayer}) {
     return Scaffold(
       body: BackgroundWithOneLight(
         child: SafeArea(
@@ -82,7 +105,7 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Video Player Section
-                _buildVideoPlayer(),
+                _buildVideoPlayer(youtubePlayer: youtubePlayer),
 
                 // Match Info Section
                 _buildMatchInfo(),
@@ -334,7 +357,7 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
   }
 
   // ================== VIDEO PLAYER WITH LOCK LOGIC ==================
-  Widget _buildVideoPlayer() {
+  Widget _buildVideoPlayer({Widget? youtubePlayer}) {
     return GestureDetector(
       onTap: videoControllerX.toggleControls,
       child: Container(
@@ -366,33 +389,32 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                 return const Center(child: Text("Loading recap...", style: TextStyle(color: Colors.white)));
               }
 
-              if (videoControllerX.isYoutube.value && videoControllerX.youtubeController != null) {
-                return YoutubePlayerBuilder(
-                  player: YoutubePlayer(
-                    controller: videoControllerX.youtubeController!,
-                    showVideoProgressIndicator: true,
-                    progressIndicatorColor: AppColors.primary,
-                    onReady: () {
-                      videoControllerX.isInitialized.value = true;
-                    },
-                  ),
-                  builder: (context, player) => player,
-                  onEnterFullScreen: () {
-                    SystemChrome.setPreferredOrientations([
-                      DeviceOrientation.landscapeLeft,
-                      DeviceOrientation.landscapeRight,
-                    ]);
-                  },
-                  onExitFullScreen: () {
-                    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-                  },
-                );
+              if (videoControllerX.isYoutube.value && youtubePlayer != null) {
+                return youtubePlayer;
               }
 
               return AspectRatio(
                 aspectRatio: videoControllerX.videoController!.value.aspectRatio,
                 child: Center(
                   child: VideoPlayer(videoControllerX.videoController!),
+                ),
+              );
+            }),
+
+            /// 📺 LIVE LOGO
+            Obx(() {
+              final match = videoControllerX.match.value;
+              if (match?.showLiveLogo != true || match?.liveLogo == null) {
+                return const SizedBox();
+              }
+              return Positioned(
+                top: 10,
+                right: 10,
+                child: Image.network(
+                  match!.liveLogo!,
+                  height: 30,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => const SizedBox(),
                 ),
               );
             }),
@@ -411,8 +433,8 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                     color: Colors.black.withOpacity(0.3),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.arrow_back_ios_new,
+                  child: Icon(
+                    Icons.adaptive.arrow_back,
                     color: Colors.white,
                     size: 20,
                   ),
@@ -549,6 +571,8 @@ class _RecapMatchScreenState extends State<RecapMatchScreen> {
                               Get.to(
                                 () => FullScreenVideoPage(
                                   controller: videoControllerX.videoController!,
+                                  liveLogo: videoControllerX.match.value?.liveLogo,
+                                  showLiveLogo: videoControllerX.match.value?.showLiveLogo,
                                 ),
                               );
                             }

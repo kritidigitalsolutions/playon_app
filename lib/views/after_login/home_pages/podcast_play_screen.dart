@@ -41,6 +41,31 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return Obx(() {
+      final isYoutube =
+          controller.isYoutube.value && controller.youtubeController != null;
+
+      if (isYoutube) {
+        return YoutubePlayerBuilder(
+          player: YoutubePlayer(
+            controller: controller.youtubeController!,
+            showVideoProgressIndicator: true,
+            progressIndicatorColor: AppColors.primary,
+            onReady: () {
+              controller.isInitialized.value = true;
+            },
+          ),
+          builder: (context, player) {
+            return _buildScaffold(youtubePlayer: player);
+          },
+        );
+      } else {
+        return _buildScaffold();
+      }
+    });
+  }
+
+  Widget _buildScaffold({Widget? youtubePlayer}) {
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) {
@@ -55,11 +80,13 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
               children: [
                 // Back Button and Title
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                        icon: Icon(Icons.adaptive.arrow_back,
+                            color: Colors.white),
                         onPressed: () => Get.back(),
                       ),
                       Expanded(
@@ -72,10 +99,10 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
                     ],
                   ),
                 ),
-      
+
                 // Video Player Section
-                _buildVideoPlayer(controller),
-      
+                _buildVideoPlayer(controller, youtubePlayer: youtubePlayer),
+
                 // Podcast Info Section
                 Expanded(
                   child: SingleChildScrollView(
@@ -84,7 +111,7 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
                       child: Obx(() {
                         final podcast = controller.podcast.value;
                         if (podcast == null) return const SizedBox.shrink();
-      
+
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -96,18 +123,21 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
                             Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
                                     color: AppColors.primary,
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
-                                    podcast.category?.toUpperCase() ?? "PODCAST",
+                                    podcast.category?.toUpperCase() ??
+                                        "PODCAST",
                                     style: text10(fontWeight: FontWeight.bold),
                                   ),
                                 ),
                                 const SizedBox(width: 12),
-                                const Icon(Icons.access_time, size: 16, color: AppColors.white70),
+                                const Icon(Icons.access_time,
+                                    size: 16, color: AppColors.white70),
                                 const SizedBox(width: 4),
                                 Text(
                                   podcast.duration ?? "Podcast",
@@ -116,10 +146,12 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
                               ],
                             ),
                             const SizedBox(height: 24),
-                            Text("Description", style: text16(fontWeight: FontWeight.bold)),
+                            Text("Description",
+                                style: text16(fontWeight: FontWeight.bold)),
                             const SizedBox(height: 8),
                             Text(
-                              podcast.description ?? "No description available for this podcast.",
+                              podcast.description ??
+                                  "No description available for this podcast.",
                               style: text14(color: AppColors.white70),
                             ),
                             const SizedBox(height: 16),
@@ -127,7 +159,7 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
                             const SizedBox(height: 8),
                             const AdMobBannerWidget(position: "podcast"),
                             const SizedBox(height: 28),
-      
+
                             /// COMMENTS HEADER
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -137,17 +169,18 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
                                   style: text18(fontWeight: FontWeight.bold),
                                 ),
                                 Obx(() => Text(
-                                  "${controller.comments.length}",
-                                  style: text13(color: AppColors.white60),
-                                )),
+                                      "${controller.comments.length}",
+                                      style: text13(color: AppColors.white60),
+                                    )),
                               ],
                             ),
-      
+
                             const SizedBox(height: 16),
-      
+
                             /// ADD COMMENT BOX
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 14),
                               decoration: BoxDecoration(
                                 color: Colors.white.withOpacity(0.05),
                                 borderRadius: BorderRadius.circular(14),
@@ -164,7 +197,8 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
                                       decoration: InputDecoration(
                                         hintText: "Add a comment...",
                                         hintStyle: text14(
-                                          color: AppColors.white.withOpacity(0.4),
+                                          color:
+                                              AppColors.white.withOpacity(0.4),
                                         ),
                                         border: InputBorder.none,
                                       ),
@@ -180,9 +214,9 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
                                 ],
                               ),
                             ),
-      
+
                             const SizedBox(height: 22),
-      
+
                             /// COMMENTS LIST
                             Obx(() {
                               if (controller.isCommentsLoading.value) {
@@ -193,10 +227,11 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
                                   ),
                                 );
                               }
-      
+
                               if (controller.comments.isEmpty) {
                                 return Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 25),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 25),
                                   child: Center(
                                     child: Text(
                                       "No comments yet",
@@ -205,134 +240,160 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
                                   ),
                                 );
                               }
-      
+
                               return ListView.separated(
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
                                 itemCount: controller.comments.length,
-                                separatorBuilder: (_, __) => const SizedBox(height: 18),
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: 18),
                                 itemBuilder: (_, index) {
                                   final comment = controller.comments[index];
-      
+
                                   return Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       CircleAvatar(
                                         radius: 18,
                                         backgroundColor:
-                                        AppColors.primary.withOpacity(0.2),
-      
-                                        backgroundImage:
-                                        (comment.userImage != null &&
-                                            comment.userImage!.isNotEmpty)
+                                            AppColors.primary.withOpacity(0.2),
+                                        backgroundImage: (comment.userImage !=
+                                                    null &&
+                                                comment.userImage!.isNotEmpty)
                                             ? NetworkImage(comment.userImage!)
                                             : null,
-      
                                         child: (comment.userImage == null ||
-                                            comment.userImage!.isEmpty)
+                                                comment.userImage!.isEmpty)
                                             ? Text(
-                                          comment.userName?[0]
-                                              .toUpperCase() ??
-                                              "U",
-                                          style: text14(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        )
+                                                comment.userName?[0]
+                                                        .toUpperCase() ??
+                                                    "U",
+                                                style: text14(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              )
                                             : null,
                                       ),
-      
                                       const SizedBox(width: 12),
-      
                                       Expanded(
                                         child: Container(
                                           padding: const EdgeInsets.all(12),
                                           decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(0.04),
-                                            borderRadius: BorderRadius.circular(14),
+                                            color:
+                                                Colors.white.withOpacity(0.04),
+                                            borderRadius:
+                                                BorderRadius.circular(14),
                                           ),
                                           child: Column(
                                             crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Row(
                                                 children: [
                                                   Expanded(
                                                     child: Text(
-                                                      comment.userName ?? "User",
+                                                      comment.userName ??
+                                                          "User",
                                                       style: text14(
-                                                        fontWeight: FontWeight.bold,
+                                                        fontWeight:
+                                                            FontWeight.bold,
                                                       ),
                                                     ),
                                                   ),
-      
+
                                                   /// DELETE BUTTON
-                                                  if (comment.userId == HiveService.userId)
-                                                  Obx(() {
-                                                    final isDeleting =
-                                                        controller.deletingCommentId.value ==
-                                                            comment.sId;
-      
-                                                    return GestureDetector(
-                                                      onTap: isDeleting
-                                                          ? null
-                                                          : () {
-                                                        Get.dialog(
-                                                          AlertDialog(
-                                                            backgroundColor: Colors.black,
-                                                            title: const Text(
-                                                              "Delete Comment",
-                                                              style: TextStyle(
-                                                                color: Colors.white,
-                                                              ),
-                                                            ),
-                                                            content: const Text(
-                                                              "Are you sure you want to delete this comment?",
-                                                              style: TextStyle(
-                                                                color: Colors.white70,
-                                                              ),
-                                                            ),
-                                                            actions: [
-                                                              TextButton(
-                                                                onPressed: () => Get.back(),
-                                                                child: const Text("Cancel"),
-                                                              ),
-                                                              TextButton(
-                                                                onPressed: () {
-                                                                  Get.back();
-      
-                                                                  controller.deleteComment(
-                                                                    comment.sId ?? "",
-                                                                  );
-                                                                },
-                                                                child: const Text(
-                                                                  "Delete",
-                                                                  style: TextStyle(
-                                                                    color: Colors.red,
+                                                  if (comment.userId ==
+                                                      HiveService.userId)
+                                                    Obx(() {
+                                                      final isDeleting =
+                                                          controller
+                                                                  .deletingCommentId
+                                                                  .value ==
+                                                              comment.sId;
+
+                                                      return GestureDetector(
+                                                        onTap: isDeleting
+                                                            ? null
+                                                            : () {
+                                                                Get.dialog(
+                                                                  AlertDialog(
+                                                                    backgroundColor:
+                                                                        Colors
+                                                                            .black,
+                                                                    title:
+                                                                        const Text(
+                                                                      "Delete Comment",
+                                                                      style:
+                                                                          TextStyle(
+                                                                        color: Colors
+                                                                            .white,
+                                                                      ),
+                                                                    ),
+                                                                    content:
+                                                                        const Text(
+                                                                      "Are you sure you want to delete this comment?",
+                                                                      style:
+                                                                          TextStyle(
+                                                                        color: Colors
+                                                                            .white70,
+                                                                      ),
+                                                                    ),
+                                                                    actions: [
+                                                                      TextButton(
+                                                                        onPressed:
+                                                                            () =>
+                                                                                Get.back(),
+                                                                        child: const Text(
+                                                                            "Cancel"),
+                                                                      ),
+                                                                      TextButton(
+                                                                        onPressed:
+                                                                            () {
+                                                                          Get.back();
+
+                                                                          controller
+                                                                              .deleteComment(
+                                                                            comment.sId ??
+                                                                                "",
+                                                                          );
+                                                                        },
+                                                                        child:
+                                                                            const Text(
+                                                                          "Delete",
+                                                                          style:
+                                                                              TextStyle(
+                                                                            color:
+                                                                                Colors.red,
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                    ],
                                                                   ),
+                                                                );
+                                                              },
+                                                        child: isDeleting
+                                                            ? const SizedBox(
+                                                                height: 16,
+                                                                width: 16,
+                                                                child:
+                                                                    CircularProgressIndicator(
+                                                                  strokeWidth:
+                                                                      2,
                                                                 ),
+                                                              )
+                                                            : const Icon(
+                                                                Icons
+                                                                    .delete_sweep_outlined,
+                                                                color: Colors
+                                                                    .redAccent,
+                                                                size: 20,
                                                               ),
-                                                            ],
-                                                          ),
-                                                        );
-                                                      },
-                                                      child: isDeleting
-                                                          ? const SizedBox(
-                                                        height: 16,
-                                                        width: 16,
-                                                        child: CircularProgressIndicator(
-                                                          strokeWidth: 2,
-                                                        ),
-                                                      )
-                                                          : const Icon(
-                                                        Icons.delete_sweep_outlined,
-                                                        color: Colors.redAccent,
-                                                        size: 20,
-                                                      ),
-                                                    );
-                                                  }),
-      
+                                                      );
+                                                    }),
+
                                                   const SizedBox(width: 10),
-      
+
                                                   Text(
                                                     controller.formatDate(
                                                       comment.createdAt,
@@ -343,9 +404,7 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
                                                   ),
                                                 ],
                                               ),
-      
                                               const SizedBox(height: 6),
-      
                                               Text(
                                                 comment.comment ?? "",
                                                 style: text13(
@@ -375,7 +434,8 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
     );
   }
 
-  Widget _buildVideoPlayer(PodcastPlayController controller) {
+  Widget _buildVideoPlayer(PodcastPlayController controller,
+      {Widget? youtubePlayer}) {
     return GestureDetector(
       onTap: controller.toggleControls,
       child: Container(
@@ -399,11 +459,13 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
               }
 
               if (controller.isLoading.value) {
-                return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+                return const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary));
               }
 
               if (!controller.isInitialized.value ||
-                  (controller.videoController == null && controller.youtubeController == null)) {
+                  (controller.videoController == null &&
+                      controller.youtubeController == null)) {
                 return const Center(
                   child: Text(
                     "Video unavailable",
@@ -412,34 +474,32 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
                 );
               }
 
-              if (controller.isYoutube.value && controller.youtubeController != null) {
-                return YoutubePlayerBuilder(
-                  key: ValueKey(controller.youtubeController.hashCode),
-                  player: YoutubePlayer(
-                    controller: controller.youtubeController!,
-                    showVideoProgressIndicator: true,
-                    progressIndicatorColor: AppColors.primary,
-                    onReady: () {
-                      controller.isInitialized.value = true;
-                    },
-                  ),
-                  builder: (context, player) => player,
-                  onEnterFullScreen: () {
-                    SystemChrome.setPreferredOrientations([
-                      DeviceOrientation.landscapeLeft,
-                      DeviceOrientation.landscapeRight,
-                    ]);
-                  },
-                  onExitFullScreen: () {
-                    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-                  },
-                );
+              if (controller.isYoutube.value && youtubePlayer != null) {
+                return youtubePlayer;
               }
 
               return Center(
                 child: AspectRatio(
                   aspectRatio: controller.videoController!.value.aspectRatio,
                   child: VideoPlayer(controller.videoController!),
+                ),
+              );
+            }),
+
+            /// 📺 LIVE LOGO
+            Obx(() {
+              final podcast = controller.podcast.value;
+              if (podcast?.showLiveLogo != true || podcast?.liveLogo == null) {
+                return const SizedBox();
+              }
+              return Positioned(
+                top: 10,
+                right: 10,
+                child: Image.network(
+                  podcast!.liveLogo!,
+                  height: 30,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => const SizedBox(),
                 ),
               );
             }),
@@ -539,7 +599,11 @@ class _PodcastPlayScreenState extends State<PodcastPlayScreen> {
                     child: GestureDetector(
                       onTap: () {
                         if (controller.isInitialized.value && controller.videoController != null) {
-                          Get.to(() => FullScreenVideoPage(controller: controller.videoController!));
+                          Get.to(() => FullScreenVideoPage(
+                            controller: controller.videoController!,
+                            liveLogo: controller.podcast.value?.liveLogo,
+                            showLiveLogo: controller.podcast.value?.showLiveLogo,
+                          ));
                         }
                       },
                       child: const Icon(Icons.fullscreen, color: Colors.white, size: 28),

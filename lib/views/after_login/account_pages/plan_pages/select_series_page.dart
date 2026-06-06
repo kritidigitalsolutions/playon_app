@@ -46,7 +46,7 @@ class _SelectSeriesPageState extends State<SelectSeriesPage> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                      icon: Icon(Icons.adaptive.arrow_back, color: Colors.white),
                       onPressed: () => Get.back(),
                     ),
                     Text("Select Series", style: text20(fontWeight: FontWeight.bold)),

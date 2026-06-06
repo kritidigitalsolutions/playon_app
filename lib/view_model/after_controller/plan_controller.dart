@@ -76,7 +76,7 @@ class PlanController extends GetxController {
     // 2. Check if the series (tournament) this match belongs to is purchased
     // Using tournament name or ID if available
     if (allSubs.any((sub) => sub.seriesId != null && 
-        (sub.seriesId == match.tournament || sub.seriesId == match.sId))) return true;
+        (sub.seriesId == match.tournament || sub.seriesId == match.seriesId || sub.seriesId == match.sId))) return true;
 
     // 3. Check if any of the teams in this match are purchased
     if (allSubs.any((sub) => sub.teamId != null && 

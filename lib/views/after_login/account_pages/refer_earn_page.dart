@@ -54,7 +54,7 @@ class ReferralScreen extends StatelessWidget {
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+            icon: Icon(Icons.adaptive.arrow_back, color: Colors.white),
             onPressed: () => Get.back(),
           ),
           bottom: TabBar(

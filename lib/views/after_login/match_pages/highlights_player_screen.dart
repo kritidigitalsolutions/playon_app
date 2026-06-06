@@ -65,6 +65,31 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return Obx(() {
+      final isYoutube = videoControllerX.isYoutube.value &&
+          videoControllerX.youtubeController != null;
+
+      if (isYoutube) {
+        return YoutubePlayerBuilder(
+          player: YoutubePlayer(
+            controller: videoControllerX.youtubeController!,
+            showVideoProgressIndicator: true,
+            progressIndicatorColor: AppColors.primary,
+            onReady: () {
+              videoControllerX.isInitialized.value = true;
+            },
+          ),
+          builder: (context, player) {
+            return _buildScaffold(youtubePlayer: player);
+          },
+        );
+      } else {
+        return _buildScaffold();
+      }
+    });
+  }
+
+  Widget _buildScaffold({Widget? youtubePlayer}) {
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) {
@@ -73,61 +98,63 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
       },
       child: Scaffold(
         body: BackgroundWithOneLight(
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-
-              /// 🔙 Header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                      onPressed: () => Get.back(),
-                    ),
-                    Expanded(
-                      child: Text(
-                        player.playerName ?? "Player Highlights",
-                        style: text18(fontWeight: FontWeight.bold),
-                        overflow: TextOverflow.ellipsis,
+          child: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                /// 🔙 Header
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.adaptive.arrow_back,
+                            color: Colors.white),
+                        onPressed: () => Get.back(),
                       ),
-                    ),
+                      Expanded(
+                        child: Text(
+                          player.playerName ?? "Player Highlights",
+                          style: text18(fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
 
-                    /// 🔗 Share
-                    IconButton(
-                      onPressed: () {
-                        final text =
-                            "Check out ${player.playerName} highlights on PlayOn! 🔥\n\n"
-                            "Watch it here: https://playon.app/highlight/${player.sId}";
-                        ShareHelper.shareMatchWithImage(text: text, imageUrl: player.thumbnail);
-                      },
-                      icon: const Icon(Icons.share, color: Colors.white),
-                    ),
-                  ],
+                      /// 🔗 Share
+                      IconButton(
+                        onPressed: () {
+                          final text =
+                              "Check out ${player.playerName} highlights on PlayOn! 🔥\n\n"
+                              "Watch it here: https://playon.app/highlight/${player.sId}";
+                          ShareHelper.shareMatchWithImage(
+                              text: text, imageUrl: player.thumbnail);
+                        },
+                        icon: const Icon(Icons.share, color: Colors.white),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-              /// 🎬 Video Player
-              _buildVideoPlayer(),
+                /// 🎬 Video Player
+                _buildVideoPlayer(youtubePlayer: youtubePlayer),
 
-              /// 📄 Info Section
-              Expanded(
-                child: SingleChildScrollView(
-                  child: _buildPlayerInfo(),
+                /// 📄 Info Section
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: _buildPlayerInfo(),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    )
     );
   }
 
   /// 🎬 VIDEO PLAYER
-  Widget _buildVideoPlayer() {
+  Widget _buildVideoPlayer({Widget? youtubePlayer}) {
     return GestureDetector(
       onTap: videoControllerX.toggleControls,
       child: Container(
@@ -151,11 +178,13 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                 );
               }
 
-              if (videoControllerX.isLoading.value || !videoControllerX.isInitialized.value) {
+              if (videoControllerX.isLoading.value ||
+                  !videoControllerX.isInitialized.value) {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              if (videoControllerX.videoController == null && videoControllerX.youtubeController == null) {
+              if (videoControllerX.videoController == null &&
+                  videoControllerX.youtubeController == null) {
                 return const Center(
                   child: Text(
                     "No video source found",
@@ -164,34 +193,34 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                 );
               }
 
-              if (videoControllerX.isYoutube.value && videoControllerX.youtubeController != null) {
-                return YoutubePlayerBuilder(
-                  key: ValueKey(videoControllerX.youtubeController.hashCode),
-                  player: YoutubePlayer(
-                    controller: videoControllerX.youtubeController!,
-                    showVideoProgressIndicator: true,
-                    progressIndicatorColor: AppColors.primary,
-                    onReady: () {
-                      videoControllerX.isInitialized.value = true;
-                    },
-                  ),
-                  builder: (context, player) => player,
-                  onEnterFullScreen: () {
-                    SystemChrome.setPreferredOrientations([
-                      DeviceOrientation.landscapeLeft,
-                      DeviceOrientation.landscapeRight,
-                    ]);
-                  },
-                  onExitFullScreen: () {
-                    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-                  },
-                );
+              if (videoControllerX.isYoutube.value && youtubePlayer != null) {
+                return youtubePlayer;
               }
 
-              return AspectRatio(
-                aspectRatio:
-                videoControllerX.videoController!.value.aspectRatio,
-                child: VideoPlayer(videoControllerX.videoController!),
+              return Center(
+                child: AspectRatio(
+                  aspectRatio:
+                      videoControllerX.videoController!.value.aspectRatio,
+                  child: VideoPlayer(videoControllerX.videoController!),
+                ),
+              );
+            }),
+
+            /// 📺 LIVE LOGO
+            Obx(() {
+              final playerData = videoControllerX.starPlayer.value;
+              if (playerData?.showLiveLogo != true || playerData?.liveLogo == null) {
+                return const SizedBox();
+              }
+              return Positioned(
+                top: 10,
+                right: 10,
+                child: CachedNetworkImage(
+                  imageUrl: playerData!.liveLogo!,
+                  height: 30,
+                  fit: BoxFit.contain,
+                  errorWidget: (context, url, error) => const SizedBox(),
+                ),
               );
             }),
 
@@ -294,6 +323,8 @@ class _HighlightsPlayerScreenState extends State<HighlightsPlayerScreen> {
                       onTap: () {
                         Get.to(() => FullScreenVideoPage(
                           controller: videoControllerX.videoController!,
+                          liveLogo: videoControllerX.starPlayer.value?.liveLogo,
+                          showLiveLogo: videoControllerX.starPlayer.value?.showLiveLogo,
                         ));
                       },
                       child:

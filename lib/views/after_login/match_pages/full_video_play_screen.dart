@@ -5,8 +5,15 @@ import 'package:video_player/video_player.dart';
 
 class FullScreenVideoPage extends StatefulWidget {
   final VideoPlayerController controller;
+  final String? liveLogo;
+  final bool? showLiveLogo;
 
-  const FullScreenVideoPage({super.key, required this.controller});
+  const FullScreenVideoPage({
+    super.key,
+    required this.controller,
+    this.liveLogo,
+    this.showLiveLogo,
+  });
 
   @override
   State<FullScreenVideoPage> createState() => _FullScreenVideoPageState();
@@ -50,6 +57,19 @@ class _FullScreenVideoPageState extends State<FullScreenVideoPage> {
             ),
           ),
 
+          /// 📺 LIVE LOGO
+          if (widget.showLiveLogo == true && widget.liveLogo != null)
+            Positioned(
+              top: 20,
+              right: 20,
+              child: Image.network(
+                widget.liveLogo!,
+                height: 40,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => const SizedBox(),
+              ),
+            ),
+
           /// ⏳ PROGRESS BAR
           Positioned(
             bottom: 0,
@@ -71,7 +91,7 @@ class _FullScreenVideoPageState extends State<FullScreenVideoPage> {
             left: 20,
             child: GestureDetector(
               onTap: () => Get.back(),
-              child: const Icon(Icons.arrow_back_ios, color: Colors.white),
+              child: Icon(Icons.adaptive.arrow_back, color: Colors.white),
             ),
           ),
 

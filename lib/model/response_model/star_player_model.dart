@@ -30,6 +30,8 @@ class StarPlayer {
   String? duration;
   bool? isFeatured;
   bool? isPremium;
+  String? liveLogo;
+  bool? showLiveLogo;
   String? createdAt;
   String? updatedAt;
 
@@ -46,6 +48,8 @@ class StarPlayer {
       this.duration,
       this.isFeatured,
       this.isPremium,
+      this.liveLogo,
+      this.showLiveLogo,
       this.createdAt,
       this.updatedAt});
 
@@ -62,6 +66,8 @@ class StarPlayer {
     duration = json['duration'];
     isFeatured = json['isFeatured'];
     isPremium = json['isPremium'];
+    liveLogo = json['liveLogo'];
+    showLiveLogo = json['showLiveLogo'];
     createdAt = json['createdAt'];
     updatedAt = json['updatedAt'];
   }

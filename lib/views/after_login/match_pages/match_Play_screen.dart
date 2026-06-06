@@ -94,6 +94,31 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return Obx(() {
+      final isYoutube = videoControllerX.isYoutube.value &&
+          videoControllerX.youtubeController != null;
+
+      if (isYoutube) {
+        return YoutubePlayerBuilder(
+          player: YoutubePlayer(
+            controller: videoControllerX.youtubeController!,
+            showVideoProgressIndicator: true,
+            progressIndicatorColor: Colors.red,
+            onReady: () {
+              videoControllerX.isInitialized.value = true;
+            },
+          ),
+          builder: (context, player) {
+            return _buildScaffold(youtubePlayer: player);
+          },
+        );
+      } else {
+        return _buildScaffold();
+      }
+    });
+  }
+
+  Widget _buildScaffold({Widget? youtubePlayer}) {
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) {
@@ -102,53 +127,53 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
       },
       child: Scaffold(
         body: BackgroundWithOneLight(
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Video Player Section - Fixed at the top
-              _buildVideoPlayer(),
+          child: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Video Player Section - Fixed at the top
+                _buildVideoPlayer(youtubePlayer: youtubePlayer),
 
-              // Content section with sticky tab bar
-              Expanded(
-                child: NestedScrollView(
-                  headerSliverBuilder: (context, innerBoxIsScrolled) {
-                    return [
-                      SliverToBoxAdapter(
-                        child: _buildMatchInfo(),
-                      ),
-                      const SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8),
-                          child: Column(
-                            children: [
-                              AdBannerWidget(position: "match_details"),
-                              SizedBox(height: 8),
-                              AdMobBannerWidget(position: "match_details"),
-                            ],
+                // Content section with sticky tab bar
+                Expanded(
+                  child: NestedScrollView(
+                    headerSliverBuilder: (context, innerBoxIsScrolled) {
+                      return [
+                        SliverToBoxAdapter(
+                          child: _buildMatchInfo(),
+                        ),
+                        const SliverToBoxAdapter(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8),
+                            child: Column(
+                              children: [
+                                AdBannerWidget(position: "match_details"),
+                                SizedBox(height: 8),
+                                AdMobBannerWidget(position: "match_details"),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      SliverPersistentHeader(
-                        pinned: true,
-                        delegate: _SliverAppBarDelegate(
-                          _buildTabBar(),
+                        SliverPersistentHeader(
+                          pinned: true,
+                          delegate: _SliverAppBarDelegate(
+                            _buildTabBar(),
+                          ),
                         ),
-                      ),
-                    ];
-                  },
-                  body: _buildTabContent(),
+                      ];
+                    },
+                    body: _buildTabContent(),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    )
     );
   }
 
-  Widget _buildVideoPlayer() {
+  Widget _buildVideoPlayer({Widget? youtubePlayer}) {
     return GestureDetector(
       onTap: videoControllerX.toggleControls,
       child: Container(
@@ -172,11 +197,13 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                 );
               }
 
-              if (videoControllerX.isLoading.value || !videoControllerX.isInitialized.value) {
+              if (videoControllerX.isLoading.value ||
+                  !videoControllerX.isInitialized.value) {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              if (videoControllerX.videoController == null && videoControllerX.youtubeController == null) {
+              if (videoControllerX.videoController == null &&
+                  videoControllerX.youtubeController == null) {
                 return const Center(
                   child: Text(
                     "No video source found",
@@ -185,40 +212,38 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                 );
               }
 
-              if (videoControllerX.isYoutube.value && videoControllerX.youtubeController != null) {
-                return YoutubePlayerBuilder(
-                  key: ValueKey(videoControllerX.youtubeController.hashCode),
-                  player: YoutubePlayer(
-                    controller: videoControllerX.youtubeController!,
-                    showVideoProgressIndicator: true,
-                    progressIndicatorColor: Colors.red,
-                    onReady: () {
-                      videoControllerX.isInitialized.value = true;
-                    },
-                  ),
-                  builder: (context, player) => player,
-                  onEnterFullScreen: () {
-                    SystemChrome.setPreferredOrientations([
-                      DeviceOrientation.landscapeLeft,
-                      DeviceOrientation.landscapeRight,
-                    ]);
-                  },
-                  onExitFullScreen: () {
-                    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-                  },
-                );
+              if (videoControllerX.isYoutube.value && youtubePlayer != null) {
+                return youtubePlayer;
               }
 
-              if (videoControllerX.videoController != null && videoControllerX.videoController!.value.isInitialized) {
-                return AspectRatio(
-                  aspectRatio: videoControllerX.videoController!.value.aspectRatio,
-                  child: Center(
+              if (videoControllerX.videoController != null &&
+                  videoControllerX.videoController!.value.isInitialized) {
+                return Center(
+                  child: AspectRatio(
+                    aspectRatio:
+                        videoControllerX.videoController!.value.aspectRatio,
                     child: VideoPlayer(videoControllerX.videoController!),
                   ),
                 );
               }
 
-              return const Center(child: CircularProgressIndicator());
+              if (videoControllerX.isLoading.value) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              return const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.error_outline, color: Colors.white54, size: 40),
+                    SizedBox(height: 8),
+                    Text(
+                      "Failed to load video",
+                      style: TextStyle(color: Colors.white54),
+                    ),
+                  ],
+                ),
+              );
             }),
 
             /// 🔙 BACK BUTTON
@@ -235,8 +260,8 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                     color: Colors.black.withOpacity(0.3),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.arrow_back_ios_new,
+                  child: Icon(
+                    Icons.adaptive.arrow_back,
                     color: Colors.white,
                     size: 20,
                   ),
@@ -250,7 +275,7 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
               if (match?.status?.toLowerCase() != 'live') return const SizedBox();
               return Positioned(
                 top: 10,
-                right: 10,
+                left: 50, // Near back button
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
@@ -268,9 +293,42 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
               );
             }),
 
+            /// 📺 LIVE LOGO
+            Obx(() {
+              final match = videoControllerX.match.value;
+              final highlight = videoControllerX.currentHighlight.value;
+              
+              String? logoUrl;
+              bool showLogo = false;
+
+              if (highlight != null && highlight.showLiveLogo == true) {
+                logoUrl = highlight.liveLogo;
+                showLogo = true;
+              } else if (match?.showLiveLogo == true) {
+                logoUrl = match?.liveLogo;
+                showLogo = true;
+              }
+
+              if (!showLogo || logoUrl == null) {
+                return const SizedBox();
+              }
+
+              return Positioned(
+                top: 10,
+                right: 10, // Opposite to back button
+                child: CachedNetworkImage(
+                  imageUrl: logoUrl,
+                  height: 30,
+                  fit: BoxFit.contain,
+                  errorWidget: (context, url, error) => const SizedBox(),
+                ),
+              );
+            }),
+
             /// 🔒 LOCK OVERLAY
             Obx(() {
-              if (controller.isLock.value) {
+              // Hide lock overlay if we are playing a highlight
+              if (controller.isLock.value && videoControllerX.currentHighlight.value == null) {
                 return Positioned.fill(
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -378,9 +436,17 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                                // YouTube player handles its own fullscreen or we can implement it
                                videoControllerX.youtubeController?.toggleFullScreenMode();
                             } else if (videoControllerX.videoController != null) {
+                              final highlight = videoControllerX.currentHighlight.value;
+                              final match = videoControllerX.match.value;
+                              
+                              String? logoUrl = highlight?.showLiveLogo == true ? highlight?.liveLogo : match?.liveLogo;
+                              bool? showLogo = highlight?.showLiveLogo == true ? highlight?.showLiveLogo : match?.showLiveLogo;
+
                               Get.to(
                                 () => FullScreenVideoPage(
                                   controller: videoControllerX.videoController!,
+                                  liveLogo: logoUrl,
+                                  showLiveLogo: showLogo,
                                 ),
                               );
                             }
@@ -952,7 +1018,8 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                   item.duration ?? '0:00',
                   onPlay: () {
                     if (item.videoUrl != null) {
-                      videoControllerX.initializeVideo(item.videoUrl!);
+                      videoControllerX.currentHighlight.value = item;
+                      videoControllerX.initializeVideo(item.videoUrl!, isHighlight: true);
                     }
                   },
                 );

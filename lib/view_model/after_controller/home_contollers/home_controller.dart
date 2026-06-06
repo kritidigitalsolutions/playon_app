@@ -194,6 +194,30 @@ class HomeController extends GetxController {
     }
   }
 
+  Future<void> fetchSeriesMatches(Series series) async {
+    if (series.matches == null || series.matches!.isEmpty) return;
+
+    try {
+      final matchFutures = series.matches!
+          .where((m) => m.sId != null)
+          .map((m) => _matchRepository.getMatchDetails(m.sId!))
+          .toList();
+
+      final matchResults = await Future.wait(matchFutures);
+      List<Match> fullMatches = [];
+      for (var matchRes in matchResults) {
+        if (matchRes != null && matchRes['success'] == true && matchRes['match'] != null) {
+          final m = Match.fromJson(matchRes['match']);
+          m.isSeriesPremium = series.isPremium; // Propagate series premium status to match
+          fullMatches.add(m);
+        }
+      }
+      series.fullMatches = fullMatches;
+    } catch (e) {
+      debugPrint("Error fetching matches for series ${series.title}: $e");
+    }
+  }
+
   Future<void> fetchSeries() async {
     isSeriesLoading.value = true;
     try {
@@ -206,28 +230,8 @@ class HomeController extends GetxController {
         filteredSeriesList.assignAll(fetchedSeries);
 
         // Fetch full match details for each series (only for those on home screen to save resources, or all if preferred)
-        for (var series in fetchedSeries.where((s) => s.isHomeScreen == true)) {
-          if (series.matches != null && series.matches!.isNotEmpty) {
-            try {
-              final matchFutures = series.matches!
-                  .where((m) => m.sId != null)
-                  .map((m) => _matchRepository.getMatchDetails(m.sId!))
-                  .toList();
-              
-              final matchResults = await Future.wait(matchFutures);
-              List<Match> fullMatches = [];
-              for (var matchRes in matchResults) {
-                if (matchRes != null && matchRes['success'] == true && matchRes['match'] != null) {
-                  final m = Match.fromJson(matchRes['match']);
-                  m.isSeriesPremium = series.isPremium; // Propagate series premium status to match
-                  fullMatches.add(m);
-                }
-              }
-              series.fullMatches = fullMatches;
-            } catch (e) {
-              print("Error fetching matches for series ${series.title}: $e");
-            }
-          }
+        for (var s in fetchedSeries.where((s) => s.isHomeScreen == true)) {
+          await fetchSeriesMatches(s);
         }
       }
     } catch (e) {

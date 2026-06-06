@@ -15,6 +15,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:play_on_app/utils/custom_snakebar.dart';
 import 'package:play_on_app/views/widgets/admob_banner_widget.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 import '../../custom_background.dart/ad_banner_widget.dart';
 
@@ -28,8 +29,11 @@ class ChannelPlayScreen extends StatefulWidget {
 class _ChannelPlayScreenState extends State<ChannelPlayScreen> {
   late VideoPlayerController _videoPlayerController;
   ChewieController? _chewieController;
+  YoutubePlayerController? _youtubeController;
   model.Channel? channel;
   final HomeController homeController = Get.find<HomeController>();
+  bool _isYoutube = false;
+  bool _isInitialized = false;
 
   @override
   void initState() {
@@ -54,51 +58,101 @@ class _ChannelPlayScreenState extends State<ChannelPlayScreen> {
     WakelockPlus.enable();
 
     final url = channel?.streamUrl ?? "";
+    if (url.isEmpty) return;
 
-    _videoPlayerController = VideoPlayerController.networkUrl(
-      Uri.parse(url),
-    );
+    // Detect YouTube
+    if (url.contains('youtube.com') || url.contains('youtu.be')) {
+      _isYoutube = true;
+      String? videoId = YoutubePlayer.convertUrlToId(url);
 
-    try {
-      await _videoPlayerController.initialize();
+      // Better ID extraction for various YouTube URL formats (embed links etc)
+      if (videoId == null) {
+        final regExp = RegExp(
+          r'^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*',
+          caseSensitive: false,
+          multiLine: false,
+        );
+        final match = regExp.firstMatch(url);
+        if (match != null && match.group(7)!.length == 11) {
+          videoId = match.group(7);
+        }
+      }
 
-      _chewieController = ChewieController(
-        videoPlayerController: _videoPlayerController,
-        autoPlay: true,
-        looping: false,
-        showControls: true,
-        deviceOrientationsAfterFullScreen: [DeviceOrientation.portraitUp],
-        deviceOrientationsOnEnterFullScreen: [
-          DeviceOrientation.landscapeLeft,
-          DeviceOrientation.landscapeRight,
-        ],
-        aspectRatio: _videoPlayerController.value.aspectRatio,
-        materialProgressColors: ChewieProgressColors(
-          playedColor: AppColors.error,
-          handleColor: AppColors.redAccent,
-          backgroundColor: AppColors.grey500,
-          bufferedColor: AppColors.white24,
-        ),
-        placeholder: Container(
-          color: AppColors.black87,
-          child: const Center(
-            child: CircularProgressIndicator(color: AppColors.white),
+      // Handle cases where the URL might be just the ID
+      if (videoId == null && url.length == 11) {
+        videoId = url;
+      }
+
+      if (videoId != null) {
+        _youtubeController = YoutubePlayerController(
+          initialVideoId: videoId,
+          flags: const YoutubePlayerFlags(
+            autoPlay: true,
+            mute: false,
+            isLive: true,
           ),
-        ),
-        allowedScreenSleep: false,
-        allowFullScreen: true,
-        fullScreenByDefault: false,
-        errorBuilder: (context, errorMessage) {
-          return Center(
-            child: Text(
-              'Error loading video: $errorMessage',
-              style: const TextStyle(color: AppColors.white),
-            ),
-          );
-        },
+        );
+        _isInitialized = true;
+      }
+    } else {
+      _isYoutube = false;
+      _videoPlayerController = VideoPlayerController.networkUrl(
+        Uri.parse(url),
       );
-    } catch (e) {
-      debugPrint("Video initialization error: $e");
+
+      try {
+        await _videoPlayerController.initialize();
+
+        _chewieController = ChewieController(
+          videoPlayerController: _videoPlayerController,
+          autoPlay: true,
+          looping: false,
+          showControls: true,
+          deviceOrientationsAfterFullScreen: [DeviceOrientation.portraitUp],
+          deviceOrientationsOnEnterFullScreen: [
+            DeviceOrientation.landscapeLeft,
+            DeviceOrientation.landscapeRight,
+          ],
+          aspectRatio: _videoPlayerController.value.aspectRatio,
+          overlay: (channel?.showLiveLogo == true && channel?.liveLogo != null)
+              ? Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Image.network(
+                    channel!.liveLogo!,
+                    height: 30,
+                    fit: BoxFit.contain,
+                  ),
+                )
+              : null,
+          materialProgressColors: ChewieProgressColors(
+            playedColor: AppColors.error,
+            handleColor: AppColors.redAccent,
+            backgroundColor: AppColors.grey500,
+            bufferedColor: AppColors.white24,
+          ),
+          placeholder: Container(
+            color: AppColors.black87,
+            child: const Center(
+              child: CircularProgressIndicator(color: AppColors.white),
+            ),
+          ),
+          allowedScreenSleep: false,
+          allowFullScreen: true,
+          fullScreenByDefault: false,
+          errorBuilder: (context, errorMessage) {
+            return Center(
+              child: Text(
+                'Error loading video: $errorMessage',
+                style: const TextStyle(color: AppColors.white),
+              ),
+            );
+          },
+        );
+        _isInitialized = true;
+      } catch (e) {
+        debugPrint("Video initialization error: $e");
+      }
     }
 
     if (mounted) {
@@ -108,7 +162,8 @@ class _ChannelPlayScreenState extends State<ChannelPlayScreen> {
 
   void _shareChannel() {
     if (channel == null) return;
-    final text = "Watch ${channel!.name} live on PlayOn!\nDownload now: https://play.google.com/store/apps/details?id=com.cametech.playon";
+    final text =
+        "Watch ${channel!.name} live on PlayOn!\nDownload now: https://play.google.com/store/apps/details?id=com.cametech.playon";
     ShareHelper.shareMatchWithImage(
       text: text,
       imageUrl: channel!.thumbnail ?? channel!.logo,
@@ -118,8 +173,12 @@ class _ChannelPlayScreenState extends State<ChannelPlayScreen> {
   @override
   void dispose() {
     WakelockPlus.disable();
-    _videoPlayerController.dispose();
-    _chewieController?.dispose();
+    if (!_isYoutube) {
+      _videoPlayerController.dispose();
+      _chewieController?.dispose();
+    } else {
+      _youtubeController?.dispose();
+    }
     WakelockPlus.disable();
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     super.dispose();
@@ -127,6 +186,25 @@ class _ChannelPlayScreenState extends State<ChannelPlayScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isYoutube && _youtubeController != null) {
+      return YoutubePlayerBuilder(
+        player: YoutubePlayer(
+          controller: _youtubeController!,
+          showVideoProgressIndicator: true,
+          progressIndicatorColor: AppColors.primary,
+          onReady: () {
+            setState(() {
+              _isInitialized = true;
+            });
+          },
+        ),
+        builder: (context, player) => _buildScaffold(youtubePlayer: player),
+      );
+    }
+    return _buildScaffold();
+  }
+
+  Widget _buildScaffold({Widget? youtubePlayer}) {
     return Scaffold(
       backgroundColor: AppColors.secPrimary,
       body: SafeArea(
@@ -140,13 +218,33 @@ class _ChannelPlayScreenState extends State<ChannelPlayScreen> {
                 children: [
                   Container(
                     color: Colors.black,
-                    child: _chewieController != null &&
-                            _chewieController!.videoPlayerController.value.isInitialized
-                        ? Chewie(controller: _chewieController!)
+                    child: _isInitialized
+                        ? (_isYoutube
+                            ? (youtubePlayer ?? const SizedBox())
+                            : (_chewieController != null
+                                ? Chewie(controller: _chewieController!)
+                                : const Center(
+                                    child: CircularProgressIndicator(
+                                        color: Colors.white),
+                                  )))
                         : const Center(
-                            child: CircularProgressIndicator(color: Colors.white),
+                            child:
+                                CircularProgressIndicator(color: Colors.white),
                           ),
                   ),
+
+                  // Live Logo
+                  if (channel?.showLiveLogo == true && channel?.liveLogo != null)
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: Image.network(
+                        channel!.liveLogo!,
+                        height: 30,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => const SizedBox(),
+                      ),
+                    ),
 
                   // Back Button
                   Positioned(
@@ -162,8 +260,8 @@ class _ChannelPlayScreenState extends State<ChannelPlayScreen> {
                           color: Colors.black.withOpacity(0.3),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
-                          Icons.arrow_back_ios_new,
+                        child: Icon(
+                          Icons.adaptive.arrow_back,
                           color: Colors.white,
                           size: 20,
                         ),

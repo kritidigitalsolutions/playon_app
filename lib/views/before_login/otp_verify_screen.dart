@@ -28,7 +28,7 @@ class OtpVerifyScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                      icon: Icon(Icons.adaptive.arrow_back, color: Colors.white, size: 20),
                       onPressed: () => Get.back(),
                     ),
                     const SizedBox(height: 20),

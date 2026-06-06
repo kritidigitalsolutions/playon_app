@@ -89,6 +89,24 @@ class PodcastPlayController extends GetxController {
       isYoutube.value = true;
       String? videoId = YoutubePlayer.convertUrlToId(url);
       
+      // Better ID extraction for various YouTube URL formats (embed links etc)
+      if (videoId == null) {
+        final regExp = RegExp(
+          r'^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*',
+          caseSensitive: false,
+          multiLine: false,
+        );
+        final match = regExp.firstMatch(url);
+        if (match != null && match.group(7)!.length == 11) {
+          videoId = match.group(7);
+        }
+      }
+      
+      // Handle cases where the URL might be just the ID
+      if (videoId == null && url.length == 11) {
+        videoId = url;
+      }
+
       if (videoId != null) {
         youtubeController = YoutubePlayerController(
           initialVideoId: videoId,

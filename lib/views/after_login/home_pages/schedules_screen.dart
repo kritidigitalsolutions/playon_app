@@ -55,7 +55,7 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                 children: [
                   IconButton(
                     onPressed: () => Get.back(),
-                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                    icon: Icon(Icons.adaptive.arrow_back, color: Colors.white),
                   ),
                   const Text(
                     "Match Schedule",

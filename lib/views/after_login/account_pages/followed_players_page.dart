@@ -27,7 +27,7 @@ class FollowedPlayersScreen extends StatelessWidget {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios, color: AppColors.white, size: 20),
+                      icon: Icon(Icons.adaptive.arrow_back, color: AppColors.white, size: 20),
                       onPressed: () => Get.back(),
                     ),
                     const SizedBox(width: 4),

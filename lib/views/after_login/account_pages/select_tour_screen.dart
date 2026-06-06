@@ -50,7 +50,7 @@ class _SelectTourScreenState extends State<SelectTourScreen> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios, color: AppColors.white, size: 18),
+                      icon: Icon(Icons.adaptive.arrow_back, color: AppColors.white, size: 18),
                       onPressed: () => Get.back(),
                     ),
                     const SizedBox(width: 4),

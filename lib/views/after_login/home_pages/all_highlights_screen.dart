@@ -39,7 +39,7 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
                   children: [
                     if (controller.selectedHighlightSeries.value != null) ...[
                       IconButton(
-                        icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                        icon: Icon(Icons.adaptive.arrow_back, color: Colors.white),
                         onPressed: () {
                           controller.selectedHighlightSeries.value = null;
                           controller.fetchHighlights(); // Fetch global highlights again
@@ -320,6 +320,11 @@ class _AllHighlightsScreenState extends State<AllHighlightsScreen> {
       thumbnail: highlight.thumbnail,
       title: highlight.title,
     ) : null));
+
+    // CRITICAL: If using fullMatch, ensure the videoUrl from the highlight is copied to it
+    if (fullMatch != null && (fullMatch.videoUrl == null || fullMatch.videoUrl!.isEmpty)) {
+      fullMatch.videoUrl = highlight.videoUrl;
+    }
 
     return Obx(() {
       final canWatch = Get.find<PlanController>().canWatchMatch(matchArg);

@@ -35,6 +35,8 @@ class HighlightItem {
   String? thumbnail;
   String? duration;
   List<String>? tags;
+  String? liveLogo;
+  bool? showLiveLogo;
   bool? isPremium;
   int? order;
   String? createdAt;
@@ -54,6 +56,8 @@ class HighlightItem {
       this.thumbnail,
       this.duration,
       this.tags,
+      this.liveLogo,
+      this.showLiveLogo,
       this.isPremium,
       this.order,
       this.createdAt,
@@ -73,6 +77,8 @@ class HighlightItem {
     thumbnail = json['thumbnail'];
     duration = json['duration']?.toString();
     tags = json['tags']?.cast<String>();
+    liveLogo = json['liveLogo'];
+    showLiveLogo = json['showLiveLogo'];
     isPremium = json['isPremium'];
     order = json['order'];
     createdAt = json['createdAt'];

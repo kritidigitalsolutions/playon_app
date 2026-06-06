@@ -27,6 +27,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late Series series;
+  bool _isMatchesLoading = false;
 
   @override
   void initState() {
@@ -34,10 +35,22 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
     series = Get.arguments as Series;
     _tabController = TabController(length: 5, vsync: this);
 
-    // Fetch highlights for this series
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
     final homeController = Get.find<HomeController>();
+    
+    // Fetch highlights for this series
     if (series.sId != null) {
       homeController.fetchHighlights(seriesId: series.sId);
+    }
+
+    // Fetch full matches if not already loaded
+    if (series.fullMatches == null || series.fullMatches!.isEmpty) {
+      setState(() => _isMatchesLoading = true);
+      await homeController.fetchSeriesMatches(series);
+      if (mounted) setState(() => _isMatchesLoading = false);
     }
   }
 
@@ -178,16 +191,12 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
 
   /// ================= HOME TAB =================
   Widget _buildHomeTab() {
-    final matches = series.fullMatches ?? [];
-    debugPrint("🔍 Total matches: ${matches.length}");
-    debugPrint("🔍 Series ID: ${series.sId}");
-    debugPrint("🔍 Series title: ${series.title}");
-    for (var m in matches) {
-      debugPrint("Match: ${m.teamA} vs ${m.teamB} | Status: ${m.status}");
+    if (_isMatchesLoading) {
+      return const Center(child: CircularProgressIndicator());
     }
 
+    final matches = series.fullMatches ?? [];
     final live = matches.where((m) => m.status == 'live').toList();
-    final upcoming = matches.where((m) => m.status == 'upcoming').toList();
     final completed = matches.where((m) =>
     m.status == 'completed' || m.status == 'finished').toList();
 
@@ -198,15 +207,35 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
         const SizedBox(height: 8),
         const AdMobBannerWidget(position: "series_top"),
         const SizedBox(height: 16),
-        if (live.isNotEmpty) _buildHorizontalSection("Live Matches", live),
-        if (upcoming.isNotEmpty) _buildHorizontalSection("Upcoming Matches", upcoming),
-        if (completed.isNotEmpty) _buildHorizontalSection("Recent Results", completed),
+        
+        if (live.isNotEmpty) ...[
+          Text("Live Matches", style: text16(color: Colors.white, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          ...live.map((m) => _matchRow(m)).toList(),
+          const SizedBox(height: 20),
+        ],
+
+        if (completed.isNotEmpty) ...[
+          Text("Recent Results", style: text16(color: Colors.white, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          ...completed.map((m) => _matchRow(m)).toList(),
+        ],
+
+        if (live.isEmpty && completed.isEmpty)
+          Center(
+            heightFactor: 5,
+            child: Text("No completed matches", style: text14(color: Colors.white60)),
+          ),
       ],
     );
   }
 
   /// ================= UPCOMING =================
   Widget _buildUpcomingTab() {
+    if (_isMatchesLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     final matches = series.fullMatches
         ?.where((m) => m.status == 'upcoming')
         .toList() ??
@@ -587,128 +616,6 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen>
           ),
         );
       },
-    );
-  }
-
-  /// ================= SECTION =================
-  Widget _buildHorizontalSection(String title, List<match_model.Match> matches) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title,
-            style: text16(
-                color: Colors.white, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 250,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: matches.length,
-            itemBuilder: (_, i) => _homeMatchCard(matches[i], screenWidth),
-          ),
-        ),
-        const SizedBox(height: 20),
-      ],
-    );
-  }
-
-  Widget _homeMatchCard(match_model.Match match, double screenWidth) {
-    return GestureDetector(
-      onTap: () {
-        if (match.status == 'upcoming') {
-          Get.toNamed(AppRoutes.matchDetails, arguments: match);
-        } else {
-          Get.toNamed(AppRoutes.matchPlay, arguments: match);
-        }
-      },
-      child: Container(
-        width: screenWidth * 0.75, // Responsive width
-        constraints: const BoxConstraints(maxWidth: 320),
-        margin: const EdgeInsets.only(right: 16),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white10),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// Match Banner
-            Stack(
-              children: [
-                _buildMatchImage(
-                  match.banner ?? match.thumbnail,
-                  match.sport,
-                  height: 140,
-                  width: double.infinity,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                ),
-                if (series.tournamentLogo != null && series.tournamentLogo!.isNotEmpty)
-                  Positioned(
-                    top: 8,
-                    left: 8,
-                    child: Container(
-                      height: 25,
-                      width: 25,
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Image.network(
-                        series.tournamentLogo!,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => const Icon(Icons.emoji_events, color: Colors.white, size: 12),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "${match.teamA} vs ${match.teamB}",
-                    style: text16(fontWeight: FontWeight.bold),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: _getStatusColor(match.status).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: _getStatusColor(match.status).withOpacity(0.5)),
-                        ),
-                        child: Text(
-                          match.status?.toUpperCase() ?? "",
-                          style: text10(
-                            color: _getStatusColor(match.status),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      const Icon(Icons.calendar_month, size: 14, color: Colors.white60),
-                      const SizedBox(width: 4),
-                      Text(
-                        _formatDate(match.matchDate),
-                        style: text12(color: Colors.white60),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 

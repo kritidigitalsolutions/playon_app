@@ -722,6 +722,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 videoUrl: highlight.videoUrl,
               ) : null));
 
+              // CRITICAL: If using fullMatch, ensure the videoUrl from the highlight is copied to it
+              if (fullMatch != null && (fullMatch.videoUrl == null || fullMatch.videoUrl!.isEmpty)) {
+                fullMatch.videoUrl = highlight.videoUrl;
+              }
+
               final canWatch = Get.find<PlanController>().canWatchMatch(match);
               return GestureDetector(
                 onTap: () {
