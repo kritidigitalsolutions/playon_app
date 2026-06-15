@@ -50,12 +50,12 @@ class _AdMobBannerWidgetState extends State<AdMobBannerWidget> {
 
     String? adUnitId = placement?.adUnitId;
     
-    // If ID is missing, we use a fallback to verify layout, but this is why you see "Test Ad"
+    // Always use the production ID as fallback if dynamic placement is missing
     if (adUnitId == null || adUnitId.isEmpty) {
-      adUnitId = 'ca-app-pub-3940256099942544/6300978111'; // Google Test Banner ID
-      debugPrint('AdMob: Waiting for Real ID for ${widget.position}...');
+      adUnitId = 'ca-app-pub-9899829518030319/8300458151'; // Real AdMob Banner ID
+      debugPrint('AdMob: Using Fallback Real ID for ${widget.position}...');
     } else {
-      debugPrint('AdMob: Loading Production Ad for ${widget.position}');
+      debugPrint('AdMob: Loading Ad for ${widget.position}');
     }
 
     _bannerAd?.dispose();

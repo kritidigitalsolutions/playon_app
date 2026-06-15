@@ -11,13 +11,13 @@ import 'package:play_on_app/view_model/before_controller/auth_controller.dart';
 class HomeBinding implements Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<HomeController>(() => HomeController());
-    Get.lazyPut<AdController>(() => AdController());
-    Get.lazyPut<AuthController>(() => AuthController());
-    Get.lazyPut<LegalController>(() => LegalController());
-    Get.lazyPut<PlanController>(() => PlanController());
-    Get.lazyPut<NotificationController>(() => NotificationController());
-    Get.lazyPut<PlayerController>(() => PlayerController());
-    Get.lazyPut<SeriesController>(() => SeriesController());
+    Get.put<HomeController>(HomeController());
+    Get.put<AdController>(AdController());
+    Get.put<AuthController>(AuthController());
+    Get.put<LegalController>(LegalController());
+    Get.put<PlanController>(PlanController());
+    Get.put<NotificationController>(NotificationController());
+    Get.put<PlayerController>(PlayerController());
+    Get.put<SeriesController>(SeriesController());
   }
 }
