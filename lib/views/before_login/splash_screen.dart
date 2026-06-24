@@ -41,6 +41,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint("🌊 [UI] Building SplashScreen");
     return Scaffold(
       body: BackgroundWithImg(
         child: Padding(

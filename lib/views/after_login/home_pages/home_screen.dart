@@ -38,6 +38,12 @@ class _HomeScreenState extends State<HomeScreen> {
   final RxString searchQuery = "".obs;
 
   @override
+  void initState() {
+    super.initState();
+    debugPrint("🏠 [UI] HomeScreen initState");
+  }
+
+  @override
   void dispose() {
     searchController.dispose();
     super.dispose();

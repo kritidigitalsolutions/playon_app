@@ -66,7 +66,7 @@ class AppPages {
     // home
     GetPage(
       name: AppRoutes.myHomePage,
-      page: () => MyHomePage(),
+      page: () => const MyHomePage(),
       binding: HomeBinding(),
     ),
     GetPage(name: AppRoutes.channelPlay, page: () => ChannelPlayScreen()),

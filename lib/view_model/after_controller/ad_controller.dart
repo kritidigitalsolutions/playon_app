@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:play_on_app/model/response_model/ad_placement_model.dart';
 import 'package:play_on_app/repo/ad_repository.dart';
@@ -6,11 +7,14 @@ class AdController extends GetxController {
   final AdRepository _repository = AdRepository();
   var adPlacements = <AdPlacement>[].obs;
   var isLoading = false.obs;
+  var isMobileAdsInitialized = false.obs;
 
   @override
   void onInit() {
+    debugPrint("📢 [CTRL] AdController onInit START");
     super.onInit();
     fetchAdPlacements();
+    debugPrint("📢 [CTRL] AdController onInit END");
   }
 
   Future<void> fetchAdPlacements() async {

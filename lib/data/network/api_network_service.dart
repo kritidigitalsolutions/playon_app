@@ -121,6 +121,8 @@ class NetworkApiService extends BaseApiService {
   }
 
   AppException _handleDioError(DioException error) {
+    debugPrint("DIO ERROR TYPE: ${error.type}");
+    debugPrint("DIO ERROR MESSAGE: ${error.message}");
     debugPrint("HANDLE ERROR => ${error.response?.data}");
 
     switch (error.type) {
@@ -147,6 +149,12 @@ class NetworkApiService extends BaseApiService {
 
       case DioExceptionType.cancel:
         return FetchDataException("Request cancelled");
+
+      case DioExceptionType.connectionError:
+        return FetchDataException("No Internet Connection");
+
+      case DioExceptionType.badCertificate:
+        return FetchDataException("Bad Certificate");
 
       case DioExceptionType.unknown:
       default:

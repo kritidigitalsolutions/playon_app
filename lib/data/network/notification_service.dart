@@ -47,36 +47,24 @@ class NotificationService {
 
   // 🔥 INIT
   static Future<void> init() async {
-    // ✅ Local Notification Init
+
+    print("STEP A");
+
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const ios = DarwinInitializationSettings();
 
     await _localNotifications.initialize(
       const InitializationSettings(android: android, iOS: ios),
-      onDidReceiveNotificationResponse: (response) {
-        print("👉 LOCAL NOTIFICATION CLICKED");
-        print("👉 Payload: ${response.payload}");
-      },
+      onDidReceiveNotificationResponse: (response) {},
     );
 
-    if (Platform.isAndroid) {
-      final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-          _localNotifications.resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
+    print("STEP B");
 
-      await androidImplementation?.requestNotificationsPermission();
-      await androidImplementation?.requestExactAlarmsPermission();
-    }
-
-    print("✅ Local Notification Initialized");
-
-    // ✅ Channel
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'high_importance_channel',
       'High Importance Notifications',
       description: 'This channel is used for important notifications.',
       importance: Importance.max,
-      playSound: true,
     );
 
     await _localNotifications
@@ -84,53 +72,16 @@ class NotificationService {
         AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(channel);
 
-    print("✅ Notification Channel Created");
+    print("STEP C");
 
-    // ✅ TOKEN DEBUG
     String? token = await _messaging.getToken();
-    print("🔥 TOKEN (INIT): $token");
 
-    // ✅ TOKEN REFRESH
-    _messaging.onTokenRefresh.listen((newToken) {
-      print("🔄 TOKEN REFRESHED: $newToken");
-      syncTokenToServer();
-    });
+    print("STEP D");
+    print("FCM TOKEN = $token");
 
-    // ✅ FOREGROUND LISTENER
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print("📩 FOREGROUND MESSAGE RECEIVED");
-      print("📩 Title: ${message.notification?.title}");
-      print("📩 Body: ${message.notification?.body}");
-      print("📦 Data: ${message.data}");
-
-      if (_shouldShowNotification(message)) {
-        _showNotificationInternal(message);
-
-        if (Get.isRegistered<NotificationController>()) {
-          Get.find<NotificationController>().refreshData();
-        }
-      }
-    });
-
-    // ✅ BACKGROUND CLICK (APP OPEN FROM NOTIFICATION)
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      print("📲 NOTIFICATION CLICKED (BACKGROUND)");
-      print("📦 Data: ${message.data}");
-    });
-
-    // ✅ TERMINATED STATE CLICK
-    RemoteMessage? initialMessage =
-    await FirebaseMessaging.instance.getInitialMessage();
-
-    if (initialMessage != null) {
-      print("🚀 APP OPENED FROM TERMINATED STATE");
-      print("📦 Data: ${initialMessage.data}");
-    }
-
-    print("✅ NotificationService INIT DONE");
-    
-    // Request permission and sync
     await requestPermissionAndSync();
+
+    print("STEP E");
   }
 
   static bool _shouldShowNotification(RemoteMessage message) {

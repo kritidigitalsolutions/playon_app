@@ -169,6 +169,7 @@ class PlanController extends GetxController {
 
   @override
   void onInit() {
+    debugPrint("💳 [CTRL] PlanController onInit START");
     super.onInit();
     _razorpay = Razorpay();
     _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
@@ -178,6 +179,7 @@ class PlanController extends GetxController {
     fetchMySubscription();
     fetchSubscriptionHistory();
     fetchPromos();
+    debugPrint("💳 [CTRL] PlanController onInit END");
   }
 
   @override
@@ -313,7 +315,7 @@ class PlanController extends GetxController {
       showCustomSnackbar(title: 'Success', message: 'Payment successful', type: SnackType.success);
       fetchMySubscription();
       fetchSubscriptionHistory();
-      
+
       // Navigate back if on plan selection page
       if (Get.currentRoute.contains('Select')) {
         Get.back();

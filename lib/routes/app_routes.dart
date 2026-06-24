@@ -8,7 +8,7 @@ class AppRoutes {
 
   // my home pages
 
-  static const String myHomePage = "/myHmePage";
+  static const String myHomePage = "/myHomePage";
   static const String home = "/home";
   static const String notification = '/notification';
   static const String channelPlay = '/channelPlay';

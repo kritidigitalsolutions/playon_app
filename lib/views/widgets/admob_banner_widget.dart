@@ -23,18 +23,34 @@ class _AdMobBannerWidgetState extends State<AdMobBannerWidget> {
   @override
   void initState() {
     super.initState();
-    // Listen for ad placements being loaded from backend
-    _adWorker = ever(adController.adPlacements, (_) {
-      if (!_isLoaded && _bannerAd == null) {
+    // Listen for mobile ads initialization
+    _adWorker = ever(adController.isMobileAdsInitialized, (isInitialized) {
+      if (isInitialized && !_isLoaded && _bannerAd == null) {
+        _loadAd();
+      }
+    });
+
+    // Also listen for ad placements if they come after initialization
+    ever(adController.adPlacements, (_) {
+      if (adController.isMobileAdsInitialized.value && !_isLoaded && _bannerAd == null) {
         _loadAd();
       }
     });
     
-    // Initial attempt
-    _loadAd();
+    // Initial attempt only if already initialized
+    if (adController.isMobileAdsInitialized.value) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadAd();
+      });
+    }
   }
 
   void _loadAd() {
+    // If not initialized yet, worker will catch it later
+    if (!adController.isMobileAdsInitialized.value) {
+      return;
+    }
+
     // If user has ad-free plan, don't even try to load
     if (planController.isAdFree.value) {
       return;
@@ -52,8 +68,13 @@ class _AdMobBannerWidgetState extends State<AdMobBannerWidget> {
     
     // Always use the production ID as fallback if dynamic placement is missing
     if (adUnitId == null || adUnitId.isEmpty) {
-      adUnitId = 'ca-app-pub-9899829518030319/8300458151'; // Real AdMob Banner ID
-      debugPrint('AdMob: Using Fallback Real ID for ${widget.position}...');
+      // Use Test IDs on Simulator/Fallback to prevent native crashes
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        adUnitId = 'ca-app-pub-3940256099942544/2934735716';
+      } else {
+        adUnitId = 'ca-app-pub-3940256099942544/6300978111';
+      }
+      debugPrint('AdMob: Using Test ID for ${widget.position}...');
     } else {
       debugPrint('AdMob: Loading Ad for ${widget.position}');
     }
