@@ -67,9 +67,9 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/play_logo.png"
+  image_path: "assets/playonl.jpeg"
   adaptive_icon_background: "#FFFFFF"   # or your color
-  adaptive_icon_foreground: "assets/play_logo.png"
+  adaptive_icon_foreground: "assets/playonl.jpeg"
 
 flutter:
   config:

@@ -9,6 +9,7 @@ import 'package:play_on_app/model/response_model/star_player_model.dart' as star
 import 'package:play_on_app/repo/match_repository.dart';
 import 'package:video_player/video_player.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
+import 'package:play_on_app/view_model/after_controller/ad_controller.dart';
 import 'package:play_on_app/view_model/after_controller/plan_controller.dart';
 import 'package:play_on_app/data/network/notification_service.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
@@ -696,6 +697,11 @@ class VideoControllerX extends GetxController {
     }
 
     debugPrint("Initializing Video: $url (Type: $streamType)");
+
+    // Show Interstitial Ad before playing video
+    if (Get.isRegistered<AdController>()) {
+      Get.find<AdController>().showInterstitialAd();
+    }
 
     // Signal UI that we are re-initializing
     isInitialized.value = false;

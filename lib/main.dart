@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -5,6 +6,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:play_on_app/data/network/notification_service.dart';
 import 'package:play_on_app/routes/app_pages.dart';
 import 'package:play_on_app/routes/app_routes.dart';
+import 'package:play_on_app/utils/ad_navigator_observer.dart';
 import 'package:play_on_app/utils/hive_service/userdetail.dart';
 import 'package:play_on_app/view_model/after_controller/ad_controller.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
@@ -45,6 +47,7 @@ Future<void> main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
     debugPrint("🔥 [SVC] Firebase Ready");
   } catch (e) {
     debugPrint("❌ [SVC] Firebase Error: $e");
@@ -105,6 +108,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: AppRoutes.splashScreen,
       getPages: AppPages.routes,
+      navigatorObservers: [AdNavigatorObserver()],
       theme: ThemeData(
         scaffoldBackgroundColor: const Color(0xFF040B23),
         brightness: Brightness.dark,
@@ -183,7 +187,7 @@ class _MyHomePageState extends State<MyHomePage> {
             _navItem(Icons.home, 'Home', 0, currentIndex),
             _navItem(Icons.live_tv, 'Live', 1, currentIndex),
             _navItem(Icons.list_alt, 'Series', 2, currentIndex),
-            _navItem(Icons.video_library, 'Clips', 3, currentIndex),
+            _navItem(Icons.video_library, 'Highlights', 3, currentIndex),
             _navItem(Icons.calendar_today, 'Events', 4, currentIndex),
           ],
         ),

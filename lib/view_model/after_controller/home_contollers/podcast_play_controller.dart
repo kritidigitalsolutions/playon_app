@@ -5,6 +5,7 @@ import 'package:video_player/video_player.dart';
 import 'package:play_on_app/model/response_model/podcast_model.dart';
 import '../../../model/response_model/comment_model.dart';
 import '../../../repo/match_repository.dart';
+import 'package:play_on_app/view_model/after_controller/ad_controller.dart';
 import '../plan_controller.dart';
 import 'package:play_on_app/utils/custom_snakebar.dart';
 import 'package:flutter/material.dart';
@@ -72,6 +73,12 @@ class PodcastPlayController extends GetxController {
 
   void initializeVideo(String url) {
     if (isLock.value) return;
+
+    // Show Interstitial Ad before playing podcast
+    if (Get.isRegistered<AdController>()) {
+      Get.find<AdController>().showInterstitialAd();
+    }
+
     isLoading.value = true;
     isInitialized.value = false;
     

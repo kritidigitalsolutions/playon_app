@@ -69,5 +69,15 @@
 
     <key>GADApplicationIdentifier</key>
     <string>ca-app-pub-9899829518030319~1225929015</string>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>itms-apps</string>
+        <string>tez</string>
+        <string>phonepe</string>
+        <string>paytmmp</string>
+        <string>gpay</string>
+        <string>whatsapp</string>
+        <string>paytm</string>
+    </array>
 </dict>
 </plist>

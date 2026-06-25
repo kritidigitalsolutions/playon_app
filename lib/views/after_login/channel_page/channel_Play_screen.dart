@@ -14,6 +14,7 @@ import 'package:get/get.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:play_on_app/utils/custom_snakebar.dart';
 import 'package:play_on_app/views/widgets/admob_banner_widget.dart';
+import 'package:play_on_app/view_model/after_controller/ad_controller.dart';
 import 'package:play_on_app/view_model/after_controller/home_contollers/home_controller.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
@@ -56,6 +57,11 @@ class _ChannelPlayScreenState extends State<ChannelPlayScreen> {
 
   Future<void> _initializePlayer() async {
     WakelockPlus.enable();
+
+    // Show Interstitial Ad before playing channel
+    if (Get.isRegistered<AdController>()) {
+      Get.find<AdController>().showInterstitialAd();
+    }
 
     final url = channel?.streamUrl ?? "";
     if (url.isEmpty) return;

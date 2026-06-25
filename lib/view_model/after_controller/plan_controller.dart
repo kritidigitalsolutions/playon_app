@@ -328,7 +328,10 @@ class PlanController extends GetxController {
 
   void _handlePaymentError(PaymentFailureResponse response) {
     isPaymentProcessing.value = false;
-    _showPaymentFailureDialog(response.message ?? 'Payment failed or cancelled');
+    // Add a small delay before showing dialog to ensure Razorpay UI is fully dismissed on iOS
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _showPaymentFailureDialog(response.message ?? 'Payment failed or cancelled');
+    });
   }
 
   void _showPaymentFailureDialog(String errorMessage) {

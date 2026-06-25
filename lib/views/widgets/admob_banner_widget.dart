@@ -58,25 +58,14 @@ class _AdMobBannerWidgetState extends State<AdMobBannerWidget> {
 
     final placement = adController.getAdPlacementByPosition(widget.position);
     
-    // If we have placements but none for this position yet, wait for the worker
-    if (adController.adPlacements.isNotEmpty && placement == null) {
-      debugPrint('AdMob: No placement found for ${widget.position} in database.');
-      // return; // Optional: don't show test ad if position missing in DB
-    }
-
     String? adUnitId = placement?.adUnitId;
     
-    // Always use the production ID as fallback if dynamic placement is missing
+    // Fallback logic: Use the provided production banner ID if specific position ID is missing in DB
     if (adUnitId == null || adUnitId.isEmpty) {
-      // Use Test IDs on Simulator/Fallback to prevent native crashes
-      if (defaultTargetPlatform == TargetPlatform.iOS) {
-        adUnitId = 'ca-app-pub-3940256099942544/2934735716';
-      } else {
-        adUnitId = 'ca-app-pub-3940256099942544/6300978111';
-      }
-      debugPrint('AdMob: Using Test ID for ${widget.position}...');
+      adUnitId = 'ca-app-pub-9899829518030319/6313252740';
+      debugPrint('AdMob: Using default production ID for ${widget.position}');
     } else {
-      debugPrint('AdMob: Loading Ad for ${widget.position}');
+      debugPrint('AdMob: Loading Ad from DB for ${widget.position}');
     }
 
     _bannerAd?.dispose();
