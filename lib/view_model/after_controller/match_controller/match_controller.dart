@@ -427,7 +427,7 @@ class VideoControllerX extends GetxController {
     _setupLockListener();
   }
 
-  void _loadInitialData() {
+  Future<void> _loadInitialData() async {
     bool isHighlightMode = Get.parameters['mode'] == 'highlight';
 
     if (Get.arguments is model.Match) {
@@ -441,7 +441,7 @@ class VideoControllerX extends GetxController {
       match.value = null;
       isLoading.value = false;
       if (starPlayer.value?.videoUrl != null) {
-        initializeVideo(starPlayer.value!.videoUrl!, isHighlight: true);
+        await initializeVideo(starPlayer.value!.videoUrl!, isHighlight: true);
       }
     } else if (Get.arguments is String) {
       fetchMatchDetails(Get.arguments, isHighlight: isHighlightMode);
@@ -449,7 +449,7 @@ class VideoControllerX extends GetxController {
   }
 
   /// ✅ Method to manually refresh data if controller is reused
-  void refreshWithArguments(dynamic arguments) {
+  Future<void> refreshWithArguments(dynamic arguments) async {
     // Reset state
     isInitialized.value = false;
     isLoading.value = true;
@@ -471,7 +471,7 @@ class VideoControllerX extends GetxController {
       match.value = null;
       isLoading.value = false;
       if (starPlayer.value?.videoUrl != null) {
-        initializeVideo(starPlayer.value!.videoUrl!, isHighlight: true);
+        await initializeVideo(starPlayer.value!.videoUrl!, isHighlight: true);
       }
     } else if (arguments is String) {
       fetchMatchDetails(arguments, isHighlight: isHighlightMode);
@@ -520,7 +520,7 @@ class VideoControllerX extends GetxController {
     });
   }
 
-  void _retryInitializationIfNecessary() {
+  Future<void> _retryInitializationIfNecessary() async {
     if (isInitialized.value || isLoading.value) return;
     
     final matchDetails = Get.find<MatchDetailsController>();
@@ -530,9 +530,9 @@ class VideoControllerX extends GetxController {
     if (match.value != null) {
       final status = match.value?.status?.toLowerCase();
       bool isFinished = status == 'finished' || status == 'completed' || isHighlightMode;
-      fetchMatchDetails(match.value!.sId!, isHighlight: isFinished);
+      await fetchMatchDetails(match.value!.sId!, isHighlight: isFinished);
     } else if (starPlayer.value != null && starPlayer.value!.videoUrl != null) {
-      initializeVideo(starPlayer.value!.videoUrl!, isHighlight: true);
+      await initializeVideo(starPlayer.value!.videoUrl!, isHighlight: true);
     }
   }
 
@@ -553,9 +553,9 @@ class VideoControllerX extends GetxController {
         final streamUrl = match.value?.stream?.streamUrl;
 
         if (videoUrl != null && videoUrl.isNotEmpty) {
-           initializeVideo(videoUrl, isHighlight: isHighlight);
+           await initializeVideo(videoUrl, isHighlight: isHighlight);
         } else if (streamUrl != null && streamUrl.isNotEmpty) {
-           initializeVideo(
+           await initializeVideo(
              streamUrl, 
              streamType: match.value?.stream?.streamType,
              isHighlight: isHighlight,
@@ -620,9 +620,9 @@ class VideoControllerX extends GetxController {
         final streamUrl = match.value?.stream?.streamUrl ?? matchData.value?.stream?.streamUrl;
 
         if (videoUrl != null && videoUrl.isNotEmpty) {
-          initializeVideo(videoUrl, isHighlight: isHighlight);
+          await initializeVideo(videoUrl, isHighlight: isHighlight);
         } else if (streamUrl != null && streamUrl.isNotEmpty) {
-          initializeVideo(
+          await initializeVideo(
             streamUrl,
             streamType: match.value?.stream?.streamType ?? matchData.value?.stream?.streamType,
             isHighlight: isHighlight,
@@ -643,7 +643,7 @@ class VideoControllerX extends GetxController {
             });
 
             if (stream != null && stream['streamUrl'] != null) {
-              initializeVideo(
+              await initializeVideo(
                 stream['streamUrl'],
                 streamType: stream['streamType'],
               );
@@ -665,7 +665,7 @@ class VideoControllerX extends GetxController {
               final hItem = highlight_model.HighlightItem.fromJson(firstHighlight);
               currentHighlight.value = hItem;
               if (hItem.videoUrl != null) {
-                initializeVideo(hItem.videoUrl!, isHighlight: true);
+                await initializeVideo(hItem.videoUrl!, isHighlight: true);
               }
             }
           }
@@ -676,7 +676,7 @@ class VideoControllerX extends GetxController {
 
       // 6. Last resort: check if matchData has any streamUrl left
       if (!isInitialized.value && matchData.value?.stream?.streamUrl != null) {
-        initializeVideo(
+        await initializeVideo(
           matchData.value!.stream!.streamUrl!,
           streamType: matchData.value!.stream!.streamType,
         );
@@ -688,7 +688,7 @@ class VideoControllerX extends GetxController {
     }
   }
 
-  void initializeVideo(String url, {bool isHighlight = false, String? streamType}) {
+  Future<void> initializeVideo(String url, {bool isHighlight = false, String? streamType}) async {
     // Don't initialize if it's currently locked
     // EXCEPT for highlights which are usually free
     if (!isHighlight && Get.isRegistered<MatchDetailsController>() && Get.find<MatchDetailsController>().isLock.value) {
@@ -700,7 +700,7 @@ class VideoControllerX extends GetxController {
 
     // Show Interstitial Ad before playing video
     if (Get.isRegistered<AdController>()) {
-      Get.find<AdController>().showInterstitialAd();
+      await Get.find<AdController>().showInterstitialAd();
     }
 
     // Signal UI that we are re-initializing

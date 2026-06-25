@@ -71,12 +71,12 @@ class PodcastPlayController extends GetxController {
     }
   }
 
-  void initializeVideo(String url) {
+  Future<void> initializeVideo(String url) async {
     if (isLock.value) return;
 
     // Show Interstitial Ad before playing podcast
     if (Get.isRegistered<AdController>()) {
-      Get.find<AdController>().showInterstitialAd();
+      await Get.find<AdController>().showInterstitialAd();
     }
 
     isLoading.value = true;

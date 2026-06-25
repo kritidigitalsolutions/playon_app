@@ -60,7 +60,7 @@ class _ChannelPlayScreenState extends State<ChannelPlayScreen> {
 
     // Show Interstitial Ad before playing channel
     if (Get.isRegistered<AdController>()) {
-      Get.find<AdController>().showInterstitialAd();
+      await Get.find<AdController>().showInterstitialAd();
     }
 
     final url = channel?.streamUrl ?? "";

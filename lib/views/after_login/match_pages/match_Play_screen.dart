@@ -1016,10 +1016,10 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                   "Match Moment",
                   item.thumbnail ?? 'https://via.placeholder.com/300x200',
                   item.duration ?? '0:00',
-                  onPlay: () {
+                  onPlay: () async {
                     if (item.videoUrl != null) {
                       videoControllerX.currentHighlight.value = item;
-                      videoControllerX.initializeVideo(item.videoUrl!, isHighlight: true);
+                      await videoControllerX.initializeVideo(item.videoUrl!, isHighlight: true);
                     }
                   },
                 );

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -64,7 +65,7 @@ class AdController extends GetxController {
         ));
   }
 
-  void showInterstitialAd() {
+  Future<void> showInterstitialAd() async {
     // 1. Check if user is ad-free
     if (Get.isRegistered<PlanController>() && Get.find<PlanController>().isAdFree.value) {
       debugPrint("📢 [AD] Skipping ad: User is Ad-Free");
@@ -76,29 +77,34 @@ class AdController extends GetxController {
       debugPrint('📢 [AD] Warning: attempt to show interstitial before loaded.');
       // Force a reload so it's ready for the next attempt
       _createInterstitialAd();
-      return;
+      return Future.value();
     }
+
+    final Completer<void> completer = Completer<void>();
 
     _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdShowedFullScreenContent: (InterstitialAd ad) {
         debugPrint('📢 [AD] ad onAdShowedFullScreenContent.');
-        // Ad is being shown, prepare the next one immediately
-        _interstitialAd = null;
-        _createInterstitialAd();
       },
       onAdDismissedFullScreenContent: (InterstitialAd ad) {
         debugPrint('📢 [AD] $ad onAdDismissedFullScreenContent.');
         ad.dispose();
+        _createInterstitialAd();
+        if (!completer.isCompleted) completer.complete();
       },
       onAdFailedToShowFullScreenContent: (InterstitialAd ad, AdError error) {
         debugPrint('📢 [AD] $ad onAdFailedToShowFullScreenContent: $error');
         ad.dispose();
         _createInterstitialAd();
+        if (!completer.isCompleted) completer.complete();
       },
     );
+
     _interstitialAd!.show();
     // Set to null so it can't be shown twice before next one loads
     _interstitialAd = null;
+
+    return completer.future;
   }
 
   Future<void> fetchAdPlacements() async {
