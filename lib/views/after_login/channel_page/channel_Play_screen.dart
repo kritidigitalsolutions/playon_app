@@ -58,6 +58,20 @@ class _ChannelPlayScreenState extends State<ChannelPlayScreen> {
   Future<void> _initializePlayer() async {
     WakelockPlus.enable();
 
+    // Pause existing playback before showing ad
+    try {
+      if (_isInitialized) {
+        if (_isYoutube) {
+          _youtubeController?.pause();
+        } else {
+          _videoPlayerController.pause();
+        }
+      }
+    } catch (_) {}
+
+    _isInitialized = false;
+    if (mounted) setState(() {});
+
     // Show Interstitial Ad before playing channel
     if (Get.isRegistered<AdController>()) {
       await Get.find<AdController>().showInterstitialAd();
@@ -228,7 +242,9 @@ class _ChannelPlayScreenState extends State<ChannelPlayScreen> {
                         ? (_isYoutube
                             ? (youtubePlayer ?? const SizedBox())
                             : (_chewieController != null
-                                ? Chewie(controller: _chewieController!)
+                                ? Chewie(
+                                    key: ValueKey(_chewieController.hashCode),
+                                    controller: _chewieController!)
                                 : const Center(
                                     child: CircularProgressIndicator(
                                         color: Colors.white),

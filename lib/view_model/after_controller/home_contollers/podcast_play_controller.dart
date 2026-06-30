@@ -74,6 +74,12 @@ class PodcastPlayController extends GetxController {
   Future<void> initializeVideo(String url) async {
     if (isLock.value) return;
 
+    // Pause existing playback before showing ad
+    videoController?.pause();
+    youtubeController?.pause();
+    isPlaying.value = false;
+    isInitialized.value = false;
+
     // Show Interstitial Ad before playing podcast
     if (Get.isRegistered<AdController>()) {
       await Get.find<AdController>().showInterstitialAd();
@@ -125,21 +131,37 @@ class PodcastPlayController extends GetxController {
         isInitialized.value = true;
         isPlaying.value = true;
         isLoading.value = false;
+
+        // Explicitly play after a short delay
+        Future.delayed(const Duration(milliseconds: 500), () {
+          youtubeController?.play();
+        });
       } else {
         isLoading.value = false;
         showCustomSnackbar(title: "Error", message: "Invalid YouTube URL", type: SnackType.error);
       }
     } else {
       isYoutube.value = false;
-      videoController = VideoPlayerController.networkUrl(Uri.parse(url))
-        ..initialize().then((_) {
+      final controller = VideoPlayerController.networkUrl(Uri.parse(url));
+      videoController = controller;
+
+      try {
+        await controller.initialize();
+        
+        // Wait briefly for UI to be ready
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        if (videoController == controller) {
           isInitialized.value = true;
-          videoController?.play();
+          await controller.play();
           isPlaying.value = true;
-          isLoading.value = false;
-        }).catchError((error) {
-          isLoading.value = false;
-        });
+        }
+      } catch (error) {
+        debugPrint("Podcast Video Error: $error");
+        isInitialized.value = false;
+      } finally {
+        isLoading.value = false;
+      }
 
       videoController?.addListener(() {
         if (videoController != null) {

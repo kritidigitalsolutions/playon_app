@@ -220,8 +220,10 @@ class _MatchPlayScreenState extends State<MatchPlayScreen> {
                   videoControllerX.videoController!.value.isInitialized) {
                 return Center(
                   child: AspectRatio(
-                    aspectRatio:
-                        videoControllerX.videoController!.value.aspectRatio,
+                    key: ValueKey(videoControllerX.videoController.hashCode),
+                    aspectRatio: videoControllerX.videoController!.value.aspectRatio > 0
+                        ? videoControllerX.videoController!.value.aspectRatio
+                        : 16 / 9,
                     child: VideoPlayer(videoControllerX.videoController!),
                   ),
                 );

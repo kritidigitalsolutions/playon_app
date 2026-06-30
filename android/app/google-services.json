@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "257271466858-0tv9i0e6f5bm2v81hesr1vbqre5602jb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.cametech.playon",
+            "certificate_hash": "49f99b8d77c6ea487ca9b82eb924b7ad5fd9f9d9"
+          }
+        },
+        {
           "client_id": "257271466858-kiu0q6ia98ofeph41tqbon2mmo33p770.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

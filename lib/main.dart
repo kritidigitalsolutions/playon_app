@@ -1,5 +1,6 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -52,15 +53,6 @@ Future<void> main() async {
   } catch (e) {
     debugPrint("❌ [SVC] Firebase Error: $e");
   }
-
-  // ── 3. runApp — PEHLE render karo ───────────
-  //
-  //  iOS Rule:
-  //  Koi bhi system dialog (notification permission,
-  //  tracking permission) runApp ke BAAD hona chahiye.
-  //  Pehle hone se iOS ka display layer confuse hota
-  //  hai aur Flutter kuch render nahi kar paata.
-  //
   runApp(const MyApp());
 
   // ── 4. Pehle frame ke baad services init karo ─
@@ -160,19 +152,54 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  Future<bool?> _showExitDialog(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF081029),
+        title: const Text('Exit App', style: TextStyle(color: Colors.white)),
+        content: const Text('Are you sure you want to exit?',
+            style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('No', style: TextStyle(color: Colors.blue)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(true);
+            },
+            child: const Text('Yes', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     debugPrint("🏠 [UI] MyHomePage Build");
-    return Scaffold(
-      backgroundColor: const Color(0xFF040B23),
-      body: Obx(
-            () => IndexedStack(
-          index: controller.currentIndex.value,
-          children: screens,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final shouldPop = await _showExitDialog(context);
+        if (shouldPop ?? false) {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF040B23),
+        body: Obx(
+          () => IndexedStack(
+            index: controller.currentIndex.value,
+            children: screens,
+          ),
         ),
-      ),
-      bottomNavigationBar: Obx(
-            () => _buildBottomBar(controller.currentIndex.value),
+        bottomNavigationBar: Obx(
+          () => _buildBottomBar(controller.currentIndex.value),
+        ),
       ),
     );
   }
@@ -185,7 +212,7 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _navItem(Icons.home, 'Home', 0, currentIndex),
-            _navItem(Icons.live_tv, 'Live', 1, currentIndex),
+            _navItem(Icons.live_tv, 'Live Tv', 1, currentIndex),
             _navItem(Icons.list_alt, 'Series', 2, currentIndex),
             _navItem(Icons.video_library, 'Highlights', 3, currentIndex),
             _navItem(Icons.calendar_today, 'Events', 4, currentIndex),
