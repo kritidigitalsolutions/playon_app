@@ -5,7 +5,10 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:play_on_app/model/response_model/ad_placement_model.dart';
 import 'package:play_on_app/repo/ad_repository.dart';
 import 'package:play_on_app/view_model/after_controller/plan_controller.dart';
+import 'package:play_on_app/utils/hive_service/hive_service.dart';
+import 'package:play_on_app/routes/app_routes.dart';
 
+import 'home_contollers/home_controller.dart';
 import 'home_contollers/podcast_play_controller.dart';
 import 'match_controller/match_controller.dart';
 
@@ -43,6 +46,16 @@ class AdController extends GetxController {
       _createInterstitialAd();
     }
 
+    // NEW: Listen for login state changes to trigger ad loading
+    if (Get.isRegistered<HomeController>()) {
+      final homeCtr = Get.find<HomeController>();
+      ever(homeCtr.isLogin, (bool isLoggedIn) {
+        if (isLoggedIn && _interstitialAd == null && isMobileAdsInitialized.value) {
+          _createInterstitialAd();
+        }
+      });
+    }
+
     debugPrint("📢 [CTRL] AdController onInit END");
   }
 
@@ -53,7 +66,10 @@ class AdController extends GetxController {
   }
 
   void _createInterstitialAd() {
-    if (_isAdLoading) return;
+    if (_isAdLoading || !HiveService.isLogin()) {
+      _isAdLoading = false;
+      return;
+    }
     _isAdLoading = true;
     
     InterstitialAd.load(
@@ -99,7 +115,35 @@ class AdController extends GetxController {
   }
 
   Future<void> showInterstitialAd() async {
-    // 1. Check if user is ad-free
+    // 1. Check if user is logged in
+    if (!HiveService.isLogin()) {
+      debugPrint("📢 [AD] Skipping ad: User is not logged in");
+      return;
+    }
+
+    // 2. Check if the current screen should show ads
+    final String currentRoute = Get.currentRoute;
+    final List<String> excludedRoutes = [
+      AppRoutes.profilePage,
+      AppRoutes.accessPlan,
+      AppRoutes.chooseMatch,
+      AppRoutes.selectTeam,
+      AppRoutes.selectSeries,
+      AppRoutes.purchasedItems,
+      AppRoutes.login,
+      AppRoutes.otpVerify,
+      AppRoutes.fullnameEnter,
+      AppRoutes.sportInterrestScreen,
+      AppRoutes.splashScreen,
+      AppRoutes.accountDelete,
+    ];
+
+    if (excludedRoutes.contains(currentRoute)) {
+      debugPrint("📢 [AD] Skipping ad: Current route ($currentRoute) is excluded");
+      return;
+    }
+
+    // 3. Check if user is ad-free
     if (Get.isRegistered<PlanController>() && Get.find<PlanController>().isAdFree.value) {
       debugPrint("📢 [AD] Skipping ad: User is Ad-Free");
       return;
