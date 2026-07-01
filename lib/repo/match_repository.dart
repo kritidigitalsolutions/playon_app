@@ -282,4 +282,13 @@ class MatchRepository {
       rethrow;
     }
   }
+
+  Future<dynamic> getPopups() async {
+    try {
+      final response = await _apiServices.getApi(AppUrls.popups);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

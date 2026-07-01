@@ -150,6 +150,286 @@ class _MyHomePageState extends State<MyHomePage> {
         controller.changeIndex(widget.index!);
       });
     }
+
+    // Show Promo Popup every time app opens (MyHomePage is reached)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndShowPromoDialog();
+    });
+  }
+
+  void _checkAndShowPromoDialog() {
+    if (controller.popupData.value != null) {
+      _showPromoDialog(controller.popupData.value!);
+    } else {
+      // If data is still loading, wait for it
+      late Worker worker;
+      worker = ever(controller.popupData, (data) {
+        if (data != null) {
+          _showPromoDialog(data);
+          worker.dispose(); // Show only once per app open
+        }
+      });
+      
+      // Safety timeout - if API fails or takes too long, don't show anything
+      Future.delayed(const Duration(seconds: 5), () {
+        worker.dispose();
+      });
+    }
+  }
+
+  void _showPromoDialog(Map<String, dynamic> data) {
+    final type = data['type'] ?? "PROMO";
+    final imageUrl = data['image'] ?? "";
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        if (type == "IMAGE" && imageUrl.isNotEmpty) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const Center(child: CircularProgressIndicator());
+                    },
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      padding: const EdgeInsets.all(20),
+                      color: const Color(0xFF0D1535),
+                      child: const Text("Failed to load image"),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: -10,
+                  top: -10,
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1A2151),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.blueAccent.withOpacity(0.5), width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          )
+                        ],
+                      ),
+                      child: const Icon(Icons.close, color: Colors.white, size: 20),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // Default PROMO layout
+        final title = data['title'] ?? "SPECIAL OFFER";
+        final description = data['description'] ?? "";
+        final promo = data['promo'] ?? {};
+        final code = promo['code'] ?? "NOCODE";
+        final discountValue = promo['discountValue']?.toString() ?? "0";
+        final discountType = promo['discountType'] == 'percent' ? "% OFF" : " OFF";
+
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF0D1535), Color(0xFF1A2151)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.blueAccent.withOpacity(0.3), width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.5),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.blueAccent.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.blueAccent.withOpacity(0.5)),
+                      ),
+                      child: const Text(
+                        "LIMITED TIME OFFER",
+                        style: TextStyle(
+                          color: Colors.blueAccent,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      title.toUpperCase(),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 22,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      description,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white60,
+                        fontSize: 14,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                    // Promo Code Section
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.03),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.blueAccent.withOpacity(0.3), style: BorderStyle.solid),
+                      ),
+                      child: Column(
+                        children: [
+                          const Text(
+                            "USE CODE",
+                            style: TextStyle(
+                              color: Colors.white38,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            code,
+                            style: TextStyle(
+                              color: Colors.blueAccent.shade100,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 32,
+                              letterSpacing: 5,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.blueAccent.withOpacity(0.5),
+                                  blurRadius: 10,
+                                )
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          "SAVE ",
+                          style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w500),
+                        ),
+                        Text(
+                          "$discountValue$discountType ",
+                          style: TextStyle(
+                            color: Colors.orangeAccent.shade200,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 24,
+                          ),
+                        ),
+                        const Text(
+                          "TODAY",
+                          style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 30),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        if (controller.isLogin.value) {
+                          Get.toNamed(AppRoutes.accessPlan);
+                        } else {
+                          Get.toNamed(AppRoutes.login);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                        foregroundColor: Colors.white,
+                        elevation: 8,
+                        shadowColor: Colors.blueAccent.withOpacity(0.5),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 40),
+                      ),
+                      child: const Text(
+                        "CLAIM OFFER",
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, letterSpacing: 1),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Close Button
+              Positioned(
+                right: -10,
+                top: -10,
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A2151),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.blueAccent.withOpacity(0.5), width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
+                        )
+                      ],
+                    ),
+                    child: const Icon(Icons.close, color: Colors.white, size: 20),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Future<bool?> _showExitDialog(BuildContext context) {

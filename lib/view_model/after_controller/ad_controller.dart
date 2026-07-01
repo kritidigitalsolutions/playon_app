@@ -123,23 +123,16 @@ class AdController extends GetxController {
 
     // 2. Check if the current screen should show ads
     final String currentRoute = Get.currentRoute;
-    final List<String> excludedRoutes = [
-      AppRoutes.profilePage,
-      AppRoutes.accessPlan,
-      AppRoutes.chooseMatch,
-      AppRoutes.selectTeam,
-      AppRoutes.selectSeries,
-      AppRoutes.purchasedItems,
-      AppRoutes.login,
-      AppRoutes.otpVerify,
-      AppRoutes.fullnameEnter,
-      AppRoutes.sportInterrestScreen,
-      AppRoutes.splashScreen,
-      AppRoutes.accountDelete,
+    final List<String> allowedRoutes = [
+      AppRoutes.channelPlay,
+      AppRoutes.matchPlay,
+      AppRoutes.podcastPlay,
+      AppRoutes.highlightsPlayer,
+      AppRoutes.matchDetails,
     ];
 
-    if (excludedRoutes.contains(currentRoute)) {
-      debugPrint("📢 [AD] Skipping ad: Current route ($currentRoute) is excluded");
+    if (!allowedRoutes.contains(currentRoute)) {
+      debugPrint("📢 [AD] Skipping ad: Current route ($currentRoute) is not a content/video route");
       return;
     }
 

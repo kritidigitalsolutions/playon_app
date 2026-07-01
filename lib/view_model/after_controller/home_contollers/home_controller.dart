@@ -81,6 +81,9 @@ class HomeController extends GetxController {
 
   var liveScores = <String, ScoreData>{}.obs;
 
+  var popupData = Rxn<Map<String, dynamic>>();
+  var isPopupLoading = false.obs;
+
   Timer? _scoreTimer;
 
   final RxInt selectedTabIndex = 0.obs;
@@ -119,6 +122,7 @@ class HomeController extends GetxController {
     fetchReferralCode();
     fetchReferralOffer();
     fetchReferralVouchers();
+    fetchPopups();
     _startScoreTimer();
 
     // Setup search listeners
@@ -597,6 +601,20 @@ class HomeController extends GetxController {
       onSuccess();
     } else {
       _showLoginBottomSheet();
+    }
+  }
+
+  Future<void> fetchPopups() async {
+    isPopupLoading.value = true;
+    try {
+      final res = await _matchRepository.getPopups();
+      if (res['success'] == true) {
+        popupData.value = res['data'];
+      }
+    } catch (e) {
+      debugPrint("Error fetching popups: $e");
+    } finally {
+      isPopupLoading.value = false;
     }
   }
 
