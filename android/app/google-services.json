@@ -30,6 +30,14 @@
           }
         },
         {
+          "client_id": "257271466858-pjqep0l49o6ibgqmqbtjcjp4572abpss.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.cametech.playon",
+            "certificate_hash": "d11285a512aa73926e1450017dfb5d6fdaa17601"
+          }
+        },
+        {
           "client_id": "257271466858-7c4qa7ttf0entmjckpcghvvso0f81pb0.apps.googleusercontent.com",
           "client_type": 3
         }

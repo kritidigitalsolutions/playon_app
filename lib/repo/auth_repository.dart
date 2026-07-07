@@ -67,6 +67,15 @@ class AuthRepository {
     }
   }
 
+  Future<dynamic> appleLogin(Map<String, dynamic> data) async {
+    try {
+      final response = await _apiService.postApi(AppUrls.socialLogin, data);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<dynamic> getSocialMedia() async {
     try {
       final response = await _apiService.getApi(AppUrls.socialMedia);

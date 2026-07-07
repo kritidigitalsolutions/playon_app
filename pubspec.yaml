@@ -48,6 +48,7 @@ dependencies:
   google_mobile_ads: ^8.0.0
 #  flutter_inappwebview_ios: ^6.1.5
   flutter_inappwebview: ^6.1.5
+  sign_in_with_apple: ^8.1.0
 
 dev_dependencies:
   flutter_test:

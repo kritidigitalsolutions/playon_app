@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -19,6 +20,7 @@ class LoginScreen extends StatelessWidget {
     required String label,
     required Color color,
     required Color textColor,
+    Color? iconColor,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
@@ -40,7 +42,7 @@ class LoginScreen extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            FaIcon(icon, color: Colors.red, size: 20),
+            FaIcon(icon, color: iconColor ?? textColor, size: 20),
             const SizedBox(width: 12),
             Text(
               label,
@@ -122,13 +124,28 @@ class LoginScreen extends StatelessWidget {
 
                   const SizedBox(height: 30),
 
-                  // Social Login Button
-                  Obx(() => _socialLoginButton(
-                    icon: FontAwesomeIcons.google,
-                    label: ctr.isLoading.value ? "Signing in..." : "Sign in with Google",
-                    color: Colors.white,
-                    textColor: Colors.black87,
-                    onTap: ctr.isLoading.value ? () {} : () => ctr.loginWithGoogle(),
+                  // Social Login Buttons
+                  Obx(() => Column(
+                    children: [
+                      if (Platform.isAndroid)
+                        _socialLoginButton(
+                          icon: FontAwesomeIcons.google,
+                          label: ctr.isLoading.value ? "Signing in..." : "Sign in with Google",
+                          color: Colors.white,
+                          textColor: Colors.black87,
+                          iconColor: Colors.red,
+                          onTap: ctr.isLoading.value ? () {} : () => ctr.loginWithGoogle(),
+                        ),
+                      if (Platform.isIOS)
+                        _socialLoginButton(
+                          icon: FontAwesomeIcons.apple,
+                          label: ctr.isLoading.value ? "Signing in..." : "Sign in with Apple",
+                          color: Colors.black,
+                          textColor: Colors.white,
+                          iconColor: Colors.white,
+                          onTap: ctr.isLoading.value ? () {} : () => ctr.loginWithApple(),
+                        ),
+                    ],
                   )),
 
                   const SizedBox(height: 30),

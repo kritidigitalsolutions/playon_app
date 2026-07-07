@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:dio/dio.dart' as dio;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:play_on_app/model/response_model/auth_response_model.dart';
 import 'package:play_on_app/model/response_model/social_media_model.dart';
 import 'package:play_on_app/repo/auth_repository.dart';
@@ -289,7 +291,88 @@ class AuthController extends GetxController {
   }
 
 
+  Future<void> loginWithApple() async {
+    isLoading.value = true;
+    try {
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
 
+      final response = await _repository.appleLogin({
+        "idToken": credential.identityToken,
+        "provider": "apple",
+        "email": credential.email,
+        "fullName": credential.givenName != null ? "${credential.givenName} ${credential.familyName}" : null,
+      });
+
+      final data = VerifyOtpResponseModel.fromJson(response);
+      if (data.success == true) {
+        final userDetail = UserDetails(
+          sId: data.user?.id,
+          token: data.token,
+          email: data.user?.email,
+          phone: data.user?.mobile,
+          isNewUser: data.isNewUser,
+          name: data.user?.fullName,
+          image: data.user?.profilePic ?? data.user?.profileImage,
+        );
+
+        if (data.user?.fullName != null && data.user!.fullName!.isNotEmpty) {
+          nameController.text = data.user!.fullName!;
+        } else if (credential.givenName != null) {
+          nameController.text = "${credential.givenName} ${credential.familyName}";
+          if (userDetail.name == null || userDetail.name!.isEmpty) {
+            userDetail.name = nameController.text;
+          }
+        }
+
+        await HiveService.saveUser(userDetail);
+        userData.value = data.user;
+
+        NotificationService.syncTokenToServer();
+
+        if (data.isNewUser == true) {
+          if (Get.isRegistered<HomeController>()) {
+            final homeCtr = Get.find<HomeController>();
+            homeCtr.userName.value = nameController.text;
+            homeCtr.fetchMatches();
+          }
+
+          if (nameController.text.trim().length < 3) {
+            Get.offAllNamed(AppRoutes.fullnameEnter);
+          } else {
+            Get.offAllNamed(AppRoutes.myHomePage);
+          }
+        } else {
+          if (Get.isRegistered<HomeController>()) {
+            final homeCtr = Get.find<HomeController>();
+            homeCtr.isLogin.value = true;
+            homeCtr.userName.value = nameController.text;
+            homeCtr.fetchMatches();
+          }
+          Get.offAllNamed(AppRoutes.myHomePage);
+        }
+      } else {
+        showCustomSnackbar(
+          title: "Error",
+          message: data.message ?? "Apple login failed",
+          type: SnackType.error,
+        );
+      }
+    } catch (e) {
+      print("Apple Login Error: $e");
+      showCustomSnackbar(
+        title: "Error",
+        message: "Apple login failed. Please try again.",
+        type: SnackType.error,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
   Future<void> verifyOtp() async {
     if (otpController.text.isEmpty) {
       showCustomSnackbar(title: "Error", message: "Enter OTP", type: SnackType.error);
