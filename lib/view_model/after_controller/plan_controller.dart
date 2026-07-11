@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:play_on_app/model/response_model/match_model.dart' as model;
@@ -5,6 +8,7 @@ import 'package:get/get.dart';
 import 'package:play_on_app/model/response_model/subscription_model.dart';
 import 'package:play_on_app/repo/plan_repository.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:play_on_app/model/response_model/series_model.dart' as series_model;
 import 'package:play_on_app/model/response_model/star_player_model.dart' as star_player_model;
 import 'package:play_on_app/model/response_model/podcast_model.dart' as podcast_model;
@@ -20,6 +24,8 @@ import '../../utils/custom_snakebar.dart';
 class PlanController extends GetxController {
   final _api = PlanRepository();
   late Razorpay _razorpay;
+  final InAppPurchase _iap = InAppPurchase.instance;
+  late StreamSubscription<List<PurchaseDetails>> _iapSubscription;
 
   final planList = ApiResponse<PlanModel>.loading().obs;
   final mySubscription = ApiResponse<MySubscriptionResponse>.loading().obs;
@@ -175,6 +181,16 @@ class PlanController extends GetxController {
     _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
     _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
     _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+
+    final Stream<List<PurchaseDetails>> purchaseUpdated = _iap.purchaseStream;
+    _iapSubscription = purchaseUpdated.listen((purchaseDetailsList) {
+      _listenToPurchaseUpdated(purchaseDetailsList);
+    }, onDone: () {
+      _iapSubscription.cancel();
+    }, onError: (error) {
+      debugPrint("IAP Error: $error");
+    });
+
     fetchPlans();
     fetchMySubscription();
     fetchSubscriptionHistory();
@@ -185,6 +201,7 @@ class PlanController extends GetxController {
   @override
   void onClose() {
     _razorpay.clear();
+    _iapSubscription.cancel();
     super.onClose();
   }
 
@@ -266,6 +283,11 @@ class PlanController extends GetxController {
     _currentTeamId = teamId;
     _currentItemId = itemId;
     _currentPromoCode = promoCode;
+
+    if (Platform.isIOS) {
+      _buyPlanIOS(planId);
+      return;
+    }
 
     try {
       final response = await _api.createOrder(planId, itemId: itemId, seriesId: seriesId, matchId: matchId, teamId: teamId, promoCode: promoCode);
@@ -411,6 +433,99 @@ class PlanController extends GetxController {
 
   void _handleExternalWallet(ExternalWalletResponse response) {
     isPaymentProcessing.value = false;
+  }
+
+  // --- iOS In-App Purchase Logic ---
+
+  Future<void> _buyPlanIOS(String planId) async {
+    final bool available = await _iap.isAvailable();
+    if (!available) {
+      isPaymentProcessing.value = false;
+      showCustomSnackbar(title: 'Error', message: 'In-app purchases are not available on this device', type: SnackType.error);
+      return;
+    }
+
+    // Find the plan to get its slug or another identifier used in App Store Connect
+    final plan = planList.value.data?.plans?.firstWhere((p) => p.id == planId);
+    if (plan == null) {
+      isPaymentProcessing.value = false;
+      showCustomSnackbar(title: 'Error', message: 'Plan details not found', type: SnackType.error);
+      return;
+    }
+
+    // IMPORTANT: On iOS, product IDs must be created in App Store Connect.
+    // We assume the slug is used as the product ID here.
+    String productId = plan.slug ?? planId;
+    
+    final ProductDetailsResponse response = await _iap.queryProductDetails({productId});
+    if (response.notFoundIDs.isNotEmpty) {
+      debugPrint("Products not found: ${response.notFoundIDs}");
+      isPaymentProcessing.value = false;
+      showCustomSnackbar(title: 'Error', message: 'Product not found in App Store', type: SnackType.error);
+      return;
+    }
+
+    final ProductDetails productDetails = response.productDetails.first;
+    final PurchaseParam purchaseParam = PurchaseParam(productDetails: productDetails);
+
+    // Using buyNonConsumable for plans. If it's a one-time consumable, use buyConsumable.
+    // Most subscriptions or permanent features are non-consumable.
+    _iap.buyNonConsumable(purchaseParam: purchaseParam);
+  }
+
+  void _listenToPurchaseUpdated(List<PurchaseDetails> purchaseDetailsList) {
+    purchaseDetailsList.forEach((PurchaseDetails purchaseDetails) async {
+      if (purchaseDetails.status == PurchaseStatus.pending) {
+        // Purchase is pending, shows loading or processing state
+      } else {
+        if (purchaseDetails.status == PurchaseStatus.error) {
+          isPaymentProcessing.value = false;
+          showCustomSnackbar(title: 'Error', message: purchaseDetails.error?.message ?? 'Purchase failed', type: SnackType.error);
+        } else if (purchaseDetails.status == PurchaseStatus.purchased || purchaseDetails.status == PurchaseStatus.restored) {
+          bool verified = await _verifyIOSPurchase(purchaseDetails);
+          if (verified) {
+            if (purchaseDetails.pendingCompletePurchase) {
+              await _iap.completePurchase(purchaseDetails);
+            }
+            isPaymentProcessing.value = false;
+            showCustomSnackbar(title: 'Success', message: 'Purchase successful', type: SnackType.success);
+            fetchMySubscription();
+            fetchSubscriptionHistory();
+            if (Get.currentRoute.contains('Select')) {
+              Get.back();
+            }
+          } else {
+            isPaymentProcessing.value = false;
+            showCustomSnackbar(title: 'Error', message: 'Purchase verification failed', type: SnackType.error);
+          }
+        }
+        if (purchaseDetails.pendingCompletePurchase && purchaseDetails.status != PurchaseStatus.purchased) {
+           await _iap.completePurchase(purchaseDetails);
+        }
+      }
+    });
+  }
+
+  Future<bool> _verifyIOSPurchase(PurchaseDetails purchaseDetails) async {
+    try {
+      final Map<String, dynamic> verifyData = {
+        'platform': 'ios',
+        'product_id': purchaseDetails.productID,
+        'purchase_id': purchaseDetails.purchaseID,
+        'verification_data': purchaseDetails.verificationData.serverVerificationData,
+        'planId': _currentPlanId!,
+      };
+
+      if (_currentMatchId != null) verifyData['matchId'] = _currentMatchId;
+      if (_currentSeriesId != null) verifyData['seriesId'] = _currentSeriesId;
+      if (_currentTeamId != null) verifyData['teamId'] = _currentTeamId;
+
+      final response = await _api.verifyPayment(verifyData);
+      return response['success'] == true;
+    } catch (e) {
+      debugPrint("Verification error: $e");
+      return false;
+    }
   }
 
   void removePromoCode() {
