@@ -24,3 +24,9 @@
 
 # Firebase
 -keep class com.google.firebase.** { *; }
+
+# Razorpay Proguard Rules
+-keepattributes *Annotation*
+-dontwarn com.razorpay.**
+-keep class com.razorpay.** {*;}
+-optimizations !method/inlining/*

@@ -63,6 +63,29 @@ class _SelectSeriesPageState extends State<SelectSeriesPage> {
               const SizedBox(height: 20),
               Expanded(
                 child: Obx(() {
+                  if (planController.isPaymentProcessing.value) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const CircularProgressIndicator(color: AppColors.primary),
+                          const SizedBox(height: 16),
+                          const Text("Processing Payment...", style: TextStyle(color: Colors.white)),
+                          const SizedBox(height: 24),
+                          TextButton(
+                            onPressed: () {
+                              planController.isPaymentProcessing.value = false;
+                            },
+                            child: Text(
+                              "Cancel / Go Back",
+                              style: text14(color: AppColors.primary, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
                   if (seriesController.isLoading.value) {
                     return const Center(child: CircularProgressIndicator(color: AppColors.primary));
                   }

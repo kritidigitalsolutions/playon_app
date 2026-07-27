@@ -31,7 +31,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final AuthController _authController = Get.put(AuthController());
   final PlayerController _playerController = Get.put(PlayerController());
   final SeriesController _seriesController = Get.put(SeriesController());
-  final PlanController _planController = Get.put(PlanController());
+  final PlanController _planController = Get.find<PlanController>();
   String? _profileImagePath;
   final ImagePicker _picker = ImagePicker();
 

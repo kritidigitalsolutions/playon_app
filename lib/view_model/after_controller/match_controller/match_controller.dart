@@ -48,7 +48,7 @@ class MatchDetailsController extends GetxController {
   var isScoreLoading = false.obs;
 
   final MatchRepository _repository = MatchRepository();
-  final planController = Get.put(PlanController());
+  final planController = Get.find<PlanController>();
 
   Timer? _timer;
 

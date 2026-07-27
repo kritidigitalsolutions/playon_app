@@ -166,6 +166,8 @@ class PlanController extends GetxController {
   }
 
   final isPaymentProcessing = false.obs;
+  Timer? _paymentTimeoutTimer;
+
   String? _currentPlanId;
   String? _currentMatchId;
   String? _currentSeriesId;
@@ -202,6 +204,7 @@ class PlanController extends GetxController {
   void onClose() {
     _razorpay.clear();
     _iapSubscription.cancel();
+    _paymentTimeoutTimer?.cancel();
     super.onClose();
   }
 
@@ -277,6 +280,16 @@ class PlanController extends GetxController {
 
   Future<void> buyPlan(String planId, {String? itemId, String? seriesId, String? matchId, String? teamId, String? promoCode}) async {
     isPaymentProcessing.value = true;
+    
+    // Safety timeout: automatically reset processing state after 3 minutes
+    _paymentTimeoutTimer?.cancel();
+    _paymentTimeoutTimer = Timer(const Duration(minutes: 3), () {
+      if (isPaymentProcessing.value) {
+        debugPrint("⚠️ [CTRL] Payment processing safety timeout reached");
+        isPaymentProcessing.value = false;
+      }
+    });
+
     _currentPlanId = planId;
     _currentMatchId = matchId;
     _currentSeriesId = seriesId;
@@ -304,7 +317,9 @@ class PlanController extends GetxController {
           'order_id': orderData['id'],
           'description': response['plan']?['title'] ?? 'Subscription Payment',
           'prefill': {
-            'contact': auth.userData.value?.mobile ?? '',
+            'contact': (auth.userData.value?.mobile != null && auth.userData.value!.mobile!.isNotEmpty) 
+                        ? auth.userData.value!.mobile! 
+                        : '8888888888', // Fallback for social login users without phone
             'email': auth.userData.value?.email ?? ''
           },
           'external': {
@@ -313,43 +328,84 @@ class PlanController extends GetxController {
         };
 
         _razorpay.open(options);
+      } else {
+        isPaymentProcessing.value = false;
+        _paymentTimeoutTimer?.cancel();
+        showCustomSnackbar(
+          title: 'Error', 
+          message: response['message'] ?? 'Failed to create order', 
+          type: SnackType.error
+        );
       }
     } catch (e) {
       isPaymentProcessing.value = false;
+      _paymentTimeoutTimer?.cancel();
       showCustomSnackbar(title: 'Error', message: e.toString(), type: SnackType.error);
     }
   }
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) {
-    final Map<String, dynamic> verifyData = {
-      'razorpay_payment_id': response.paymentId!,
-      'razorpay_order_id': response.orderId!,
-      'razorpay_signature': response.signature!,
-      'planId': _currentPlanId!,
-    };
-
-    if (_currentMatchId != null) verifyData['matchId'] = _currentMatchId;
-    if (_currentSeriesId != null) verifyData['seriesId'] = _currentSeriesId;
-    if (_currentTeamId != null) verifyData['teamId'] = _currentTeamId;
-
-    _api.verifyPayment(verifyData).then((value) {
-      isPaymentProcessing.value = false;
-      showCustomSnackbar(title: 'Success', message: 'Payment successful', type: SnackType.success);
-      fetchMySubscription();
-      fetchSubscriptionHistory();
-
-      // Navigate back if on plan selection page
-      if (Get.currentRoute.contains('Select')) {
-        Get.back();
+    debugPrint("💳 [CTRL] Payment Success Callback: ${response.paymentId}");
+    
+    try {
+      if (response.paymentId == null || response.orderId == null || response.signature == null) {
+        isPaymentProcessing.value = false;
+        showCustomSnackbar(
+          title: 'Error', 
+          message: 'Payment details missing from gateway', 
+          type: SnackType.error
+        );
+        return;
       }
-    }).catchError((error) {
+
+      final Map<String, dynamic> verifyData = {
+        'razorpay_payment_id': response.paymentId ?? '',
+        'razorpay_order_id': response.orderId ?? '',
+        'razorpay_signature': response.signature ?? '',
+        'planId': _currentPlanId ?? '',
+      };
+
+      if (_currentMatchId != null) verifyData['matchId'] = _currentMatchId;
+      if (_currentSeriesId != null) verifyData['seriesId'] = _currentSeriesId;
+      if (_currentTeamId != null) verifyData['teamId'] = _currentTeamId;
+
+      _api.verifyPayment(verifyData).then((value) {
+        isPaymentProcessing.value = false;
+        
+        if (value != null && value['success'] == true) {
+          showCustomSnackbar(title: 'Success', message: 'Payment successful', type: SnackType.success);
+          fetchMySubscription();
+          fetchSubscriptionHistory();
+
+          // Navigate back if on selection pages
+          if (Get.currentRoute.contains('Select') || 
+              Get.currentRoute.contains('Choose') || 
+              Get.currentRoute.contains('accessPlan')) {
+            Get.back();
+          }
+        } else {
+          showCustomSnackbar(
+            title: 'Verification Failed', 
+            message: value?['message'] ?? 'Unable to verify payment status', 
+            type: SnackType.error
+          );
+        }
+      }).catchError((error) {
+        debugPrint("❌ Verification Error: $error");
+        isPaymentProcessing.value = false;
+        showCustomSnackbar(title: 'Error', message: 'Payment verification failed', type: SnackType.error);
+      });
+    } catch (e) {
+      debugPrint("❌ Payment Callback Exception: $e");
       isPaymentProcessing.value = false;
-      showCustomSnackbar(title: 'Error', message: 'Payment verification failed', type: SnackType.error);
-    });
+      showCustomSnackbar(title: 'Error', message: 'An unexpected error occurred', type: SnackType.error);
+    }
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
+    debugPrint("❌ [CTRL] Payment Error/Cancelled: ${response.code} - ${response.message}");
     isPaymentProcessing.value = false;
+    _paymentTimeoutTimer?.cancel();
     // Add a small delay before showing dialog to ensure Razorpay UI is fully dismissed on iOS
     Future.delayed(const Duration(milliseconds: 500), () {
       _showPaymentFailureDialog(response.message ?? 'Payment failed or cancelled');
@@ -433,6 +489,7 @@ class PlanController extends GetxController {
 
   void _handleExternalWallet(ExternalWalletResponse response) {
     isPaymentProcessing.value = false;
+    _paymentTimeoutTimer?.cancel();
   }
 
   // --- iOS In-App Purchase Logic ---

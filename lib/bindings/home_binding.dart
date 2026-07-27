@@ -15,7 +15,7 @@ class HomeBinding implements Bindings {
     Get.put<AdController>(AdController());
     Get.put<AuthController>(AuthController());
     Get.put<LegalController>(LegalController());
-    Get.put<PlanController>(PlanController());
+    Get.put<PlanController>(PlanController(), permanent: true);
     Get.put<NotificationController>(NotificationController());
     Get.put<PlayerController>(PlayerController());
     Get.put<SeriesController>(SeriesController());

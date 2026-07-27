@@ -129,13 +129,23 @@ class AccessPlansScreen extends StatelessWidget {
   Widget _buildPlansTab() {
     return Obx(() {
       if (controller.isPaymentProcessing.value) {
-        return const Center(
+        return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(color: AppColors.primary),
-              SizedBox(height: 16),
-              Text("Processing Payment...", style: TextStyle(color: Colors.white)),
+              const CircularProgressIndicator(color: AppColors.primary),
+              const SizedBox(height: 16),
+              const Text("Processing Payment...", style: TextStyle(color: Colors.white)),
+              const SizedBox(height: 24),
+              TextButton(
+                onPressed: () {
+                  controller.isPaymentProcessing.value = false;
+                },
+                child: Text(
+                  "Cancel / Go Back",
+                  style: text14(color: AppColors.primary, fontWeight: FontWeight.bold),
+                ),
+              ),
             ],
           ),
         );

@@ -138,24 +138,49 @@ class _SelectTeamPageState extends State<SelectTeamPage> {
               const SizedBox(height: 10),
               
               Expanded(
-                child: isLoading
-                    ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                    : filteredTeams.isEmpty
-                        ? Center(child: Text("No teams found", style: text14(color: AppColors.white70)))
-                        : GridView.builder(
-                            padding: const EdgeInsets.all(16),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              childAspectRatio: 1.1,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                            ),
-                            itemCount: filteredTeams.length,
-                            itemBuilder: (context, index) {
-                              final team = filteredTeams[index];
-                              return _buildTeamCard(team);
+                child: Obx(() {
+                  if (planController.isPaymentProcessing.value) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const CircularProgressIndicator(color: AppColors.primary),
+                          const SizedBox(height: 16),
+                          const Text("Processing Payment...", style: TextStyle(color: Colors.white)),
+                          const SizedBox(height: 24),
+                          TextButton(
+                            onPressed: () {
+                              planController.isPaymentProcessing.value = false;
                             },
+                            child: Text(
+                              "Cancel / Go Back",
+                              style: text14(color: AppColors.primary, fontWeight: FontWeight.bold),
+                            ),
                           ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return isLoading
+                      ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                      : filteredTeams.isEmpty
+                          ? Center(child: Text("No teams found", style: text14(color: AppColors.white70)))
+                          : GridView.builder(
+                              padding: const EdgeInsets.all(16),
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                childAspectRatio: 1.1,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                              ),
+                              itemCount: filteredTeams.length,
+                              itemBuilder: (context, index) {
+                                final team = filteredTeams[index];
+                                return _buildTeamCard(team);
+                              },
+                            );
+                }),
               ),
             ],
           ),

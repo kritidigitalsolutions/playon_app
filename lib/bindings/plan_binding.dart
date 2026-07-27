@@ -6,6 +6,5 @@ class PlanBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<AuthController>(() => AuthController());
-    Get.lazyPut<PlanController>(() => PlanController());
   }
 }
