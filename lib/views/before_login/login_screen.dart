@@ -21,12 +21,15 @@ class LoginScreen extends StatelessWidget {
     required Color color,
     required Color textColor,
     Color? iconColor,
+    double height = 50,
+    double fontSize = 14,
+    double iconSize = 20,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 50,
+        height: height,
         decoration: BoxDecoration(
           color: color,
           border: color == Colors.white ? Border.all(color: Colors.grey.shade300) : null,
@@ -42,11 +45,12 @@ class LoginScreen extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            FaIcon(icon, color: iconColor ?? textColor, size: 20),
+            FaIcon(icon, color: iconColor ?? textColor, size: iconSize),
             const SizedBox(width: 12),
             Text(
               label,
-              style: text14(fontWeight: FontWeight.bold).copyWith(color: textColor),
+              style: text14(fontWeight: FontWeight.bold)
+                  .copyWith(color: textColor, fontSize: fontSize),
             ),
           ],
         ),
@@ -127,7 +131,31 @@ class LoginScreen extends StatelessWidget {
                   // Social Login Buttons
                   Obx(() => Column(
                     children: [
-                      if (Platform.isAndroid)
+                      if (Platform.isIOS) ...[
+                        _socialLoginButton(
+                          icon: FontAwesomeIcons.apple,
+                          label: ctr.isLoading.value ? "Signing in..." : "Sign in with Apple",
+                          color: Colors.white,
+                          textColor: Colors.black,
+                          iconColor: Colors.black,
+                          height: 44,
+                          fontSize: 19,
+                          iconSize: 19,
+                          onTap: ctr.isLoading.value ? () {} : () => ctr.loginWithApple(),
+                        ),
+                        const SizedBox(height: 16),
+                        _socialLoginButton(
+                          icon: FontAwesomeIcons.google,
+                          label: ctr.isLoading.value ? "Signing in..." : "Sign in with Google",
+                          color: Colors.white,
+                          textColor: Colors.black87,
+                          iconColor: Colors.red,
+                          height: 44,
+                          fontSize: 19,
+                          iconSize: 19,
+                          onTap: ctr.isLoading.value ? () {} : () => ctr.loginWithGoogle(),
+                        ),
+                      ] else if (Platform.isAndroid)
                         _socialLoginButton(
                           icon: FontAwesomeIcons.google,
                           label: ctr.isLoading.value ? "Signing in..." : "Sign in with Google",
@@ -135,15 +163,6 @@ class LoginScreen extends StatelessWidget {
                           textColor: Colors.black87,
                           iconColor: Colors.red,
                           onTap: ctr.isLoading.value ? () {} : () => ctr.loginWithGoogle(),
-                        ),
-                      if (Platform.isIOS)
-                        _socialLoginButton(
-                          icon: FontAwesomeIcons.apple,
-                          label: ctr.isLoading.value ? "Signing in..." : "Sign in with Apple",
-                          color: Colors.black,
-                          textColor: Colors.white,
-                          iconColor: Colors.white,
-                          onTap: ctr.isLoading.value ? () {} : () => ctr.loginWithApple(),
                         ),
                     ],
                   )),

@@ -197,6 +197,9 @@ class AuthController extends GetxController {
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn(
         scopes: ['email'],
+        clientId: Platform.isIOS
+            ? "257271466858-f1t04b696n2pd4boiebpcsagjq7sc5e0.apps.googleusercontent.com"
+            : null,
         serverClientId: "257271466858-7c4qa7ttf0entmjckpcghvvso0f81pb0.apps.googleusercontent.com",
       );
 

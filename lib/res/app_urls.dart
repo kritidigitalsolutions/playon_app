@@ -1,5 +1,5 @@
 class AppUrls {
-  // static const String baseUrl = 'http://192.168.1.29:8000/api';
+  // static const String baseUrl = 'http://192.168.1.14:8000/api';
   // static const String baseUrl = 'http://13.233.70.187/api';
   static const String baseUrl = 'https://api.playonsports.online/api';
   // static const String baseUrl = 'https://play-on-weld.vercel.app/api';
@@ -7,7 +7,7 @@ class AppUrls {
   // Auth Endpoints
   static const String sendOtp = '$baseUrl/auth/send-otp';
   static const String verifyOtp = '$baseUrl/auth/verify-otp';
-  static const String socialLogin = '$baseUrl/auth/social-login';
+  static const String socialLogin = '$baseUrl/auth/apple/login';
   static const String googleLogin = '$baseUrl/auth/google/login';
 
   // User Endpoints
