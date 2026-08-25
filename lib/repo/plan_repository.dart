@@ -62,6 +62,22 @@ class PlanRepository {
     }
   }
 
+  Future<dynamic> verifyApplePayment(Map<String, dynamic> data) async {
+    try {
+      final token = HiveService.getToken();
+      if (token != null) {
+        _apiService.setToken(token);
+      }
+      final response = await _apiService.postApi(
+        AppUrls.appleVerifyPayment,
+        data,
+      );
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<dynamic> getMySubscription() async {
     try {
       final token = HiveService.getToken();

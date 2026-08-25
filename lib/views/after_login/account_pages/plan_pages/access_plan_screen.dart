@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:play_on_app/res/app_colors.dart';
@@ -170,44 +171,71 @@ class AccessPlansScreen extends StatelessWidget {
           );
         case Status.completed:
           final plans = controller.planList.value.data?.plans ?? [];
+
           return Column(
             children: [
               _buildPromoCodeField(),
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: plans.length,
-                  itemBuilder: (context, index) {
-                    final plan = plans[index];
-                    final isActive = controller.isPlanActive(plan.id, slug: plan.slug);
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 20),
-                      child: _buildPlanCard(
-                        title: plan.title ?? "",
-                        price: "${plan.currency == 'INR' ? '₹' : plan.currency}${plan.price} / ${plan.billingType}",
-                        features: plan.features ?? [],
-                        buttonText: isActive ? "Purchased" : (plan.buttonText ?? "Unlock Now"),
-                        isPrimary: index == 0,
-                        onTap: isActive
-                            ? () {}
-                            : () {
-                                if (plan.slug == "one-match-pass" || plan.buttonText == "Choose The Match") {
-                                  Get.toNamed(AppRoutes.chooseMatch, arguments: plan);
-                                } else if (plan.buttonText == "Choose The Team") {
-                                  Get.toNamed(AppRoutes.selectTeam, arguments: plan);
-                                } else if (plan.buttonText == "Choose The Series") {
-                                  Get.toNamed(AppRoutes.selectSeries, arguments: plan);
-                                } else {
-                                  if (plan.id != null) {
-                                    controller.buyPlan(plan.id!, promoCode: controller.isPromoApplied.value ? controller.appliedPromoCode.value : null);
-                                  }
-                                }
-                              },
+                child: plans.isEmpty
+                    ? Center(
+                        child: Text(
+                          "No plans available at the moment.",
+                          style: text14(color: AppColors.white70),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: plans.length,
+                        itemBuilder: (context, index) {
+                          final plan = plans[index];
+                          final isActive = controller.isPlanActive(plan.id, slug: plan.slug);
+                          
+                          // Priorities Apple's localized info on iOS if found
+                          String displayTitle = plan.title ?? "";
+                          String displayPrice = "${plan.currency == 'INR' ? '₹' : plan.currency}${plan.price} / ${plan.billingType}";
+                          
+                          if (Platform.isIOS && plan.slug != null && controller.iapProducts.containsKey(plan.slug)) {
+                            final iap = controller.iapProducts[plan.slug]!;
+                            displayTitle = iap.title.split('(').first.trim();
+                            displayPrice = "${iap.price} / ${plan.billingType}";
+                          }
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 20),
+                            child: _buildPlanCard(
+                              title: displayTitle,
+                              price: displayPrice,
+                              features: plan.features ?? [],
+                              buttonText: isActive ? "Purchased" : (plan.buttonText ?? "Unlock Now"),
+                              isPrimary: index == 0,
+                              onTap: isActive
+                                  ? () {}
+                                  : () {
+                                      if (plan.slug == "one-match-pass" || plan.buttonText == "Choose The Match") {
+                                        Get.toNamed(AppRoutes.chooseMatch, arguments: plan);
+                                      } else if (plan.buttonText == "Choose The Team") {
+                                        Get.toNamed(AppRoutes.selectTeam, arguments: plan);
+                                      } else if (plan.buttonText == "Choose The Series") {
+                                        Get.toNamed(AppRoutes.selectSeries, arguments: plan);
+                                      } else {
+                                        if (plan.id != null) {
+                                          if (Platform.isIOS) {
+                                            _showPaymentSelectionSheet(context, plan.id!);
+                                          } else {
+                                            controller.buyPlan(plan.id!, promoCode: controller.isPromoApplied.value ? controller.appliedPromoCode.value : null);
+                                          }
+                                        }
+                                      }
+                                    },
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
               ),
+              if (Platform.isIOS) ...[
+                _buildRestoreButton(),
+                _buildLegalFooter(),
+              ],
             ],
           );
         default:
@@ -446,6 +474,160 @@ class AccessPlansScreen extends StatelessWidget {
           return const SizedBox();
       }
     });
+  }
+
+  Widget _buildRestoreButton() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: TextButton(
+        onPressed: () => controller.restorePurchases(),
+        child: Text(
+          "Restore Purchases",
+          style: text14(color: AppColors.primary, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLegalFooter() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      child: Column(
+        children: [
+          Text(
+            "Subscriptions will be charged to your iTunes account at confirmation of purchase.",
+            textAlign: TextAlign.center,
+            style: text10(color: AppColors.white38),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              GestureDetector(
+                onTap: () => Get.toNamed(AppRoutes.termsConditions),
+                child: Text("Terms of Use", style: text12(color: AppColors.primary)),
+              ),
+              Text("  •  ", style: text12(color: AppColors.white38)),
+              GestureDetector(
+                onTap: () => Get.toNamed(AppRoutes.privacyPolicy),
+                child: Text("Privacy Policy", style: text12(color: AppColors.primary)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPaymentSelectionSheet(BuildContext context, String planId) {
+    final plan = controller.planList.value.data?.plans?.firstWhereOrNull((p) => p.id == planId);
+    
+    final Map<String, String> slugToAppleId = {
+      'ad-free': 'playon_adsfree',
+    };
+    final appleId = slugToAppleId[plan?.slug] ?? plan?.slug;
+    final isIapAvailable = appleId != null && controller.iapProducts.containsKey(appleId);
+
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: AppColors.secPrimary,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Select Payment Method", style: text20(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text(
+              "Choose how you'd like to pay for your subscription",
+              style: text14(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 24),
+            _paymentOption(
+              icon: Icons.apple,
+              title: "Apple Pay (In-App Purchase)",
+              subtitle: isIapAvailable 
+                  ? "Fast and secure with your Apple ID" 
+                  : "Currently unavailable for this plan",
+              enabled: isIapAvailable,
+              onTap: () {
+                Get.back();
+                controller.buyPlan(
+                  planId,
+                  useIAP: true,
+                  promoCode: controller.isPromoApplied.value ? controller.appliedPromoCode.value : null,
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            _paymentOption(
+              icon: Icons.payment_outlined,
+              title: "Razorpay / Cards / UPI",
+              subtitle: "Pay via external secure gateway",
+              onTap: () {
+                Get.back();
+                controller.buyPlan(
+                  planId,
+                  useIAP: false,
+                  promoCode: controller.isPromoApplied.value ? controller.appliedPromoCode.value : null,
+                );
+              },
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  Widget _paymentOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    bool enabled = true,
+  }) {
+    return InkWell(
+      onTap: enabled ? onTap : null,
+      borderRadius: BorderRadius.circular(16),
+      child: Opacity(
+        opacity: enabled ? 1.0 : 0.5,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.white.withOpacity(0.1)),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: AppColors.primary),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: text16(fontWeight: FontWeight.bold)),
+                    Text(subtitle, style: text12(color: AppColors.textSecondary)),
+                  ],
+                ),
+              ),
+              if (enabled) const Icon(Icons.chevron_right, color: AppColors.white38),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildSubscriptionCard(Subscription sub, {bool isActive = false}) {

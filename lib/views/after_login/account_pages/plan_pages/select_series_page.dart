@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -205,9 +206,13 @@ class _SelectSeriesPageState extends State<SelectSeriesPage> {
                               if (isPurchased) {
                                 Get.toNamed(AppRoutes.followedPage);
                               } else if (selectedPlan?.id != null && series.sId != null) {
-                                planController.buyPlan(selectedPlan!.id!,
-                                    seriesId: series.sId,
-                                    promoCode: planController.isPromoApplied.value ? planController.appliedPromoCode.value : null);
+                                if (Platform.isIOS) {
+                                  _showPaymentSelectionSheet(context, selectedPlan!.id!, seriesId: series.sId);
+                                } else {
+                                  planController.buyPlan(selectedPlan!.id!,
+                                      seriesId: series.sId,
+                                      promoCode: planController.isPromoApplied.value ? planController.appliedPromoCode.value : null);
+                                }
                               }
                             },
                             style: ElevatedButton.styleFrom(
@@ -228,5 +233,112 @@ class _SelectSeriesPageState extends State<SelectSeriesPage> {
         ),
       );
     });
+  }
+
+  void _showPaymentSelectionSheet(BuildContext context, String planId, {String? seriesId}) {
+    final isIapAvailable = selectedPlan?.slug != null && planController.iapProducts.containsKey(selectedPlan!.slug);
+
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: AppColors.secPrimary,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Select Payment Method", style: text20(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text(
+              "Choose how you'd like to pay for your subscription",
+              style: text14(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 24),
+            _paymentOption(
+              icon: Icons.apple,
+              title: "Apple Pay (In-App Purchase)",
+              subtitle: isIapAvailable 
+                  ? "Fast and secure with your Apple ID" 
+                  : "Currently unavailable for this plan",
+              enabled: isIapAvailable,
+              onTap: () {
+                Get.back();
+                planController.buyPlan(
+                  planId,
+                  seriesId: seriesId,
+                  useIAP: true,
+                  promoCode: planController.isPromoApplied.value ? planController.appliedPromoCode.value : null,
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            _paymentOption(
+              icon: Icons.payment_outlined,
+              title: "Razorpay / Cards / UPI",
+              subtitle: "Pay via external secure gateway",
+              onTap: () {
+                Get.back();
+                planController.buyPlan(
+                  planId,
+                  seriesId: seriesId,
+                  useIAP: false,
+                  promoCode: planController.isPromoApplied.value ? planController.appliedPromoCode.value : null,
+                );
+              },
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  Widget _paymentOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    bool enabled = true,
+  }) {
+    return InkWell(
+      onTap: enabled ? onTap : null,
+      borderRadius: BorderRadius.circular(16),
+      child: Opacity(
+        opacity: enabled ? 1.0 : 0.5,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.white.withOpacity(0.1)),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: AppColors.primary),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: text16(fontWeight: FontWeight.bold)),
+                    Text(subtitle, style: text12(color: AppColors.textSecondary)),
+                  ],
+                ),
+              ),
+              if (enabled) const Icon(Icons.chevron_right, color: AppColors.white38),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

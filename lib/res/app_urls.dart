@@ -1,7 +1,7 @@
 class AppUrls {
-  // static const String baseUrl = 'http://192.168.1.14:8000/api';
+  static const String baseUrl = 'http://192.168.1.9:8000/api';
   // static const String baseUrl = 'http://13.233.70.187/api';
-  static const String baseUrl = 'https://api.playonsports.online/api';
+  // static const String baseUrl = 'https://api.playonsports.online/api';
   // static const String baseUrl = 'https://play-on-weld.vercel.app/api';
 
   // Auth Endpoints
@@ -68,6 +68,7 @@ class AppUrls {
   // Payment Endpoints
   static const String createOrder = '$baseUrl/payment/create-order';
   static const String verifyPayment = '$baseUrl/payment/verify';
+  static const String appleVerifyPayment = '$baseUrl/payment/apple-verify';
   static const String promoCodes = '$baseUrl/promos';
 
   // Watchlist Endpoints

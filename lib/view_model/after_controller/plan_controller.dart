@@ -33,6 +33,9 @@ class PlanController extends GetxController {
   final hasAccess = false.obs;
   final isAdFree = false.obs;
 
+  // iOS IAP Product Details for localized pricing
+  final iapProducts = <String, ProductDetails>{}.obs;
+
   final promoController = TextEditingController();
   final isPromoApplied = false.obs;
   final appliedPromoCode = "".obs;
@@ -211,7 +214,13 @@ class PlanController extends GetxController {
 
   void fetchPlans() {
     _api.getPlans().then((value) {
-      planList.value = ApiResponse.completed(PlanModel.fromJson(value));
+      final plans = PlanModel.fromJson(value);
+      planList.value = ApiResponse.completed(plans);
+      
+      // Fetch IAP localized prices if on iOS
+      if (Platform.isIOS && plans.plans != null && plans.plans!.isNotEmpty) {
+        fetchIAPProducts(plans.plans!);
+      }
     }).onError((error, stackTrace) {
       planList.value = ApiResponse.error(error.toString());
     });
@@ -278,7 +287,7 @@ class PlanController extends GetxController {
     }
   }
 
-  Future<void> buyPlan(String planId, {String? itemId, String? seriesId, String? matchId, String? teamId, String? promoCode}) async {
+  Future<void> buyPlan(String planId, {String? itemId, String? seriesId, String? matchId, String? teamId, String? promoCode, bool useIAP = true}) async {
     isPaymentProcessing.value = true;
     
     // Safety timeout: automatically reset processing state after 3 minutes
@@ -297,7 +306,8 @@ class PlanController extends GetxController {
     _currentItemId = itemId;
     _currentPromoCode = promoCode;
 
-    if (Platform.isIOS) {
+    if (Platform.isIOS && useIAP) {
+      // iOS In-App Purchase
       _buyPlanIOS(planId);
       return;
     }
@@ -494,6 +504,74 @@ class PlanController extends GetxController {
 
   // --- iOS In-App Purchase Logic ---
 
+  Future<void> fetchIAPProducts(List<Plan> plans) async {
+    try {
+      debugPrint("🔍 [IAP] --- START FETCH ---");
+      final bool available = await _iap.isAvailable();
+      if (!available) {
+        debugPrint("❌ [IAP] In-app purchases are NOT available on this device. Check if IAP is enabled in Settings.");
+        return;
+      }
+
+      // Backend slugs ko Apple IDs se map karein
+      final Map<String, String> slugToAppleId = {
+        'ad-free': 'playon_adsfree',
+        'ad-free-pass': 'playon_adsfree',
+      };
+
+      // 1. Backend se aayi hui IDs
+      final Set<String> productIdsFromBackend = plans
+          .map((p) => slugToAppleId[p.slug] ?? p.slug ?? "")
+          .where((id) => id.isNotEmpty)
+          .toSet();
+
+      // 2. Ek HARDCODED ID bhi add karte hain testing ke liye
+      final Set<String> testIds = {'playon_adsfree'};
+      
+      final Set<String> finalQueryIds = {...productIdsFromBackend, ...testIds};
+
+      debugPrint("🔍 [IAP] Querying App Store for: $finalQueryIds");
+
+      final ProductDetailsResponse response = await _iap.queryProductDetails(finalQueryIds);
+      
+      debugPrint("📡 [IAP] Response received:");
+      debugPrint("   - Found: ${response.productDetails.length} products");
+      debugPrint("   - NOT Found: ${response.notFoundIDs.length} IDs");
+
+      if (response.notFoundIDs.isNotEmpty) {
+        debugPrint("⚠️ [IAP] Missing IDs list: ${response.notFoundIDs}");
+      }
+
+      for (var product in response.productDetails) {
+        iapProducts[product.id] = product;
+        debugPrint("✅ [IAP] LOADED: ${product.id} | Price: ${product.price} | Title: ${product.title}");
+      }
+      
+      if (response.error != null) {
+        debugPrint("❌ [IAP] ERROR FROM APPLE: ${response.error!.code} - ${response.error!.message}");
+      }
+      debugPrint("🔍 [IAP] --- END FETCH ---");
+    } catch (e) {
+      debugPrint("❌ [IAP] EXCEPTION: $e");
+    }
+  }
+
+  Future<void> restorePurchases() async {
+    isPaymentProcessing.value = true;
+    try {
+      final bool available = await _iap.isAvailable();
+      if (!available) {
+        isPaymentProcessing.value = false;
+        showCustomSnackbar(title: 'Error', message: 'In-app purchases are not available', type: SnackType.error);
+        return;
+      }
+      await _iap.restorePurchases();
+    } catch (e) {
+      isPaymentProcessing.value = false;
+      showCustomSnackbar(title: 'Error', message: 'Failed to restore purchases: $e', type: SnackType.error);
+    }
+  }
+
   Future<void> _buyPlanIOS(String planId) async {
     final bool available = await _iap.isAvailable();
     if (!available) {
@@ -511,8 +589,15 @@ class PlanController extends GetxController {
     }
 
     // IMPORTANT: On iOS, product IDs must be created in App Store Connect.
-    // We assume the slug is used as the product ID here.
-    String productId = plan.slug ?? planId;
+    
+    // Check mapping first
+    final Map<String, String> slugToAppleId = {
+      'ad-free': 'playon_adsfree',
+    };
+    
+    String productId = slugToAppleId[plan.slug] ?? plan.slug ?? planId;
+    
+    debugPrint("🛒 [IAP] Initiating purchase for Product ID: $productId");
     
     final ProductDetailsResponse response = await _iap.queryProductDetails({productId});
     if (response.notFoundIDs.isNotEmpty) {
@@ -532,32 +617,60 @@ class PlanController extends GetxController {
 
   void _listenToPurchaseUpdated(List<PurchaseDetails> purchaseDetailsList) {
     purchaseDetailsList.forEach((PurchaseDetails purchaseDetails) async {
+      debugPrint("🛒 [IAP] Purchase Stream Update: ID=${purchaseDetails.productID} Status=${purchaseDetails.status}");
+
       if (purchaseDetails.status == PurchaseStatus.pending) {
         // Purchase is pending, shows loading or processing state
+        isPaymentProcessing.value = true;
       } else {
         if (purchaseDetails.status == PurchaseStatus.error) {
+          debugPrint("❌ [IAP] Error: ${purchaseDetails.error}");
           isPaymentProcessing.value = false;
+          
+          // ALWAYS complete the purchase to remove it from the queue even if it failed
+          if (purchaseDetails.pendingCompletePurchase) {
+            await _iap.completePurchase(purchaseDetails);
+            debugPrint("🧹 [IAP] Completed failed purchase to clear queue");
+          }
+          
           showCustomSnackbar(title: 'Error', message: purchaseDetails.error?.message ?? 'Purchase failed', type: SnackType.error);
-        } else if (purchaseDetails.status == PurchaseStatus.purchased || purchaseDetails.status == PurchaseStatus.restored) {
+        } 
+        else if (purchaseDetails.status == PurchaseStatus.purchased || purchaseDetails.status == PurchaseStatus.restored) {
+          debugPrint("✅ [IAP] Product ${purchaseDetails.status == PurchaseStatus.purchased ? 'Purchased' : 'Restored'}!");
+          
           bool verified = await _verifyIOSPurchase(purchaseDetails);
+          
+          // ALWAYS complete the purchase if it reached a terminal state (purchased/restored)
+          // to prevent it from getting stuck in the StoreKit queue.
+          if (purchaseDetails.pendingCompletePurchase) {
+            await _iap.completePurchase(purchaseDetails);
+            debugPrint("🧹 [IAP] Completed ${purchaseDetails.status == PurchaseStatus.purchased ? 'successful' : 'restored'} purchase");
+          }
+
           if (verified) {
-            if (purchaseDetails.pendingCompletePurchase) {
-              await _iap.completePurchase(purchaseDetails);
-            }
             isPaymentProcessing.value = false;
             showCustomSnackbar(title: 'Success', message: 'Purchase successful', type: SnackType.success);
             fetchMySubscription();
             fetchSubscriptionHistory();
-            if (Get.currentRoute.contains('Select')) {
+            
+            if (Get.currentRoute.contains('Select') || Get.currentRoute.contains('Choose')) {
               Get.back();
             }
           } else {
             isPaymentProcessing.value = false;
-            showCustomSnackbar(title: 'Error', message: 'Purchase verification failed', type: SnackType.error);
+            showCustomSnackbar(
+              title: 'Verification Failed', 
+              message: 'Payment received but verification failed. Please contact support if your plan is not active.', 
+              type: SnackType.error
+            );
           }
         }
-        if (purchaseDetails.pendingCompletePurchase && purchaseDetails.status != PurchaseStatus.purchased) {
-           await _iap.completePurchase(purchaseDetails);
+        else if (purchaseDetails.status == PurchaseStatus.canceled) {
+          debugPrint("🚫 [IAP] Purchase Canceled by user");
+          isPaymentProcessing.value = false;
+          if (purchaseDetails.pendingCompletePurchase) {
+            await _iap.completePurchase(purchaseDetails);
+          }
         }
       }
     });
@@ -565,22 +678,30 @@ class PlanController extends GetxController {
 
   Future<bool> _verifyIOSPurchase(PurchaseDetails purchaseDetails) async {
     try {
+      debugPrint("🔍 [IAP] Starting verification on server...");
+      
+      // Ensure we have a planId. If _currentPlanId is lost (e.g. app restart),
+      // we use the productID as a fallback plan identifier if your backend supports it.
+      final String? pId = _currentPlanId;
+      
       final Map<String, dynamic> verifyData = {
-        'platform': 'ios',
-        'product_id': purchaseDetails.productID,
-        'purchase_id': purchaseDetails.purchaseID,
         'verification_data': purchaseDetails.verificationData.serverVerificationData,
-        'planId': _currentPlanId!,
+        'planId': pId ?? '',
       };
 
       if (_currentMatchId != null) verifyData['matchId'] = _currentMatchId;
       if (_currentSeriesId != null) verifyData['seriesId'] = _currentSeriesId;
       if (_currentTeamId != null) verifyData['teamId'] = _currentTeamId;
 
-      final response = await _api.verifyPayment(verifyData);
-      return response['success'] == true;
+      debugPrint("📡 [IAP] Apple Verification Payload: $verifyData");
+
+      final response = await _api.verifyApplePayment(verifyData);
+      
+      debugPrint("📡 [IAP] Server Verification Response: $response");
+      
+      return response != null && response['success'] == true;
     } catch (e) {
-      debugPrint("Verification error: $e");
+      debugPrint("❌ [IAP] Verification error: $e");
       return false;
     }
   }
