@@ -170,11 +170,16 @@ class AccessPlansScreen extends StatelessWidget {
             ),
           );
         case Status.completed:
-          final plans = controller.planList.value.data?.plans ?? [];
+          final allPlans = controller.planList.value.data?.plans ?? [];
+          
+          // Filter plans for iOS: only show those mapped to App Store
+          final plans = Platform.isIOS 
+              ? allPlans.where((p) => controller.isAppleSupportedPlan(p)).toList()
+              : allPlans;
 
           return Column(
             children: [
-              _buildPromoCodeField(),
+              if (!Platform.isIOS) _buildPromoCodeField(),
               Expanded(
                 child: plans.isEmpty
                     ? Center(
@@ -192,12 +197,21 @@ class AccessPlansScreen extends StatelessWidget {
                           
                           // Priorities Apple's localized info on iOS if found
                           String displayTitle = plan.title ?? "";
-                          String displayPrice = "${plan.currency == 'INR' ? '₹' : plan.currency}${plan.price} / ${plan.billingType}";
+                          String displayPrice = "${plan.currency == 'INR' ? '₹' : plan.currency ?? '₹'}${plan.price}";
+                          if (plan.billingType != null && plan.billingType!.toLowerCase() != "null" && plan.billingType!.isNotEmpty) {
+                            displayPrice += " / ${plan.billingType}";
+                          }
                           
-                          if (Platform.isIOS && plan.slug != null && controller.iapProducts.containsKey(plan.slug)) {
-                            final iap = controller.iapProducts[plan.slug]!;
-                            displayTitle = iap.title.split('(').first.trim();
-                            displayPrice = "${iap.price} / ${plan.billingType}";
+                          if (Platform.isIOS && plan.slug != null) {
+                            final appleId = PlanController.slugToAppleIdMap[plan.slug] ?? plan.slug!;
+                            if (controller.iapProducts.containsKey(appleId)) {
+                              final iap = controller.iapProducts[appleId]!;
+                              displayTitle = iap.title.split('(').first.trim();
+                              displayPrice = iap.price;
+                              if (plan.billingType != null && plan.billingType!.toLowerCase() != "null" && plan.billingType!.isNotEmpty) {
+                                displayPrice += " / ${plan.billingType}";
+                              }
+                            }
                           }
 
                           return Padding(
@@ -219,11 +233,7 @@ class AccessPlansScreen extends StatelessWidget {
                                         Get.toNamed(AppRoutes.selectSeries, arguments: plan);
                                       } else {
                                         if (plan.id != null) {
-                                          if (Platform.isIOS) {
-                                            _showPaymentSelectionSheet(context, plan.id!);
-                                          } else {
-                                            controller.buyPlan(plan.id!, promoCode: controller.isPromoApplied.value ? controller.appliedPromoCode.value : null);
-                                          }
+                                          controller.buyPlan(plan.id!, promoCode: controller.isPromoApplied.value ? controller.appliedPromoCode.value : null);
                                         }
                                       }
                                     },
@@ -520,68 +530,9 @@ class AccessPlansScreen extends StatelessWidget {
   }
 
   void _showPaymentSelectionSheet(BuildContext context, String planId) {
-    final plan = controller.planList.value.data?.plans?.firstWhereOrNull((p) => p.id == planId);
-    
-    final Map<String, String> slugToAppleId = {
-      'ad-free': 'playon_adsfree',
-    };
-    final appleId = slugToAppleId[plan?.slug] ?? plan?.slug;
-    final isIapAvailable = appleId != null && controller.iapProducts.containsKey(appleId);
-
-    Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: AppColors.secPrimary,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Select Payment Method", style: text20(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text(
-              "Choose how you'd like to pay for your subscription",
-              style: text14(color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 24),
-            _paymentOption(
-              icon: Icons.apple,
-              title: "Apple Pay (In-App Purchase)",
-              subtitle: isIapAvailable 
-                  ? "Fast and secure with your Apple ID" 
-                  : "Currently unavailable for this plan",
-              enabled: isIapAvailable,
-              onTap: () {
-                Get.back();
-                controller.buyPlan(
-                  planId,
-                  useIAP: true,
-                  promoCode: controller.isPromoApplied.value ? controller.appliedPromoCode.value : null,
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            _paymentOption(
-              icon: Icons.payment_outlined,
-              title: "Razorpay / Cards / UPI",
-              subtitle: "Pay via external secure gateway",
-              onTap: () {
-                Get.back();
-                controller.buyPlan(
-                  planId,
-                  useIAP: false,
-                  promoCode: controller.isPromoApplied.value ? controller.appliedPromoCode.value : null,
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-      isScrollControlled: true,
-    );
+    // This sheet is deprecated as per Apple requirements (IAP only)
+    // but kept as internal reference if needed for other platforms in future
+    // For now, it's bypassed in UI logic.
   }
 
   Widget _paymentOption({

@@ -36,6 +36,26 @@ class PlanController extends GetxController {
   // iOS IAP Product Details for localized pricing
   final iapProducts = <String, ProductDetails>{}.obs;
 
+  // Centralized mapping for Backend Slugs to Apple Product IDs
+  static const Map<String, String> slugToAppleIdMap = {
+    'ad-free': 'playon_adsfree',
+    'ad-free-pass': 'playon_adsfree',
+    'one-match-pass': 'playon_match_pass',
+    'series-pass': 'playon_series_pass',
+    'team-pass': 'playon_team_pass',
+    'unlimited-sports-pass': 'playon_unlimited_pass',
+    'full-access': 'playon_full_access',
+  };
+
+  bool isAppleSupportedPlan(Plan plan) {
+    if (!Platform.isIOS) return true;
+    if (plan.slug == null) return false;
+    
+    // Plan is supported if it has a mapping or if its slug is found in IAP products
+    final appleId = slugToAppleIdMap[plan.slug] ?? plan.slug;
+    return iapProducts.containsKey(appleId);
+  }
+
   final promoController = TextEditingController();
   final isPromoApplied = false.obs;
   final appliedPromoCode = "".obs;
@@ -306,8 +326,8 @@ class PlanController extends GetxController {
     _currentItemId = itemId;
     _currentPromoCode = promoCode;
 
-    if (Platform.isIOS && useIAP) {
-      // iOS In-App Purchase
+    if (Platform.isIOS) {
+      // iOS ONLY In-App Purchase as per requirement
       _buyPlanIOS(planId);
       return;
     }
@@ -514,21 +534,15 @@ class PlanController extends GetxController {
       }
 
       // Backend slugs ko Apple IDs se map karein
-      final Map<String, String> slugToAppleId = {
-        'ad-free': 'playon_adsfree',
-        'ad-free-pass': 'playon_adsfree',
-      };
-
-      // 1. Backend se aayi hui IDs
-      final Set<String> productIdsFromBackend = plans
-          .map((p) => slugToAppleId[p.slug] ?? p.slug ?? "")
+      final Set<String> finalQueryIds = plans
+          .map((p) => slugToAppleIdMap[p.slug] ?? p.slug ?? "")
           .where((id) => id.isNotEmpty)
           .toSet();
 
-      // 2. Ek HARDCODED ID bhi add karte hain testing ke liye
-      final Set<String> testIds = {'playon_adsfree'};
-      
-      final Set<String> finalQueryIds = {...productIdsFromBackend, ...testIds};
+      // Add a hardcoded test ID if needed, but centralized map is better
+      if (finalQueryIds.isEmpty) {
+        finalQueryIds.add('playon_adsfree');
+      }
 
       debugPrint("🔍 [IAP] Querying App Store for: $finalQueryIds");
 
@@ -590,12 +604,7 @@ class PlanController extends GetxController {
 
     // IMPORTANT: On iOS, product IDs must be created in App Store Connect.
     
-    // Check mapping first
-    final Map<String, String> slugToAppleId = {
-      'ad-free': 'playon_adsfree',
-    };
-    
-    String productId = slugToAppleId[plan.slug] ?? plan.slug ?? planId;
+    String productId = slugToAppleIdMap[plan.slug] ?? plan.slug ?? planId;
     
     debugPrint("🛒 [IAP] Initiating purchase for Product ID: $productId");
     

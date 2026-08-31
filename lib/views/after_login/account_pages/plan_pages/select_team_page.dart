@@ -225,7 +225,7 @@ class _SelectTeamPageState extends State<SelectTeamPage> {
       return GestureDetector(
         onTap: () {
           if (isPurchased) {
-            // Already purchased, do nothing or show info if needed, but UI already shows green
+            // Already purchased
           } else if (selectedPlan?.id != null) {
             planController.buyPlan(selectedPlan!.id!,
                 teamId: team['_id'],
@@ -313,64 +313,7 @@ class _SelectTeamPageState extends State<SelectTeamPage> {
   }
 
   void _showPaymentSelectionSheet(BuildContext context, String planId, {String? teamId}) {
-    final isIapAvailable = selectedPlan?.slug != null && planController.iapProducts.containsKey(selectedPlan!.slug);
-
-    Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: AppColors.secPrimary,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Select Payment Method", style: text20(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text(
-              "Choose how you'd like to pay for your subscription",
-              style: text14(color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 24),
-            _paymentOption(
-              icon: Icons.apple,
-              title: "Apple Pay (In-App Purchase)",
-              subtitle: isIapAvailable 
-                  ? "Fast and secure with your Apple ID" 
-                  : "Currently unavailable for this plan",
-              enabled: isIapAvailable,
-              onTap: () {
-                Get.back();
-                planController.buyPlan(
-                  planId,
-                  teamId: teamId,
-                  useIAP: true,
-                  promoCode: planController.isPromoApplied.value ? planController.appliedPromoCode.value : null,
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            _paymentOption(
-              icon: Icons.payment_outlined,
-              title: "Razorpay / Cards / UPI",
-              subtitle: "Pay via external secure gateway",
-              onTap: () {
-                Get.back();
-                planController.buyPlan(
-                  planId,
-                  teamId: teamId,
-                  useIAP: false,
-                  promoCode: planController.isPromoApplied.value ? planController.appliedPromoCode.value : null,
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-      isScrollControlled: true,
-    );
+    // Deprecated for iOS
   }
 
   Widget _paymentOption({

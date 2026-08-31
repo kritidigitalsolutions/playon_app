@@ -206,13 +206,9 @@ class _SelectSeriesPageState extends State<SelectSeriesPage> {
                               if (isPurchased) {
                                 Get.toNamed(AppRoutes.followedPage);
                               } else if (selectedPlan?.id != null && series.sId != null) {
-                                if (Platform.isIOS) {
-                                  _showPaymentSelectionSheet(context, selectedPlan!.id!, seriesId: series.sId);
-                                } else {
-                                  planController.buyPlan(selectedPlan!.id!,
-                                      seriesId: series.sId,
-                                      promoCode: planController.isPromoApplied.value ? planController.appliedPromoCode.value : null);
-                                }
+                                planController.buyPlan(selectedPlan!.id!,
+                                    seriesId: series.sId,
+                                    promoCode: planController.isPromoApplied.value ? planController.appliedPromoCode.value : null);
                               }
                             },
                             style: ElevatedButton.styleFrom(
@@ -236,64 +232,7 @@ class _SelectSeriesPageState extends State<SelectSeriesPage> {
   }
 
   void _showPaymentSelectionSheet(BuildContext context, String planId, {String? seriesId}) {
-    final isIapAvailable = selectedPlan?.slug != null && planController.iapProducts.containsKey(selectedPlan!.slug);
-
-    Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: AppColors.secPrimary,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Select Payment Method", style: text20(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text(
-              "Choose how you'd like to pay for your subscription",
-              style: text14(color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 24),
-            _paymentOption(
-              icon: Icons.apple,
-              title: "Apple Pay (In-App Purchase)",
-              subtitle: isIapAvailable 
-                  ? "Fast and secure with your Apple ID" 
-                  : "Currently unavailable for this plan",
-              enabled: isIapAvailable,
-              onTap: () {
-                Get.back();
-                planController.buyPlan(
-                  planId,
-                  seriesId: seriesId,
-                  useIAP: true,
-                  promoCode: planController.isPromoApplied.value ? planController.appliedPromoCode.value : null,
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            _paymentOption(
-              icon: Icons.payment_outlined,
-              title: "Razorpay / Cards / UPI",
-              subtitle: "Pay via external secure gateway",
-              onTap: () {
-                Get.back();
-                planController.buyPlan(
-                  planId,
-                  seriesId: seriesId,
-                  useIAP: false,
-                  promoCode: planController.isPromoApplied.value ? planController.appliedPromoCode.value : null,
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-      isScrollControlled: true,
-    );
+    // Deprecated for iOS
   }
 
   Widget _paymentOption({
