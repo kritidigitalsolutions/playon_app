@@ -28,6 +28,7 @@ import 'package:play_on_app/views/before_login/sport_interest_screen.dart';
 import 'package:play_on_app/views/after_login/account_pages/plan_pages/select_series_page.dart';
 import 'package:play_on_app/views/after_login/account_pages/plan_pages/select_team_page.dart';
 import 'package:play_on_app/views/after_login/account_pages/plan_pages/purchased_items_page.dart';
+import 'package:play_on_app/views/after_login/account_pages/plan_pages/plan_summary_screen.dart';
 import 'package:play_on_app/views/after_login/home_pages/watch_list_screen.dart';
 import '../views/after_login/account_pages/followed_players_page.dart';
 import '../views/after_login/account_pages/player_detail_screen.dart';
@@ -89,6 +90,7 @@ class AppPages {
     GetPage(name: AppRoutes.selectTeam, page: () => const SelectTeamPage(), binding: PlanBinding()),
     GetPage(name: AppRoutes.selectSeries, page: () => const SelectSeriesPage(), binding: PlanBinding()),
     GetPage(name: AppRoutes.purchasedItems, page: () => const PurchasedItemsPage(), binding: PlanBinding()),
+    GetPage(name: AppRoutes.planSummary, page: () => PlanSummaryScreen(), binding: PlanBinding()),
     GetPage(name: AppRoutes.accountDelete, page: () => DeleteAccountScreen()),
     GetPage(name: AppRoutes.followPlayer, page: () => FollowedPlayersScreen()),
     GetPage(name: AppRoutes.playerDetail, page: () => const PlayerDetailScreen()),

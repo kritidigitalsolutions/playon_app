@@ -80,6 +80,12 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 
+    <key>NSCameraUsageDescription</key>
+    <string>We need access to your camera to let you take a profile picture.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>We need access to your gallery to let you choose a profile picture.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>We need access to your microphone for recording videos.</string>
     <key>GADApplicationIdentifier</key>
     <string>ca-app-pub-9899829518030319~1225929015</string>
     <key>LSApplicationQueriesSchemes</key>

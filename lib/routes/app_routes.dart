@@ -26,6 +26,7 @@ class AppRoutes {
   static const String selectTeam = "/selectTeam";
   static const String selectSeries = "/selectSeries";
   static const String purchasedItems = "/purchasedItems";
+  static const String planSummary = "/planSummary";
   static const String accountDelete = "/accountDelete";
   static const String privacyPolicy = "/privacyPolicy";
   static const String aboutUs = "/aboutUs";

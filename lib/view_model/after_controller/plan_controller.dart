@@ -689,20 +689,33 @@ class PlanController extends GetxController {
     try {
       debugPrint("🔍 [IAP] Starting verification on server...");
       
-      // Ensure we have a planId. If _currentPlanId is lost (e.g. app restart),
-      // we use the productID as a fallback plan identifier if your backend supports it.
       final String? pId = _currentPlanId;
       
+      // Many backends have strict requirements on field names. 
+      // We send all common variations to ensure the backend receives what it needs.
       final Map<String, dynamic> verifyData = {
-        'verification_data': purchaseDetails.verificationData.serverVerificationData,
         'planId': pId ?? '',
+        'product_id': purchaseDetails.productID,
+        'transaction_id': purchaseDetails.purchaseID,
+        'productId': purchaseDetails.productID,
+        'transactionId': purchaseDetails.purchaseID,
+        'verification_data': purchaseDetails.verificationData.serverVerificationData, // SK2 JWS
+        'receipt-data': purchaseDetails.verificationData.localVerificationData, // Apple's official key name (hyphenated)
+        'receipt_data': purchaseDetails.verificationData.localVerificationData, // underscore version
+        'isSandbox': true, // Helpful for backend to know it should try sandbox verify URL
+        'source': 'apple',
       };
 
       if (_currentMatchId != null) verifyData['matchId'] = _currentMatchId;
       if (_currentSeriesId != null) verifyData['seriesId'] = _currentSeriesId;
       if (_currentTeamId != null) verifyData['teamId'] = _currentTeamId;
 
-      debugPrint("📡 [IAP] Apple Verification Payload: $verifyData");
+      debugPrint("📡 [IAP] Apple Verification Payload Summary:");
+      debugPrint("   - planId: ${verifyData['planId']}");
+      debugPrint("   - productId: ${verifyData['product_id']}");
+      debugPrint("   - transactionId: ${verifyData['transactionId']}");
+      debugPrint("   - hasReceiptData (hyphen): ${verifyData['receipt-data'] != null}");
+      debugPrint("   - isSandbox: ${verifyData['isSandbox']}");
 
       final response = await _api.verifyApplePayment(verifyData);
       

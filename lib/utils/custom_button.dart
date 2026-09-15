@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:play_on_app/res/app_colors.dart';
 import 'package:play_on_app/utils/app_text_style.dart';
 
@@ -247,6 +248,148 @@ class CustomElevatedIconButton extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class ApplePayButton extends StatelessWidget {
+  final VoidCallback onPressed;
+  final bool isLoading;
+  final double height;
+  final double borderRadius;
+
+  const ApplePayButton({
+    super.key,
+    required this.onPressed,
+    this.isLoading = false,
+    this.height = 48, // Meets >30pt minimum
+    this.borderRadius = 8,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: height,
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          padding: EdgeInsets.symmetric(vertical: height / 10), // 1/10th margin as per guidelines
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+          ),
+          elevation: 0,
+        ),
+        child: isLoading
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.black,
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Pay with ",
+                    style: text18(
+                      color: Colors.black,
+                      fontWeight: FontWeight.w500,
+                    ).copyWith(letterSpacing: -0.5),
+                  ),
+                  const FaIcon(
+                    FontAwesomeIcons.apple,
+                    color: Colors.black,
+                    size: 20,
+                  ),
+                  Text(
+                    " Pay",
+                    style: text18(
+                      color: Colors.black,
+                      fontWeight: FontWeight.w600,
+                    ).copyWith(letterSpacing: -0.5),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+class SubscribeAppleButton extends StatelessWidget {
+  final VoidCallback onPressed;
+  final bool isLoading;
+  final double height;
+  final double borderRadius;
+
+  const SubscribeAppleButton({
+    super.key,
+    required this.onPressed,
+    this.isLoading = false,
+    this.height = 54,
+    this.borderRadius = 12,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height,
+      constraints: const BoxConstraints(minHeight: 30, minWidth: 140),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(color: Colors.black.withOpacity(0.1), width: 1),
+      ),
+      child: ElevatedButton(
+        onPressed: isLoading ? null : onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
+          padding: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+          ),
+        ),
+        child: isLoading
+            ? const SizedBox(
+                height: 22,
+                width: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: Colors.black,
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Subscribe with ",
+                    style: text18(
+                      color: Colors.black,
+                      fontWeight: FontWeight.w600,
+                    ).copyWith(letterSpacing: -0.5,fontSize: 24),
+                  ),
+                  const FaIcon(
+                    FontAwesomeIcons.apple,
+                    color: Colors.black,
+                    size: 24,
+                  ),
+                  Text(
+                    "Pay",
+                    style: text18(
+                      color: Colors.black,
+                      fontWeight: FontWeight.w600,
+                    ).copyWith(letterSpacing: -0.5,fontSize: 24),
+                  ),
+                ],
+              ),
       ),
     );
   }

@@ -232,8 +232,12 @@ class AccessPlansScreen extends StatelessWidget {
                                       } else if (plan.buttonText == "Choose The Series") {
                                         Get.toNamed(AppRoutes.selectSeries, arguments: plan);
                                       } else {
-                                        if (plan.id != null) {
-                                          controller.buyPlan(plan.id!, promoCode: controller.isPromoApplied.value ? controller.appliedPromoCode.value : null);
+                                        if (Platform.isIOS) {
+                                          Get.toNamed(AppRoutes.planSummary, arguments: plan);
+                                        } else {
+                                          if (plan.id != null) {
+                                            controller.buyPlan(plan.id!, promoCode: controller.isPromoApplied.value ? controller.appliedPromoCode.value : null);
+                                          }
                                         }
                                       }
                                     },
@@ -242,10 +246,7 @@ class AccessPlansScreen extends StatelessWidget {
                         },
                       ),
               ),
-              if (Platform.isIOS) ...[
-                _buildRestoreButton(),
-                _buildLegalFooter(),
-              ],
+              if (Platform.isIOS) _buildLegalFooter(),
             ],
           );
         default:
@@ -487,14 +488,11 @@ class AccessPlansScreen extends StatelessWidget {
   }
 
   Widget _buildRestoreButton() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: TextButton(
-        onPressed: () => controller.restorePurchases(),
-        child: Text(
-          "Restore Purchases",
-          style: text14(color: AppColors.primary, fontWeight: FontWeight.bold),
-        ),
+    return GestureDetector(
+      onTap: () => controller.restorePurchases(),
+      child: Text(
+        "Restore Purchases",
+        style: text14(color: const Color(0xFF0084FF), fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -505,22 +503,29 @@ class AccessPlansScreen extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            "Subscriptions will be charged to your iTunes account at confirmation of purchase.",
-            textAlign: TextAlign.center,
-            style: text10(color: AppColors.white38),
+            "Billed through the App Store.",
+            style: text12(color: Colors.white70),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
+          Text(
+            "Payment will be charged to your Apple ID at confirmation of purchase. Subscription renews automatically unless canceled at least 24 hours before the end of the current period. Manage in Settings.",
+            textAlign: TextAlign.center,
+            style: text12(color: Colors.white54).copyWith(height: 1.4),
+          ),
+          const SizedBox(height: 20),
+          _buildRestoreButton(),
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               GestureDetector(
                 onTap: () => Get.toNamed(AppRoutes.termsConditions),
-                child: Text("Terms of Use", style: text12(color: AppColors.primary)),
+                child: Text("Terms of Use", style: text13(color: const Color(0xFF0084FF))),
               ),
-              Text("  •  ", style: text12(color: AppColors.white38)),
+              Text("  •  ", style: text13(color: Colors.white38)),
               GestureDetector(
                 onTap: () => Get.toNamed(AppRoutes.privacyPolicy),
-                child: Text("Privacy Policy", style: text12(color: AppColors.primary)),
+                child: Text("Privacy Policy", style: text13(color: const Color(0xFF0084FF))),
               ),
             ],
           ),
