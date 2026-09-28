@@ -1,0 +1,9 @@
+{
+  "id" : "8ed18e89-17fb-45f1-87b2-0ed580c4544e",
+  "targets" : [
+    {
+      "id" : "66DEB54E-6995-4189-A1EC-1709A10E3F4E",
+      "name" : "play_on_app"
+    }
+  ]
+}
